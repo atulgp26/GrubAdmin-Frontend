@@ -1,0 +1,47 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: "#FE5720",
+        "primary-hover": "#e55a2b",
+        background: "#f8fafc",
+        "header-bg": "#fff",
+        border: "#e2e8f0",
+        "sidebar-border": "#E0E3E1",
+        "sidebar-goback-border": "#6B7971",
+        "sidebar-heading": "#37493F",
+        "sidebar-subheading": "#6B7971",
+        zone1: "#1A9CD6",
+        zone2: "#F99D20",
+        "text-primary": "#1e293b",
+        "text-secondary": "#64748b",
+        "accent-light": "#ffd9cc",
+        "accent-dark": "#cb3301",
+        "text-body": "#37493f",
+        "text-heading": "#03130a",
+        "orange-500": "#fe480b",
+        "notification-icon": "#6B7971",
+        gray: {
+          50: "#f9fafb",
+          100: "#f3f4f6",
+          200: "#e5e7eb",
+          300: "#d1d5db",
+          400: "#9ca3af",
+          500: "#6b7280",
+          600: "#4b5563",
+          700: "#374151",
+          800: "#1f2937",
+          900: "#111827",
+        },
+      },
+    },
+  },
+  plugins: [],
+};
