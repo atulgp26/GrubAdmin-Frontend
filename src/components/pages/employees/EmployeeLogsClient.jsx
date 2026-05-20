@@ -1,13 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import EmployeeLogs from "@/components/pages/employees/EmployeeLogs";
-import LogsSidebar from "@/components/pages/employees/LogsSidebar";
+import EmployeeLogs from "./EmployeeLogs";
+import LogsSidebar from "./LogsSidebar";
 import Button from "@/components/ui/Button";
 import { ArrowLeft } from "lucide-react";
-import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const page = () => {
+export default function EmployeeLogsClient() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const employeeIdFromUrl = searchParams.get("id");
@@ -38,10 +37,11 @@ const page = () => {
 					preSelectId={preSelectId}
 					onSelect={handleEmployeeSelect}
 				/>
+				currentId={selectedEmployee?.id}
+				onSelect={handleEmployeeSelect}
+				/>
 				<EmployeeLogs employee={selectedEmployee} />
 			</div>
 		</div>
 	);
-};
-
-export default page;
+}

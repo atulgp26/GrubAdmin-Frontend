@@ -4,7 +4,7 @@
   --color-neutral-primary: #03130a;
   --color-neutral-secondary: #37493f;
   --color-neutral-light: #a4aca7;
-  --color-brand-default: #ff3333;
+  --color-brand-default: #FE5720;
   --color-brand-primary-btn: #FE5720;
   --color-stroke-neutral: #e0e3e1;
   --color-stroke-brand: #6b7971;
@@ -245,4 +245,9 @@ button{
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
+}
+
+.custom-date-input::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
 }

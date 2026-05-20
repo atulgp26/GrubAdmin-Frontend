@@ -3,6 +3,7 @@ import Modal from '../../ui/Modal';
 import Input from '../../ui/Input';
 import Button from '../../ui/Button';
 import MultiSelectDropdown from '../../ui/MultiSelectDropdown';
+import { useRef } from 'react';
 import { MdCalendarToday, MdDone } from 'react-icons/md';
 import Select from '@/components/ui/Select';
 import MobileNumberInput from '@/components/ui/MobileNumberInput';
@@ -22,7 +23,7 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
     employeeId: '',
     joiningDate: ''
   });
-
+const dateRef = useRef(null);
   const [focusedField, setFocusedField] = useState('');
   const [selectedRole, setSelectedRole] = useState([]);
   const [roleOptions, setRoleOptions] = useState([]);
@@ -351,7 +352,7 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
       
       if (roleId) {
         // API expects key 'role' (not 'role_id') for assigning role during create
-        payload.role = roleId;
+        payload.role_id = roleId;
         console.log("Role ID added to payload (role):", roleId);
       } else {
         console.warn("No role ID found! formData.role:", formData.role);
@@ -628,22 +629,31 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
             <h3 className="text-[var(--color-neutral-secondary)] text-base font-medium">
               Joining date <span className="text-sm text-[var(--color-neutral-secondary)]">(optional)</span>
             </h3>
-            <div className="relative">
-              <Input
-                type="date"
-                placeholder="Select date"
-                value={formData.joiningDate}
-                onChange={(e) => handleInputChange('joiningDate', e.target.value)}
-                onFocus={() => handleFocus('joiningDate')}
-                onBlur={handleBlur}
-                isFocused={focusedField === 'joiningDate'}
-                className="pr-10"
-              />
-              <MdCalendarToday className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--info-panel-view-bg)] pointer-events-none" />
-              {validationErrors.joiningDate && (
-                <p className="absolute top-full left-0 mt-1 text-xs text-red-500">{validationErrors.joiningDate}</p>
-              )}
-            </div>
+         <div className="relative">
+  <Input
+    ref={dateRef}
+    type="date"
+    placeholder="Select date"
+    value={formData.joiningDate}
+    onChange={(e) => handleInputChange('joiningDate', e.target.value)}
+    onFocus={() => handleFocus('joiningDate')}
+    onBlur={handleBlur}
+    isFocused={focusedField === 'joiningDate'}
+    className="pr-12 custom-date-input"
+    max={new Date().toISOString().split('T')[0]}
+  />
+
+  <MdCalendarToday
+    onClick={() => dateRef.current?.showPicker()}
+    className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--info-panel-view-bg)] cursor-pointer"
+  />
+
+  {validationErrors.joiningDate && (
+    <p className="absolute top-full left-0 mt-1 text-xs text-red-500">
+      {validationErrors.joiningDate}
+    </p>
+  )}
+</div>
           </div>
         </div>
 
