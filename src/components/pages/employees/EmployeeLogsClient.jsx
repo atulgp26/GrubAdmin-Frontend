@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import EmployeeLogs from "./EmployeeLogs";
 import LogsSidebar from "./LogsSidebar";
 import Button from "@/components/ui/Button";
@@ -36,9 +36,6 @@ export default function EmployeeLogsClient() {
 					currentId={selectedEmployee?.id}
 					preSelectId={preSelectId}
 					onSelect={handleEmployeeSelect}
-				/>
-				currentId={selectedEmployee?.id}
-				onSelect={handleEmployeeSelect}
 				/>
 				<EmployeeLogs employee={selectedEmployee} />
 			</div>

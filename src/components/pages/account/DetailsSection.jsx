@@ -11,7 +11,7 @@ import { VscKey } from "react-icons/vsc";
 import { CiUser } from "react-icons/ci";
 import Icon from "@/components/ui/Icon";
 
-export default function DetailsSection({ basicDetails, professionalDetails }) {
+export default function DetailsSection({ basicDetails, professionalDetails, onAddPassword }) {
   return (
     <div className="col-span-6 lg:col-span-4 flex flex-col justify-center py-8 px-0 lg:px-12">
       <div>
@@ -27,11 +27,22 @@ export default function DetailsSection({ basicDetails, professionalDetails }) {
             value={basicDetails.contact}
             className="-ml-4"
           />
-          <DetailItem
-            icon={<VscKey className="w-5 h-5 text-[var(--color-neutral-light)]" />}
-            label="Password"
-            value={basicDetails.password}
-          />
+      <DetailItem
+    icon={<VscKey className="w-5 h-5 text-[var(--color-neutral-light)]" />}
+    label="Password"
+    value={
+        basicDetails.password === "ADD" || !basicDetails.password ? (
+            <button
+                onClick={onAddPassword}
+                className="text-[var(--color-stroke-brand)] font-semibold text-base"
+            >
+                ADD
+            </button>
+        ) : (
+            basicDetails.password
+        )
+    }
+/>
         </div>
       </div>
 

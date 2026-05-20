@@ -8,6 +8,7 @@ export default function DeleteEmployeeModal({
   open,
   onClose,
   onDelete,
+  onSuspend,
   selectedCount = 0,
   firstSelectedName = "this account",
   warning,
@@ -67,13 +68,16 @@ export default function DeleteEmployeeModal({
             Not sure? You can suspend the<br />
             accounts instead.
           </p>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="w-[270px] btn-size-md-lg"
-          >
-          DELETE EMPLOYEE
-          </Button>
+      <Button
+  variant="outline"
+  onClick={() => {
+    onClose();
+    if (onSuspend) onSuspend();
+  }}
+  className="w-[270px] btn-size-md-lg"
+>
+  SUSPEND EMPLOYEE
+</Button>
         </div>
         } 
       </div>
