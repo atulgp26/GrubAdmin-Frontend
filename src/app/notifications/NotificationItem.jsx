@@ -1,5 +1,7 @@
+"use client"
 import React from "react";
 import TableCheckbox from "@/components/ui/TableCheckbox";
+import { useRouter } from "next/navigation";
 
 export default function NotificationItem({
 	notification,
@@ -7,6 +9,7 @@ export default function NotificationItem({
 	onSelect,
 	getNotificationIcon,
 }) {
+	const router = useRouter();
 	const handleCheckboxChange = (e) => {
 		onSelect(e);
 	};

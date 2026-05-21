@@ -187,29 +187,20 @@ const AddNewClient = ({
 
 		console.log("Saving client:", data);
 
-		const result = await onConfirm(data);
+	const result = await onConfirm(data);
 
-		if (result.error) {
-			showError(result.error);
-			return;
-		}
+if (result?.error) {
+    showError(result.error);
+    return;
+}
 
-		showSuccess("Saved", "Customer created successfully!");
 
-		setForm({
-			fullName: "",
-			clientId: "",
-			phone: "",
-			email: "",
-			country: "",
-			state: "",
-			vertical: "",
-			orgName: "",
-		});
-		setSelectedIso("");
-		setCountryOptions([]);
+		showSuccess("Success", result?.message);
 
-		onClose();
+	setForm({ fullName: "", clientId: "", phone: "", email: "", country: "", state: "", vertical: "", orgName: "" });
+setSelectedIso("");
+setCountryOptions([]);
+onClose();
 	};
 	return (
 		<FullPageModal open={open} onClose={onClose}>

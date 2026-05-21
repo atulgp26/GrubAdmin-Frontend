@@ -145,10 +145,25 @@ export default function GrubPacsTable({
 								<TableCell className="!text-right text-[var(--color-stroke-brand)]">
 									<div className="flex justify-end">
 										<BoxCountBadge
-											asText
+											asText={groupName === "Assigned"}
 											tooltipSide="bottom"
 											tooltipAlign="end"
 											tooltipTextColor="text-[var(--color-neutral-secondary)]"
+											tooltipText={
+												groupName === "Unassigned"
+													? "Click To Assign"
+													: undefined
+											}
+											onClick={
+												groupName === "Unassigned"
+													? () =>
+															onRowAction(
+																"assign",
+																item,
+																groupName,
+															)
+													: undefined
+											}
 											tooltipContent={
 												groupName === "Assigned" ? (
 													<div className="space-y-2">

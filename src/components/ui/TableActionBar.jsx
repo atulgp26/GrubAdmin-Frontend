@@ -32,6 +32,7 @@ export default function TableActionBar({
 	reassignButtonText = "Reassign Role",
 	customActions = [],
 }) {
+	const actions = Array.isArray(customActions) ? customActions : [];
 	const [activeAction, setActiveAction] = useState(null);
 	const [showMoreDropdown, setShowMoreDropdown] = useState(false);
 	const moreRef = useRef(null);
@@ -75,7 +76,7 @@ export default function TableActionBar({
 			</div>
 			{suspended ? (
 				<div className="flex items-center space-x-4">
-					{customActions.map((action) => (
+					{actions.map((action) => (
 						<Button
 							variant="grayOutline"
 							className="flex gap-2 !border cursor-pointer !border-[var(--color-stroke-brand)] bg-white px-4 py-2 rounded-md !text-base font-medium items-center"
@@ -116,7 +117,7 @@ export default function TableActionBar({
 				</div>
 			) : (
 				<div className="flex items-center space-x-4">
-					{customActions.map((action) => (
+					{actions.map((action) => (
 						<div
 							onClick={action.onClick}
 							key={action.key}
@@ -127,7 +128,9 @@ export default function TableActionBar({
 								variant="text"
 								className="flex items-center gap-2 text-[var(--color-stroke-brand)] font-medium uppercase"
 							>
-								{action.icon()}
+								{typeof action.icon === "function"
+									? action.icon()
+									: action.icon}
 								<span className="leading-none">
 									{action.label}
 								</span>

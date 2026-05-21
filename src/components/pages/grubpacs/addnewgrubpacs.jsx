@@ -64,8 +64,9 @@ const AddNewGrubPac = ({
 			const formatted = {
 				id: initialData.id ?? null,
 				box_id: initialData.boxId ?? initialData.code ?? "",
-				name: initialData.boxName ?? "",
-				vertical: initialData.vertical?.id ?? "",
+				name: initialData.name ?? "",
+				vertical:
+					initialData.vertical?.id ?? initialData.verticalId ?? "",
 				status: initialData.status ?? "active",
 			};
 			setFormData(formatted);
