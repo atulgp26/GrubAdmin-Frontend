@@ -38,6 +38,7 @@ import { useRouter } from "next/navigation";
 import CustomTooltip from "@/components/ui/CustomTooltip";
 import Link from "next/link";
 import { customerService } from "@/api/services/customerService";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 import EmptyState from "@/components/ui/EmptyState";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import InfoPanel from "@/components/common/InfoPanel";
@@ -306,21 +307,29 @@ const ClientsList = () => {
 	}, [isAuthenticated, forceRefetch, fetchCustomers]);
 
 	const onCreateCustomer = useCallback(async (formData) => {
-    setIsCreatingCustomer(true);
-    try {
-        const res = await customerService.createCustomer(formData);
-        if (res?.success) {
-            setForceRefetch(true);
-            return { message: res.message || res.data?.message || "Client added successfully!" };
-        } else {
-            return { error: res?.error || res?.message || "Failed to create client" };
-        }
-    } catch (e) {
-        return { error: "Failed to create client" };
-    } finally {
-        setIsCreatingCustomer(false);
-    }
-}, []);
+		setIsCreatingCustomer(true);
+		try {
+			const res = await customerService.createCustomer(formData);
+			if (res?.success) {
+				setForceRefetch(true);
+				return {
+					message:
+						res.message ||
+						res.data?.message ||
+						"Client added successfully!",
+				};
+			} else {
+				return {
+					error:
+						res?.error || res?.message || "Failed to create client",
+				};
+			}
+		} catch (e) {
+			return { error: "Failed to create client" };
+		} finally {
+			setIsCreatingCustomer(false);
+		}
+	}, []);
 
 	// TODO: Implement auth checks to actually verify the user is authenticated not. If not then never call the api.
 
@@ -969,10 +978,8 @@ const ClientsList = () => {
 	// Loading state
 	if (loading) {
 		return (
-			<div className="flex justify-center items-center min-h-[60vh]">
-				<div className="text-lg text-[var(--color-neutral-secondary)]">
-					Loading...
-				</div>
+			<div className="min-h-[60vh]">
+				<LoadingDetails entity="clients" />
 			</div>
 		);
 	}

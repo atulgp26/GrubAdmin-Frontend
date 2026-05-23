@@ -38,6 +38,7 @@ import RolePermissionsModal from "@/components/pages/employees/RolePermissionsMo
 import InfoPanel from "@/components/common/InfoPanel";
 import EditEmployeeModal from "@/components/pages/employees/EditEmployeeModal";
 import { usePermissions } from "@/context/PermissionContext";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 
 const SuspendedEmployees = () => {
 	const router = useRouter();
@@ -1312,11 +1313,7 @@ const SuspendedEmployees = () => {
 
 			{/* Table or Grouped View */}
 			{loading ? (
-				<div className="flex items-center justify-center py-12">
-					<div className="text-[var(--color-neutral-secondary)]">
-						Loading employees...
-					</div>
-				</div>
+				<LoadingDetails entity="employees" />
 			) : filteredEmployees.length === 0 ? (
 				<div className="">
 					<Pagination

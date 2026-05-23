@@ -115,6 +115,7 @@ export default function NotificationsPage() {
 				}),
 				status: n.status,
 				category: n.item_type || n.type,
+				  itemId: n.item_id,
 			})),
 		[notifications],
 	);

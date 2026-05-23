@@ -27,6 +27,7 @@ import {
 import Pagination from "@/components/ui/Pagination";
 import SystemLogsFilterModal from "@/components/pages/system/SystemLogsFilterModal";
 import { logsService } from "@/api/services/logsService";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 
 const midLevelData = [
 	{ id: "delivery", label: "Delivery" },

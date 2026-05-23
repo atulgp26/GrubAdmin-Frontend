@@ -36,6 +36,7 @@ import AddNewEmployee from "@/components/pages/employees/AddNewEmployee";
 import CustomTooltip from "@/components/ui/CustomTooltip";
 import { employeeService } from "@/api/services/employeeService";
 import { roleService } from "@/api/services/roleService";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 import { usePermissions } from "@/context/PermissionContext";
 
 const EmployeesList = () => {
@@ -1552,11 +1553,7 @@ const EmployeesList = () => {
 
 			{/* Table or Grouped View */}
 			{loading ? (
-				<div className="flex items-center justify-center py-12">
-					<div className="text-[var(--color-neutral-secondary)]">
-						Loading employees...
-					</div>
-				</div>
+				<LoadingDetails entity="employees" />
 			) : groupByRole ? (
 				<>
 					<GroupCollapseTable

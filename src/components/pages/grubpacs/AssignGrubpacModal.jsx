@@ -10,6 +10,7 @@ import {
 	DEFAULT_PAGE_SIZE,
 } from "@/constants/config";
 import { customerService } from "@/api/services/customerService";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 
 export default function AssignGrubpacModal({
 	open,
@@ -193,9 +194,11 @@ export default function AssignGrubpacModal({
 						/>
 					</div>
 					<span className="text-sm text-[var(--color-stroke-brand)]">
-						{isLoading
-							? "Loading entries..."
-							: `${totalItemsCount} entries`}
+						{isLoading ? (
+							<LoadingDetails entity="entries" variant="inline" />
+						) : (
+							`${totalItemsCount} entries`
+						)}
 					</span>
 				</div>
 
@@ -210,9 +213,7 @@ export default function AssignGrubpacModal({
 					</div>
 					<div className="flex-1 overflow-y-auto max-h-[360px]">
 						{isLoading ? (
-							<div className="flex items-center justify-center py-12 text-[var(--color-neutral-secondary)] text-sm">
-								Loading clients...
-							</div>
+							<LoadingDetails entity="clients" />
 						) : filteredClients.length === 0 ? (
 							<div className="flex items-center justify-center py-12 text-[var(--color-stroke-brand)] text-sm">
 								No clients found. Try a different search.

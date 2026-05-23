@@ -15,6 +15,7 @@ import { showError, showSuccess } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { usePermissions } from "@/context/PermissionContext";
 import { useAuth } from "@/context/AuthContext";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 import { customerService } from "@/api/services/customerService";
 import { useDebounce, useDebouncedCallback } from "use-debounce";
 import {
@@ -66,6 +67,9 @@ export default function GrubpacsPage() {
 		items: [],
 		source: null,
 	});
+	const [loading, setLoading] = useState(true);
+	const [selectedAssignmentState, setSelectedAssignmentState] =
+		useState(null);
 
 	const { permissionsByModule, user } = usePermissions();
 
@@ -427,6 +431,7 @@ export default function GrubpacsPage() {
 	};
 
 	const fetchGrubpacs = async () => {
+		setLoading(true);
 		try {
 			const params = {
 				page_number: safeCurrentPage,
@@ -441,6 +446,8 @@ export default function GrubpacsPage() {
 			}
 		} catch (e) {
 			console.error("Failed to fetch grubpacs:", e);
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -464,6 +471,16 @@ export default function GrubpacsPage() {
 	const onStateGroupOpen = (value) => {
 		if (value) setSelectedAssignmentState(value);
 	};
+
+	if (authLoading || !isAuthenticated) return null;
+
+	if (loading) {
+		return (
+			<div className="min-h-[calc(100vh-150px)]">
+				<LoadingDetails entity="GrubPacs" />
+			</div>
+		);
+	}
 
 	return (
 		<div className="w-full">

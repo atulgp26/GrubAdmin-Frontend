@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation"; // ✅ added
 import { MdCalendarToday } from "react-icons/md";
 import { MdOutlineDone } from "react-icons/md";
 import SearchWithSuggestions from "@/components/ui/SearchWithSuggestions";
@@ -16,14 +17,12 @@ import {
 	TableRow,
 	TableCell,
 } from "@/components/ui/Table";
-import {
-	DEBOUNCE_TIME,
-	DEFAULT_PAGE_SIZE,
-} from "@/constants/config";
+import { DEBOUNCE_TIME, DEFAULT_PAGE_SIZE } from "@/constants/config";
 import { logsService } from "@/api/services/logsService";
 import { useAuth } from "@/context/AuthContext";
 import { useDebounce, useDebouncedCallback } from "use-debounce";
 import { showError } from "@/components/ui/toast";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 
 const categoryOptions = [
 	{ id: "Profile", label: "Profile" },
@@ -39,38 +38,56 @@ const normalizeLabel = (value = "") =>
 const formatModuleLabel = (module) => {
 	const safeModule = String(module || "");
 	if (!safeModule) return "Unknown";
-
 	return `${safeModule.charAt(0).toUpperCase()}${safeModule.slice(1)}`;
 };
 
-const SystemLogItem = ({ log }) => (
-	<TableRow>
-		<TableCell className="p-4 align-top whitespace-nowrap font-semibold text-[var(--color-neutral-secondary)]">
-			{log.timestamp}
-		</TableCell>
-		<TableCell className="p-4 align-top">
-			<div className="flex gap-4">
-				{log.icon}
-				<div className="flex flex-col gap-1">
-					<div className="font-medium text-[var(--color-neutral-secondary)]">
-						{log.type}
-					</div>
-					<div className="text-[var(--color-stroke-brand)] text-sm">
-						({log.subtype})
+// ✅ added highlightId + rowRefs props
+const SystemLogItem = ({ log, highlightId, rowRefs }) => {
+	const isHighlighted = log.subjectId && log.subjectId === highlightId;
+
+	return (
+		<TableRow
+			ref={
+				isHighlighted
+					? (el) => {
+							if (el) rowRefs.current[log.id] = el;
+						}
+					: null
+			}
+			data-log-id={log.id}
+			className={isHighlighted ? "log-highlight" : ""}
+		>
+			<TableCell className="p-4 align-top whitespace-nowrap font-semibold text-[var(--color-neutral-secondary)]">
+				{log.timestamp}
+			</TableCell>
+			<TableCell className="p-4 align-top">
+				<div className="flex gap-4">
+					{log.icon}
+					<div className="flex flex-col gap-1">
+						<div className="font-medium text-[var(--color-neutral-secondary)]">
+							{log.type}
+						</div>
+						<div className="text-[var(--color-stroke-brand)] text-sm">
+							({log.subtype})
+						</div>
 					</div>
 				</div>
-			</div>
-		</TableCell>
-		<TableCell className="p-4 align-top">
-			<p className="text-[var(--color-neutral-secondary)] whitespace-normal break-all max-w-full overflow-hidden">
-				{log.action}
-			</p>
-		</TableCell>
-	</TableRow>
-);
+			</TableCell>
+			<TableCell className="p-4 align-top">
+				<p className="text-[var(--color-neutral-secondary)] whitespace-normal break-all max-w-full overflow-hidden">
+					{log.action}
+				</p>
+			</TableCell>
+		</TableRow>
+	);
+};
 
 export default function SystemLogs() {
 	const { isAuthenticated, isLoading: authLoading } = useAuth();
+	const searchParams = useSearchParams(); // ✅ added
+	const highlightItemId = searchParams.get("itemId"); // ✅ e.g. "01KS1WDN0NHYABPK8BWA7KS3M5"
+	const rowRefs = useRef({}); // ✅ holds refs to highlighted rows
+	const hasScrolled = useRef(false); // ✅ scroll only once
 
 	const [search, setSearch] = useState("");
 	const [selectedCategories, setSelectedCategories] = useState([]);
@@ -114,6 +131,11 @@ export default function SystemLogs() {
 				}
 			}
 
+			// ✅ if coming from notification, filter by subject_id so the log appears on page 1
+			if (highlightItemId && !hasScrolled.current) {
+				params.subject_id = highlightItemId;
+			}
+
 			params.page_number = currentPage;
 			params.page_size = pageSize;
 
@@ -129,14 +151,28 @@ export default function SystemLogs() {
 		} finally {
 			setIsLoadingLogs(false);
 		}
-	}, [isAuthenticated, authLoading, selectedCategories, debouncedSearchValue, advancedFilters, currentPage, pageSize]);
+	}, [
+		isAuthenticated,
+		authLoading,
+		selectedCategories,
+		debouncedSearchValue,
+		advancedFilters,
+		currentPage,
+		pageSize,
+		highlightItemId,
+	]);
 
 	const formattedLogs = useMemo(
 		() =>
 			systemLogs.map((systemLog) => {
-				const category = String(systemLog.category || systemLog.module || "unknown");
+				const category = String(
+					systemLog.category || systemLog.module || "unknown",
+				);
 				const action = String(
-					systemLog.metadata?.action || systemLog.action || systemLog.type || "",
+					systemLog.metadata?.action ||
+						systemLog.action ||
+						systemLog.type ||
+						"",
 				);
 				const moduleName = formatModuleLabel(category);
 				const subtype = normalizeLabel(
@@ -144,12 +180,13 @@ export default function SystemLogs() {
 				);
 				const message = normalizeLabel(
 					String(systemLog.description || "") ||
-					`${moduleName} ${subtype}`,
+						`${moduleName} ${subtype}`,
 				);
 				const logTimestamp = systemLog.createdAt || systemLog.updatedAt;
 
 				return {
 					id: systemLog.id,
+					subjectId: systemLog.subject?.id || null, // ✅ added for matching
 					timestamp: new Date(logTimestamp).toLocaleDateString(
 						"en-GB",
 						{
@@ -173,6 +210,29 @@ export default function SystemLogs() {
 		[systemLogs],
 	);
 
+	// ✅ scroll to and blink the highlighted row after logs load
+	useEffect(() => {
+		if (!highlightItemId || hasScrolled.current || isLoadingLogs) return;
+
+		const matchedLog = formattedLogs.find(
+			(log) => log.subjectId === highlightItemId,
+		);
+		if (!matchedLog) return;
+
+		const el = rowRefs.current[matchedLog.id];
+		if (!el) return;
+
+		hasScrolled.current = true;
+
+		el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+		// blink for 3 seconds then remove
+		el.classList.add("log-blink");
+		setTimeout(() => {
+			el.classList.remove("log-blink");
+		}, 3000);
+	}, [formattedLogs, highlightItemId, isLoadingLogs]);
+
 	const handleExport = useCallback(() => {
 		if (systemLogs.length === 0) {
 			showError("No logs to export.");
@@ -192,11 +252,16 @@ export default function SystemLogs() {
 			),
 		].join("\n");
 
-		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+		const blob = new Blob([csvContent], {
+			type: "text/csv;charset=utf-8;",
+		});
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
 		link.setAttribute("href", url);
-		link.setAttribute("download", `system_logs_${new Date().toISOString().split("T")[0]}.csv`);
+		link.setAttribute(
+			"download",
+			`system_logs_${new Date().toISOString().split("T")[0]}.csv`,
+		);
 		link.style.visibility = "hidden";
 		document.body.appendChild(link);
 		link.click();
@@ -255,7 +320,21 @@ export default function SystemLogs() {
 	}, [totalPages, currentPage]);
 
 	return (
-		<div className="flex flex-col gap-6  w-full">
+		<div className="flex flex-col gap-6 w-full">
+			{/* ✅ blink keyframe style injected inline */}
+			<style>{`
+                @keyframes logBlink {
+                    0%   { background-color: transparent; }
+                    25%  { background-color: var(--color-brand-light, #fff3f0); }
+                    50%  { background-color: transparent; }
+                    75%  { background-color: var(--color-brand-light, #fff3f0); }
+                    100% { background-color: transparent; }
+                }
+                .log-blink {
+                    animation: logBlink 1s ease-in-out 3;
+                }
+            `}</style>
+
 			<div className="flex flex-wrap justify-between items-center gap-4">
 				<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)] leading-none">
 					System logs
@@ -308,7 +387,6 @@ export default function SystemLogs() {
 						padding="!py-1.5 !px-3"
 						fontsize="text-sm"
 					/>
-
 					<Button
 						variant="grayOutline"
 						size="md"
@@ -349,15 +427,16 @@ export default function SystemLogs() {
 						</TableHead>
 						<TableBody>
 							{visibleLogs.map((log) => (
-								<SystemLogItem key={log.id} log={log} />
+								<SystemLogItem
+									key={log.id}
+									log={log}
+									highlightId={highlightItemId} // ✅ passed
+									rowRefs={rowRefs} // ✅ passed
+								/>
 							))}
 						</TableBody>
 					</Table>
-					{isLoadingLogs && (
-						<div className="text-center text-[var(--color-neutral-light)] py-8">
-							Loading logs...
-						</div>
-					)}
+					{isLoadingLogs && <LoadingDetails entity="logs" />}
 					{!isLoadingLogs && visibleLogs.length === 0 && (
 						<div className="text-center text-[var(--color-neutral-light)] py-8">
 							No system logs found for your filters.

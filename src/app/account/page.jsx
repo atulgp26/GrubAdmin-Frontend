@@ -16,6 +16,7 @@ import { showSuccess, showError } from "@/components/ui/toast";
 import OtpVerifyModal from "@/components/pages/login/OtpVerifyModal";
 import { usePermissions } from "@/context/PermissionContext";
 import PasswordChangeModal from "@/components/pages/account/PasswordChangeModal";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 
 export default function AccountPage() {
 	const [state, setState] = useState({
@@ -40,25 +41,30 @@ export default function AccountPage() {
 	const { can } = usePermissions();
 	const [showAddPasswordModal, setShowAddPasswordModal] = useState(false);
 
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+	const [showChangePasswordModal, setShowChangePasswordModal] =
+		useState(false);
 
-  const handleChangePassword = async (passwords) => {
-    try {
-        const payload = {
-            old_password: passwords.current,
-            new_password: passwords.new,
-        };
-        const res = await accountService.patchProfile(payload);
-        if (res?.success && res.code === 200) {
-            showSuccess("Password changed successfully!");
-            setShowChangePasswordModal(false);
-        } else {
-            showError(res?.message || res?.error || "Failed to change password");
-        }
-    } catch (error) {
-        showError(error?.response?.data?.message || "Failed to change password");
-    }
-};
+	const handleChangePassword = async (passwords) => {
+		try {
+			const payload = {
+				old_password: passwords.current,
+				new_password: passwords.new,
+			};
+			const res = await accountService.patchProfile(payload);
+			if (res?.success && res.code === 200) {
+				showSuccess("Password changed successfully!");
+				setShowChangePasswordModal(false);
+			} else {
+				showError(
+					res?.message || res?.error || "Failed to change password",
+				);
+			}
+		} catch (error) {
+			showError(
+				error?.response?.data?.message || "Failed to change password",
+			);
+		}
+	};
 
 	const updateState = (updates) => {
 		setState((prev) => ({ ...prev, ...updates }));
@@ -82,10 +88,14 @@ export default function AccountPage() {
 					},
 				});
 			} else {
-				showError(res?.message || res?.error || "Failed to set password");
+				showError(
+					res?.message || res?.error || "Failed to set password",
+				);
 			}
 		} catch (error) {
-			showError(error?.response?.data?.message || "Failed to set password");
+			showError(
+				error?.response?.data?.message || "Failed to set password",
+			);
 		}
 	};
 
@@ -116,7 +126,8 @@ export default function AccountPage() {
 					const firstName = user.first_name || "";
 					const lastName = user.last_name || "";
 					const fullName =
-						[firstName, lastName].filter(Boolean).join(" ") || "Unknown";
+						[firstName, lastName].filter(Boolean).join(" ") ||
+						"Unknown";
 
 					let formattedContact = "";
 					if (user.mobile_number) {
@@ -125,22 +136,29 @@ export default function AccountPage() {
 					}
 
 					// ✅ Use is_password_set from API
-					const passwordDisplay = user.is_password_set ? "**********" : "ADD";
+					const passwordDisplay = user.is_password_set
+						? "**********"
+						: "ADD";
 
 					const userData = {
 						name: fullName,
 						id: user.id || "",
-            isSuperAdmin: user.role?.is_super_admin || false,
+						isSuperAdmin: user.role?.is_super_admin || false,
 						basicDetails: {
 							email: user.email || "Not provided",
-							contact: formattedContact || user.mobile_number || "Not provided",
+							contact:
+								formattedContact ||
+								user.mobile_number ||
+								"Not provided",
 							password: passwordDisplay,
 						},
 						professionalDetails: {
 							role: (
 								<div className="flex items-center justify-between text-[var(--color-neutral-secondary)] w-[350px] text-base">
 									<span className="text-[var(--color-neutral-secondary)]">
-										{response.data?.role || user.role || "No role assigned"}
+										{response.data?.role ||
+											user.role ||
+											"No role assigned"}
 									</span>
 									<ArrowUpRight className="w-5 h-5" />
 								</div>
@@ -190,7 +208,10 @@ export default function AccountPage() {
 	}, []);
 
 	const handleFieldChange = (field) => {
-		const value = prompt(`Enter new value for ${field}:`, state.fields[field]);
+		const value = prompt(
+			`Enter new value for ${field}:`,
+			state.fields[field],
+		);
 		if (value !== null) {
 			updateState({ fields: { ...state.fields, [field]: value } });
 		}
@@ -205,7 +226,8 @@ export default function AccountPage() {
 					const firstName = user.first_name || "";
 					const lastName = user.last_name || "";
 					const fullName =
-						[firstName, lastName].filter(Boolean).join(" ") || state.userData.name;
+						[firstName, lastName].filter(Boolean).join(" ") ||
+						state.userData.name;
 
 					let formattedContact = "";
 					if (user.mobile_number) {
@@ -213,7 +235,9 @@ export default function AccountPage() {
 						formattedContact = `${countryCode} ${user.mobile_number}`;
 					}
 
-					const passwordDisplay = user.is_password_set ? "**********" : "ADD";
+					const passwordDisplay = user.is_password_set
+						? "**********"
+						: "ADD";
 
 					updateState({
 						editOpen: false,
@@ -222,13 +246,19 @@ export default function AccountPage() {
 							name: fullName,
 							basicDetails: {
 								...state.userData.basicDetails,
-								email: user.email || state.userData.basicDetails.email,
-								contact: formattedContact || state.userData.basicDetails.contact,
+								email:
+									user.email ||
+									state.userData.basicDetails.email,
+								contact:
+									formattedContact ||
+									state.userData.basicDetails.contact,
 								password: passwordDisplay,
 							},
 							professionalDetails: {
 								...state.userData.professionalDetails,
-								facility: user.location || state.userData.professionalDetails.facility,
+								facility:
+									user.location ||
+									state.userData.professionalDetails.facility,
 							},
 						},
 						fields: {
@@ -268,13 +298,21 @@ export default function AccountPage() {
 			const email = state.userData?.basicDetails?.email;
 
 			if (!email) {
-				showError("Email not found. Cannot proceed with account deletion.");
+				showError(
+					"Email not found. Cannot proceed with account deletion.",
+				);
 				return;
 			}
 
-			const eligibilityResponse = await accountService.deleteEligibility(email, enteredOtp);
+			const eligibilityResponse = await accountService.deleteEligibility(
+				email,
+				enteredOtp,
+			);
 
-			if (eligibilityResponse.success && eligibilityResponse.code === 200) {
+			if (
+				eligibilityResponse.success &&
+				eligibilityResponse.code === 200
+			) {
 				const deleteResponse = await accountService.deleteAccount();
 
 				if (deleteResponse.success && deleteResponse.code === 200) {
@@ -287,7 +325,10 @@ export default function AccountPage() {
 					showError("Failed to delete account");
 				}
 			} else {
-				updateState({ otpModalOpen: false, deleteNotAllowedModal: true });
+				updateState({
+					otpModalOpen: false,
+					deleteNotAllowedModal: true,
+				});
 			}
 		} catch (error) {
 			console.error("OTP verification error:", error);
@@ -317,10 +358,8 @@ export default function AccountPage() {
 	if (state.loading) {
 		return (
 			<ProtectedRoute>
-				<div className="flex justify-center items-center min-h-[60vh]">
-					<div className="text-lg text-[var(--color-neutral-secondary)]">
-						Loading profile...
-					</div>
+				<div className="min-h-[60vh]">
+					<LoadingDetails entity="profile" />
 				</div>
 			</ProtectedRoute>
 		);
@@ -330,7 +369,9 @@ export default function AccountPage() {
 		return (
 			<ProtectedRoute>
 				<div className="flex justify-center items-center min-h-[60vh]">
-					<div className="text-lg text-red-500">Failed to load profile data</div>
+					<div className="text-lg text-red-500">
+						Failed to load profile data
+					</div>
 				</div>
 			</ProtectedRoute>
 		);
@@ -339,38 +380,44 @@ export default function AccountPage() {
 	return (
 		<ProtectedRoute>
 			<div className="space-y-8">
-			<div className="flex items-center justify-between">
-    <h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)] !ml-[16px]">
-        Your account
-    </h1>
-    <div className="flex items-center gap-3">
-        {/* CHANGE PASSWORD — only for non-superadmin */}
-        {!state.userData.isSuperAdmin && (
-            <Button
-                className="bg-white !border !border-[var(--info-panel-view-bg)] !text-[var(--info-panel-view-bg)] hover:bg-[var(--warning-light)] px-4 py-2 rounded-lg flex items-center gap-2 font-semibold"
-                onClick={() => setShowChangePasswordModal(true)}
-                variant="secondary"
-            >
-                <LuPencilLine className="w-4 h-4" />
-                <span className="block font-medium">CHANGE PASSWORD</span>
-            </Button>
-        )}
-        {/* EDIT — only for superadmin */}
-        {state.userData.isSuperAdmin &&
-            (can("edit profile details", "clients") ||
-                can("edit profile details", "account") ||
-                can("edit profile details")) && (
-            <Button
-                className="bg-white !border !border-[var(--info-panel-view-bg)] !text-[var(--info-panel-view-bg)] hover:bg-[var(--warning-light)] px-4 py-2 rounded-lg flex items-center gap-2 font-semibold"
-                onClick={() => updateState({ editOpen: true })}
-                variant="secondary"
-            >
-                <LuPencilLine className="w-4 h-4" />
-                <span className="block font-medium">EDIT</span>
-            </Button>
-        )}
-    </div>
-</div>
+				<div className="flex items-center justify-between">
+					<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)] !ml-[16px]">
+						Your account
+					</h1>
+					<div className="flex items-center gap-3">
+						{/* CHANGE PASSWORD — only for non-superadmin */}
+						{!state.userData.isSuperAdmin && (
+							<Button
+								className="bg-white !border !border-[var(--info-panel-view-bg)] !text-[var(--info-panel-view-bg)] hover:bg-[var(--warning-light)] px-4 py-2 rounded-lg flex items-center gap-2 font-semibold"
+								onClick={() => setShowChangePasswordModal(true)}
+								variant="secondary"
+							>
+								<LuPencilLine className="w-4 h-4" />
+								<span className="block font-medium">
+									CHANGE PASSWORD
+								</span>
+							</Button>
+						)}
+						{/* EDIT — only for superadmin */}
+						{state.userData.isSuperAdmin &&
+							(can("edit profile details", "clients") ||
+								can("edit profile details", "account") ||
+								can("edit profile details")) && (
+								<Button
+									className="bg-white !border !border-[var(--info-panel-view-bg)] !text-[var(--info-panel-view-bg)] hover:bg-[var(--warning-light)] px-4 py-2 rounded-lg flex items-center gap-2 font-semibold"
+									onClick={() =>
+										updateState({ editOpen: true })
+									}
+									variant="secondary"
+								>
+									<LuPencilLine className="w-4 h-4" />
+									<span className="block font-medium">
+										EDIT
+									</span>
+								</Button>
+							)}
+					</div>
+				</div>
 
 				<div className="flex justify-center items-center w-full min-h-[60vh]">
 					<div className="grid grid-cols-10 gap-20 w-full">
@@ -383,8 +430,12 @@ export default function AccountPage() {
 						<div className="col-span-6">
 							<DetailsSection
 								basicDetails={state.userData.basicDetails}
-								professionalDetails={state.userData.professionalDetails}
-								onAddPassword={() => setShowAddPasswordModal(true)}
+								professionalDetails={
+									state.userData.professionalDetails
+								}
+								onAddPassword={() =>
+									setShowAddPasswordModal(true)
+								}
 							/>
 						</div>
 					</div>
@@ -407,13 +458,13 @@ export default function AccountPage() {
 					fields={state.fields}
 					onFieldChange={handleFieldChange}
 				/>
-<PasswordChangeModal
-    open={showChangePasswordModal}
-    onClose={() => setShowChangePasswordModal(false)}
-    onBack={() => setShowChangePasswordModal(false)}
-    onSave={handleChangePassword}
-    isAddMode={false}
-/>
+				<PasswordChangeModal
+					open={showChangePasswordModal}
+					onClose={() => setShowChangePasswordModal(false)}
+					onBack={() => setShowChangePasswordModal(false)}
+					onSave={handleChangePassword}
+					isAddMode={false}
+				/>
 				<DeleteAccountModal
 					open={state.deleteOpen}
 					onClose={() => updateState({ deleteOpen: false })}
@@ -423,7 +474,9 @@ export default function AccountPage() {
 
 				<DeleteRoleModal
 					open={state.deleteNotAllowedModal}
-					onClose={() => updateState({ deleteNotAllowedModal: false })}
+					onClose={() =>
+						updateState({ deleteNotAllowedModal: false })
+					}
 					title="Deletion not allowed"
 					deleteNotAllowed={true}
 					description={`This is the only active Super admin account for managing the\nplatform.\nTo proceed, please assign the role to another employee, of edit your credentials to transfer ownership.`}
@@ -447,7 +500,9 @@ export default function AccountPage() {
 					otpRefs={otpRefs}
 					otpError={state.otpError}
 					onResend={() => {
-						showError("Please contact support to resend OTP for account deletion");
+						showError(
+							"Please contact support to resend OTP for account deletion",
+						);
 					}}
 					title="Verify Account Deletion"
 					message="Enter the OTP sent to your email to confirm account deletion"

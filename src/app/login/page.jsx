@@ -24,6 +24,7 @@ import { setAuthCookie } from "@/utils/cookies";
 import TableCheckbox from "@/components/ui/TableCheckbox";
 import { SEED_EMAIL, SEED_PASSWORD } from "@/constants/config";
 import { useAuth } from "@/context/AuthContext";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 
 const carouselData = [
 	{
@@ -43,7 +44,12 @@ const carouselData = [
 
 export default function LoginPage() {
 	const router = useRouter();
-	const { login, refreshSession, isAuthenticated, isLoading: authLoading } = useAuth();
+	const {
+		login,
+		refreshSession,
+		isAuthenticated,
+		isLoading: authLoading,
+	} = useAuth();
 	const [showPassword, setShowPassword] = useState(false);
 	const [carouselIndex, setCarouselIndex] = useState(0);
 	const [otpModalOpen, setOtpModalOpen] = useState(false);
@@ -73,8 +79,8 @@ export default function LoginPage() {
 		register,
 		handleSubmit,
 		formState: { errors },
-	} = useForm({ 
-		mode: "onSubmit", 
+	} = useForm({
+		mode: "onSubmit",
 		reValidateMode: "onChange",
 		defaultValues: {
 			email: SEED_EMAIL,
@@ -548,7 +554,14 @@ export default function LoginPage() {
 								disabled={isLoading}
 								className="btn-size-md-lg w-full !text-xl font-medium rounded-lg !my-0 disabled:opacity-50 disabled:cursor-not-allowed"
 							>
-								{isLoading ? "LOGGING IN..." : "CONTINUE"}
+								{isLoading ? (
+									<LoadingDetails
+										variant="inline"
+										text="LOGGING IN..."
+									/>
+								) : (
+									"CONTINUE"
+								)}
 							</Button>
 							<div className="flex justify-center gap-2 my-2">
 								<span className="text-lg text-[var(--color-neutral-secondary)]">

@@ -1,0 +1,15 @@
+*** Begin Patch
+*** Update File: c:\Desktop\admin-frontend\src\components\pages\employees\EmployeeLogs.jsx
+@@
+ 			</Pagination>
+ 
+ 			<div className="flex-grow">
+-				{logsLoading && (
+-					<div className="text-center text-[var(--color-neutral-light)] py-8">
+-						Loading logs...
+-					</div>
+-				)}
++				{logsLoading && (
++					<LoadingDetails entity="logs" />
++				)}
+*** End Patch
