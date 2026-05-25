@@ -954,105 +954,66 @@ const SuspendedEmployees = () => {
 	);
 
 	// Group employees by role - same as list page
-	const groupEmployeesByRole = () => {
-		const groupedEmployees = {};
+const groupEmployeesByRole = () => {
+  const groups = [];
 
-		filteredEmployees.forEach((employee) => {
-			if (employee.role && employee.role.trim()) {
-				const roleName = employee.role;
-				if (!groupedEmployees[roleName]) {
-					groupedEmployees[roleName] = [];
-				}
-				groupedEmployees[roleName].push(employee);
-			}
-		});
+  roleOptions.forEach(({ id, label }) => {
+    // Match by role ID — same as EmployeesList
+    const roleEmployees = filteredEmployees.filter((emp) => {
+      const rid =
+        emp?.originalData?.role?.id || emp?.originalData?.role_id;
+      return String(rid) === String(id);
+    });
 
-		// Get all role names from API (roleOptions)
-		const allRoleNames = new Set();
+    const permissionsCount =
+      roleEmployees.length > 0 &&
+      roleEmployees[0]?.originalData?.role?.permissions_json
+        ? (() => {
+            const permissionsJson =
+              roleEmployees[0].originalData.role.permissions_json;
+            let totalCount = 0;
+            Object.keys(permissionsJson).forEach((sectionKey) => {
+              totalCount += (permissionsJson[sectionKey] || []).length;
+            });
+            return totalCount;
+          })()
+        : 0;
 
-		// Add roles from roleOptions
-		roleOptions.forEach((role) => {
-			if (role.label) {
-				allRoleNames.add(role.label);
-			}
-		});
+    groups.push({
+      name: (
+        <CustomTooltip
+          title={
+            <div className="space-y-2">
+              <div className="text-[var(--color-stroke-brand)] text-sm">
+                {permissionsCount} permissions
+              </div>
+              <div
+                className="text-[var(--info-panel-view-bg)] text-sm font-semibold cursor-pointer hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (roleEmployees[0]?.originalData?.role) {
+                    handleViewDetails({ originalData: { role: roleEmployees[0].originalData.role } });
+                  }
+                }}
+              >
+                View details &gt;&gt;
+              </div>
+            </div>
+          }
+          placement="bottom"
+          arrowPosition="left"
+        >
+          <span className="cursor-default hover:underline text-[var(--color-stroke-brand)] font-medium text-sm">
+            {label.toUpperCase()}
+          </span>
+        </CustomTooltip>
+      ),
+      items: roleEmployees,
+    });
+  });
 
-		// Add roles from actual employees
-		Object.keys(groupedEmployees).forEach((roleName) => {
-			if (roleName) {
-				allRoleNames.add(roleName);
-			}
-		});
-
-		// Create groups for all roles - include empty ones too (sorted alphabetically)
-		const allRoles = Array.from(allRoleNames).sort((a, b) => {
-			return a.localeCompare(b);
-		});
-
-		return allRoles.map((roleName) => {
-			const roleEmployees = groupedEmployees[roleName] || [];
-			// Get permissions count from first employee's role (all employees in group have same role)
-			const permissionsCount =
-				roleEmployees.length > 0 &&
-				roleEmployees[0]?.originalData?.role?.permissions_json
-					? (() => {
-							const permissionsJson =
-								roleEmployees[0].originalData.role
-									.permissions_json;
-							let totalCount = 0;
-							Object.keys(permissionsJson).forEach(
-								(sectionKey) => {
-									const permissionList =
-										permissionsJson[sectionKey] || [];
-									totalCount += permissionList.length;
-								},
-							);
-							return totalCount;
-						})()
-					: 0;
-
-			return {
-				name: (
-					<CustomTooltip
-						title={
-							<div className="space-y-2">
-								<div className="text-[var(--color-stroke-brand)] text-sm">
-									{permissionsCount} permissions
-								</div>
-								<div
-									className="text-[var(--info-panel-view-bg)] text-sm font-semibold cursor-pointer hover:underline"
-									onClick={(e) => {
-										e.stopPropagation();
-										if (
-											roleEmployees.length > 0 &&
-											roleEmployees[0].originalData?.role
-										) {
-											handleViewDetails({
-												originalData: {
-													role: roleEmployees[0]
-														.originalData.role,
-												},
-											});
-										}
-									}}
-								>
-									View details &gt;&gt;
-								</div>
-							</div>
-						}
-						placement="bottom"
-						arrowPosition="left"
-					>
-						<span className="cursor-default hover:underline text-[var(--color-stroke-brand)] font-medium text-sm">
-							{roleName.toUpperCase()}
-						</span>
-					</CustomTooltip>
-				),
-				items: roleEmployees,
-			};
-		});
-	};
-
+  return groups;
+};
 	// Render table content for each group
 	const renderGroupTable = (group) => (
 		<div className="">
