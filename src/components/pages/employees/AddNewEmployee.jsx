@@ -11,6 +11,7 @@ import { showSuccess, showError } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { roleService } from "@/api/services/roleService";
 import { employeeService } from "@/api/services/employeeService";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 
 const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 	const [formData, setFormData] = useState({

@@ -45,6 +45,7 @@ import Pagination from "@/components/ui/Pagination";
 
 const ManageRoles = () => {
 	const [searchValue, setSearchValue] = useState("");
+	const [currentRoleId, setCurrentRoleId] = useState(null);
 	const { can } = usePermissions();
 	const canViewRoles = can("view roles", "roles") || can("view roles");
 	const canAddRoles = can("add roles", "roles") || can("add roles");
@@ -54,6 +55,7 @@ const ManageRoles = () => {
 		useState(false);
 	const [selectedRoles, setSelectedRoles] = useState(new Set());
 	const [selectAll, setSelectAll] = useState(false);
+	const pendingEditPayloadRef = useRef(null);
 	const [groupAsPerRole, setGroupAsPerRole] = useState(false);
 	const [openGroupIndex, setOpenGroupIndex] = useState(null);
 	const [createNewRole, setCreateNewRole] = useState(null);
@@ -298,6 +300,14 @@ const ManageRoles = () => {
 			// This is edit mode - show confirmation modal with dynamic data
 			try {
 				const roleId = editingRole?.id || editingRole?.originalData?.id;
+
+				// Store payload for use after confirmation
+if (summary?.isEdit && summary?.roleId && summary?.roleData) {
+    pendingEditPayloadRef.current = {
+        roleId: summary.roleId,
+        roleData: summary.roleData,
+    };
+}
 				const current =
 					roles.find((r) => r.id === roleId) || editingRole;
 				const assignedCount = current?.assignment || 0;
@@ -505,7 +515,7 @@ const ManageRoles = () => {
 				console.log("Normalized vertical IDs:", roleVerticalIds);
 
 				const verticalsDataForModal = apiVerticals.map((v) => {
-					const id = typeof v === "string" ? v : v?.id || v?.name;
+					const id = typeof v === "string" ? v : v?.name || v?.id;
 					const normalizedId = id.toString().toLowerCase();
 					const label =
 						typeof v === "string"
@@ -545,6 +555,7 @@ const ManageRoles = () => {
 	const handleOpenManagers = async (role) => {
 		try {
 			const roleId = role?.id || role?.originalData?.id;
+			setCurrentRoleId(roleId);
 			if (!roleId) {
 				setManagerListTitle(role?.name || "Employees");
 				setManagerListData([]);
@@ -794,58 +805,11 @@ const ManageRoles = () => {
 		setCreateNewRoleFullPage(true);
 	};
 	const handleReassign = () => {
-		setManagerList(false);
-		setIsDirectReassign(true);
-		(async () => {
-			try {
-				const response = await employeeService.getAdmins({});
-				if (
-					response?.success &&
-					response?.code === 200 &&
-					Array.isArray(response?.data?.admins)
-				) {
-					const rows = response.data.admins.map((admin, index) => {
-						const firstName = admin.first_name || "";
-						const lastName = admin.last_name || "";
-						const fullName =
-							[firstName, lastName].filter(Boolean).join(" ") ||
-							"Unnamed Employee";
-
-						let phoneFormatted = "";
-						if (admin.mobile_number && admin.country_code) {
-							phoneFormatted = `${admin.country_code} ${admin.mobile_number}`;
-						} else if (admin.mobile_number) {
-							phoneFormatted = admin.mobile_number;
-						}
-
-						const joinStr = formatJoiningDate(admin.joining_date);
-						const idShort = admin.id
-							? `#${admin.id.slice(-8)}`
-							: "";
-
-						return {
-							id: admin.id || `emp-${index}`,
-							name: fullName,
-							idNumber: idShort,
-							joinDate: joinStr ? `Joined ${joinStr}` : "",
-							location: admin.location || "Not specified",
-							phone: phoneFormatted || "Not provided",
-							email: admin.email || "Not provided",
-							updated: formatDate(admin.updated_at),
-						};
-					});
-					setAllEmployeesForReassign(rows);
-				} else {
-					setAllEmployeesForReassign([]);
-				}
-			} catch (e) {
-				console.error("Failed to fetch employees for reassign:", e);
-				setAllEmployeesForReassign([]);
-			} finally {
-				setEmployeesReassignModal(true);
-			}
-		})();
-	};
+	setManagerList(false);
+	setIsDirectReassign(true);
+	setAllEmployeesForReassign(managerListData);
+	setEmployeesReassignModal(true);
+};
 	const handleNext = (selectedEmployeeIds) => {
 		setSelectedEmployeesForReassign(
 			Array.isArray(selectedEmployeeIds) ? selectedEmployeeIds : [],
@@ -982,24 +946,60 @@ const ManageRoles = () => {
 		}
 	};
 
-	const handleConfirmChanges = () => {
-		setReassignConfirmModal(false);
-		try {
-			const updatedRoleName =
-				confirmRolesData?.[1]?.name ||
-				confirmRolesData?.[0]?.name ||
-				"Role";
-			const affected = confirmRolesData?.[0]?.count ?? 0;
-			showSuccess(
-				"Success",
-				`${updatedRoleName} role has been updated. ${affected} ${affected === 1 ? "employee" : "employees"} now have the new permissions.`,
-			);
-		} catch (e) {
-			showSuccess("Success", "Role has been updated.");
-		}
-		// Reset the role description to clear edit mode
-		setRoledescription("");
-	};
+const handleConfirmChanges = async () => {
+    setReassignConfirmModal(false);
+
+    // Make the actual API call now that user confirmed
+    if (pendingEditPayloadRef.current) {
+        const { roleId, roleData } = pendingEditPayloadRef.current;
+        pendingEditPayloadRef.current = null;
+        try {
+            const response = await roleService.updateRole(roleId, roleData);
+            if (response.success && response.code === 200) {
+                try {
+                    const updatedRoleName =
+                        confirmRolesData?.[1]?.name ||
+                        confirmRolesData?.[0]?.name ||
+                        "Role";
+                    const affected = confirmRolesData?.[0]?.count ?? 0;
+                    showSuccess(
+                        "Success",
+                        `${updatedRoleName} role has been updated. ${affected} ${affected === 1 ? "employee" : "employees"} now have the new permissions.`,
+                    );
+                } catch (e) {
+                    showSuccess("Success", "Role has been updated.");
+                }
+                // Refresh list
+                try {
+                    const params = {};
+                    if (searchValue && searchValue.trim())
+                        params.query = searchValue.trim();
+                    if (hideRolesWithAssignment)
+                        params.hide_assigned = "true";
+                    await loadRolesWithAssignments(params);
+                } catch (e) {
+                    console.error("Error refreshing roles after confirm:", e);
+                }
+            } else {
+                showError(
+                    response?.error ||
+                    response?.message ||
+                    "Failed to update role.",
+                );
+            }
+        } catch (e) {
+            console.error("Error updating role after confirm:", e);
+            showError(
+                e?.response?.data?.message ||
+                e?.response?.data?.error ||
+                e?.message ||
+                "Failed to update role.",
+            );
+        }
+    }
+
+    setRoledescription("");
+};
 
 	// Filter roles based on hide roles with assignment (client-side only, since assignment counts come from separate API)
 	// Search filtering is handled by API via query parameter
@@ -1687,7 +1687,8 @@ const ManageRoles = () => {
 						: `Reassign role to ${selectedRoles.size} employees`
 				}
 				description="Their previous access will be updated with the new permissions. It won't remove their records, only their access changes."
-			/>
+						excludeRoleId={currentRoleId}
+/>
 			<ReassignConfirmModal
 				open={reassignConfirmModal}
 				onClose={() => setReassignConfirmModal(false)}

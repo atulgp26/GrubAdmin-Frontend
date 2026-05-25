@@ -8,6 +8,7 @@ import { IoChevronBack } from "react-icons/io5";
 import { roleService } from "@/api/services/roleService";
 import { employeeService } from "@/api/services/employeeService";
 import { showError } from "@/components/ui/toast";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 
 export default function ReassignRoleModal({
 	open,
@@ -16,6 +17,7 @@ export default function ReassignRoleModal({
 	title,
 	description,
 	backHidden,
+	excludeRoleId,
 }) {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedGroup, setSelectedGroup] = useState(null);
@@ -142,8 +144,9 @@ export default function ReassignRoleModal({
 			.toLowerCase()
 			.includes(searchTerm.toLowerCase());
 		const shouldHide = hideRole && group.assignmentCount > 0;
-		return matchesSearch && !shouldHide;
-	});
+			const isCurrentRole = excludeRoleId && String(group.id) === String(excludeRoleId); 
+	return matchesSearch && !shouldHide && !isCurrentRole;
+});
 
 	const handleSelectGroup = (group) => {
 		setSelectedGroup(group);

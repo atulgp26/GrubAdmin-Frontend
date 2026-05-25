@@ -294,43 +294,53 @@ const CreateNewRoleFullPage = ({
 			console.log("Submitting role ID:", roleIdString);
 			console.log("Permissions:", permissionsData);
 
+			// ✅ ADD THIS RIGHT HERE
+console.log("Final payload being sent:", JSON.stringify(roleData, null, 2));
+console.log("isSuperAdmin value at save time:", isSuperAdmin);
+
 			// Call appropriate API - ensure create uses same structure as update
-			const response =
-				editRole && roleIdString
-					? await roleService.updateRole(roleIdString, roleData)
-					: await roleService.createRole({
-							name: searchValue.trim(),
-							permissions: permissionsData,
-							is_super_admin: isSuperAdmin,
-						});
+			if (editRole && roleIdString) {
+    // In edit mode, skip API call — pass payload up for confirmation
+    const permissionsCount = Object.values(permissionsData || {}).reduce(
+        (acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0),
+        0,
+    );
+    onSave({
+        roleName: searchValue.trim(),
+        permissionsCount,
+        isEdit: true,
+        roleId: roleIdString,
+        roleData,
+    });
+} else {
+    const response = await roleService.createRole({
+        name: searchValue.trim(),
+        permissions: permissionsData,
+        is_super_admin: isSuperAdmin,
+    });
 
-			console.log("API Response:", response);
-
-			if (response.success && response.code === 200) {
-				const action = editRole ? "updated" : "created";
-				showSuccess(
-					"Success",
-					`${searchValue.trim()} role has been ${action}.`,
-				);
-				// Calculate new permissions count for summary
-				const permissionsCount = Object.values(
-					permissionsData || {},
-				).reduce(
-					(acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0),
-					0,
-				);
-				onSave({
-					roleName: searchValue.trim(),
-					permissionsCount,
-					isEdit: !!editRole,
-				});
-			} else {
-				const errorMsg =
-					response.error ||
-					response.message ||
-					`Failed to ${editRole ? "update" : "create"} role.`;
-				showError(errorMsg);
-			}
+    if (response.success && response.code === 200) {
+        showSuccess(
+            "Success",
+            `${searchValue.trim()} role has been created.`,
+        );
+        const permissionsCount = Object.values(permissionsData || {}).reduce(
+            (acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0),
+            0,
+        );
+        onSave({
+            roleName: searchValue.trim(),
+            permissionsCount,
+            isEdit: false,
+        });
+    } else {
+        const errorMsg =
+            response.error ||
+            response.message ||
+            "Failed to create role.";
+        showError(errorMsg);
+    }
+}
 		} catch (error) {
 			console.error(
 				`Error ${editRole ? "updating" : "creating"} role:`,

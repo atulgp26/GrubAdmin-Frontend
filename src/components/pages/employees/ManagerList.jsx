@@ -91,14 +91,14 @@ const ManagerList = ({ open, onClose, onReassign, title = "Relationship manager"
           )}
           <hr class="border-t border-[var(--color-box-border)] w-full" />
           <div className='flex items-center justify-between w-full'>
-            <span className='text-lg text-[var(--color-neutral-secondary)]'>{rows.length} assignees</span>
-            {rows.length > 0 && (
-              <Button size="mdLg" variant="secondary" onClick={onReassign} className="flex items-center gap-2 w-1/2">
-                  <RiLoopRightFill className='w-5 h-5'/>
-                  REASSIGN TO A NEW ROLE
-              </Button>
-            )}
-          </div>
+    <span className='text-lg text-[var(--color-neutral-secondary)]'>{rows.length} assignees</span>
+    {rows.length > 0 && (
+        <Button size="mdLg" variant="secondary" onClick={onReassign} className="flex text-center items-center gap-2 w-1/2 justify-center">
+            <RiLoopRightFill className='w-5 h-5'/>
+            REASSIGN TO A NEW ROLE
+        </Button>
+    )}
+</div>
 
     </div>
     </Modal>
