@@ -295,116 +295,99 @@ const dateRef = useRef(null);
 		return profileData;
 	};
 
-	const handleSaveChanges = () => {
-		// If currently editing a field, save it first
-		if (editingField && tempValue !== currentFields[editingField]) {
-			const newFields = { ...currentFields, [editingField]: tempValue };
-			const newEditedFields = new Set([...editedFields, editingField]);
-			setCurrentFields(newFields);
-			setEditedFields(newEditedFields);
-			setEditingField(null);
-			setTempValue("");
+const handleSaveChanges = async () => {
+    if (editingField && tempValue !== currentFields[editingField]) {
+        const newFields = { ...currentFields, [editingField]: tempValue };
+        const newEditedFields = new Set([...editedFields, editingField]);
+        setCurrentFields(newFields);
+        setEditedFields(newEditedFields);
+        setEditingField(null);
+        setTempValue("");
 
-			// Check if password was changed (including the current edit)
-			if (
-				editingField === "password" ||
-				newEditedFields.has("password")
-			) {
-				setShowPasswordModal(true);
-				return;
-			}
+        if (editingField === "password" || newEditedFields.has("password")) {
+            setShowPasswordModal(true);
+            return;
+        }
 
-			// Check if email was changed (including the current edit)
-			if (editingField === "email" || newEditedFields.has("email")) {
-				setOtpEmail(
-					editingField === "email" ? tempValue : newFields.email,
-				);
-				setTitle("Hold on!");
-				setDescription(
-					`To confirm changing your email address, enter the OTP sent to your updated ID ${newFields.email}`,
-				);
-				// Prepare pending profile data
-				const updatedFields = { ...newFields };
-				if (formData.firstName && formData.lastName) {
-					updatedFields.name = `${formData.firstName} ${formData.lastName}`;
-				}
-				setPendingProfileData(prepareProfileData(updatedFields));
-				setShowOtpModal(true);
-				startOtpTimer();
-				return;
-			} else if (
-				editingField === "contact" ||
-				newEditedFields.has("contact")
-			) {
-				setOtpEmail(
-					editingField === "contact" ? tempValue : newFields.contact,
-				);
-				setTitle("Hold on!");
-				setDescription(
-					`To confirm changing your contact number, enter the OTP sent to your updated number ${newFields.contact}`,
-				);
-				// Prepare pending profile data
-				const updatedFields = { ...newFields };
-				if (formData.firstName && formData.lastName) {
-					updatedFields.name = `${formData.firstName} ${formData.lastName}`;
-				}
-				setPendingProfileData(prepareProfileData(updatedFields));
-				setShowOtpModal(true);
-				startOtpTimer();
-				return;
-			}
-		}
+        const updatedFields = { ...newFields };
+        if (formData.firstName && formData.lastName) {
+            updatedFields.name = `${formData.firstName} ${formData.lastName}`;
+        }
 
-		// Prepare final fields with formData
-	// Prepare final fields with formData
-const finalFields = {
-    name: `${formData.firstName} ${formData.lastName}`.trim() || currentFields.name,
-    email: currentFields.email,
-    contact: currentFields.contact,
-    facility: formData.location || currentFields.facility,
-};
+        const isEmail = editingField === "email" || newEditedFields.has("email");
+        const isContact = editingField === "contact" || newEditedFields.has("contact");
 
-		// Check if password was changed
-		if (editedFields.has("password")) {
-			setShowPasswordModal(true);
-			return;
-		}
-
-		// Check if any field was changed - show OTP modal
-	// OTP only needed if email or contact was changed
-const needsOtp = editedFields.has("email") || editedFields.has("contact");
-
-if (needsOtp) {
-    setTitle("Hold on!");
-    setDescription(
-        editedFields.has("email")
-            ? `To confirm changing your email address, enter the OTP sent to your updated ID ${currentFields.email}`
-            : `To confirm changing your contact number, enter the OTP sent to your updated number ${currentFields.contact}`,
-    );
-    setOtpEmail(currentFields.email || "your email");
-    setPendingProfileData(prepareProfileData(finalFields));
-    setShowOtpModal(true);
-    startOtpTimer();
-} else {
-    // Directly call API without OTP for name/location/joiningDate changes
-    const profileData = prepareProfileData(finalFields);
-    if (Object.keys(profileData).length > 0) {
-        accountService.patchProfile(profileData).then((res) => {
-           if (res?.success && res.code === 200) {
-    showSuccess("Profile updated successfully!");
-    onClose();
-    if (onSave) onSave(profileData);
-} else {
-                showError(res?.message || res?.error || "Failed to update profile");
+        if (isEmail || isContact) {
+            const profileData = prepareProfileData(updatedFields);
+            setOtpEmail(isEmail ? newFields.email : newFields.contact);
+            setTitle("Hold on!");
+            setDescription(isEmail
+                ? `To confirm changing your email address, enter the OTP sent to your updated ID ${newFields.email}`
+                : `To confirm changing your contact number, enter the OTP sent to your updated number ${newFields.contact}`
+            );
+            try {
+                const response = await accountService.updateProfile(profileData);
+                if (response.success && response.code === 200) {
+                    setPendingProfileData(profileData);
+                    setShowOtpModal(true);
+                    startOtpTimer();
+                } else {
+                    showError(response.message || response.error || "Failed to send OTP. Please try again.");
+                }
+            } catch (error) {
+                showError(error.response?.data?.message || "Failed to send OTP. Please try again.");
             }
-        }).catch((error) => {
-            showError(error?.response?.data?.message || "Failed to update profile");
-        });
-    } else {
-        onClose();
+            return;
+        }
     }
-}
-	};
+
+    const finalFields = {
+        name: `${formData.firstName} ${formData.lastName}`.trim() || currentFields.name,
+        email: currentFields.email,
+        contact: currentFields.contact,
+        facility: formData.location || currentFields.facility,
+    };
+
+    if (editedFields.has("password")) {
+        setShowPasswordModal(true);
+        return;
+    }
+
+    const profileData = prepareProfileData(finalFields);
+
+    if (Object.keys(profileData).length === 0) {
+        onClose();
+        return;
+    }
+
+    const requiresOtp = editedFields.has("email") || editedFields.has("contact");
+
+    try {
+        const response = await accountService.updateProfile(profileData);
+        if (response.success && response.code === 200) {
+            if (requiresOtp) {
+                setTitle("Hold on!");
+                setDescription(editedFields.has("email")
+                    ? `To confirm changing your email address, enter the OTP sent to your updated ID ${currentFields.email}`
+                    : `To confirm changing your contact number, enter the OTP sent to your updated number ${currentFields.contact}`
+                );
+                setOtpEmail(currentFields.email || "your email");
+                setPendingProfileData(profileData);
+                setShowOtpModal(true);
+                startOtpTimer();
+            } else {
+                // name/location/joiningDate only — no OTP needed
+                showSuccess("Profile updated successfully!");
+                onClose();
+                if (onSave) onSave(profileData);
+            }
+        } else {
+            showError(response.message || response.error || "Failed to update profile. Please try again.");
+        }
+    } catch (error) {
+        showError(error.response?.data?.message || "Failed to update profile. Please try again.");
+    }
+};
 
 	const startOtpTimer = () => {
 		// Clear any existing timer
