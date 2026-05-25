@@ -38,6 +38,7 @@ import { useRouter } from "next/navigation";
 import CustomTooltip from "@/components/ui/CustomTooltip";
 import Link from "next/link";
 import { customerService } from "@/api/services/customerService";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 import EmptyState from "@/components/ui/EmptyState";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import InfoPanel from "@/components/common/InfoPanel";
@@ -227,6 +228,17 @@ const ClientsList = () => {
 		onDebouncedSearchValueChange();
 	};
 
+	const handleOpenGmail = (email) => {
+		const sanitizedEmail = (email || "").trim();
+		if (!sanitizedEmail) {
+			showError("Client email is not available.");
+			return;
+		}
+
+		const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(sanitizedEmail)}`;
+		window.open(gmailUrl, "_blank", "noopener,noreferrer");
+	};
+
 	useEffect(() => {
 		if (!authLoading && !isAuthenticated) {
 			router.push("/login");
@@ -299,14 +311,21 @@ const ClientsList = () => {
 		try {
 			const res = await customerService.createCustomer(formData);
 			if (res?.success) {
-				showSuccess("Client created successfully");
-				setAddNewClient(false);
 				setForceRefetch(true);
+				return {
+					message:
+						res.message ||
+						res.data?.message ||
+						"Client added successfully!",
+				};
 			} else {
-				showError(res?.error || "Failed to create client");
+				return {
+					error:
+						res?.error || res?.message || "Failed to create client",
+				};
 			}
 		} catch (e) {
-			showError("Failed to create client");
+			return { error: "Failed to create client" };
 		} finally {
 			setIsCreatingCustomer(false);
 		}
@@ -920,7 +939,11 @@ const ClientsList = () => {
 									>
 										<Button
 											variant="messaging"
+											type="button"
 											className="group !p-2 hover:!border-[var(--notif-border)]"
+											onClick={() =>
+												handleOpenGmail(customer.email)
+											}
 										>
 											<Icon
 												name="messaging"
@@ -932,8 +955,8 @@ const ClientsList = () => {
 								<TableCell className="w-12 p-4">
 									<button
 										ref={(el) =>
-										(buttonRefs.current[customer.id] =
-											el)
+											(buttonRefs.current[customer.id] =
+												el)
 										}
 										className={`p-2 hover:bg-[var(--color-neutral-secondary-bg)] rounded-lg`}
 									>
@@ -955,10 +978,8 @@ const ClientsList = () => {
 	// Loading state
 	if (loading) {
 		return (
-			<div className="flex justify-center items-center min-h-[60vh]">
-				<div className="text-lg text-[var(--color-neutral-secondary)]">
-					Loading...
-				</div>
+			<div className="min-h-[60vh]">
+				<LoadingDetails entity="clients" />
 			</div>
 		);
 	}
@@ -1114,9 +1135,7 @@ const ClientsList = () => {
 					<label className="flex items-center gap-2 text-lg text-[var(--color-neutral-secondary)]">
 						<CheckBox
 							checked={groupByRole}
-							onChange={(e) =>
-								setGroupByRole(e.target.checked)
-							}
+							onChange={(e) => setGroupByRole(e.target.checked)}
 						/>
 						Group as per vertical
 					</label>
@@ -1152,24 +1171,24 @@ const ClientsList = () => {
 							}
 							pagination={
 								currentOpenVertical === vertical.name &&
-									totalItems > 0
+								totalItems > 0
 									? {
-										rangeText: `Showing ${pageStartDisplay}-${pageEndDisplay}`,
-										onPrev: () =>
-											setCurrentPage((p) =>
-												Math.max(1, p - 1),
-											),
-										onNext: () =>
-											setCurrentPage((p) =>
-												Math.min(totalPages, p + 1),
-											),
-										disablePrev: currentPage <= 1,
-										disableNext:
-											currentPage >=
-											Math.ceil(
-												totalItems / pageSize,
-											),
-									}
+											rangeText: `Showing ${pageStartDisplay}-${pageEndDisplay}`,
+											onPrev: () =>
+												setCurrentPage((p) =>
+													Math.max(1, p - 1),
+												),
+											onNext: () =>
+												setCurrentPage((p) =>
+													Math.min(totalPages, p + 1),
+												),
+											disablePrev: currentPage <= 1,
+											disableNext:
+												currentPage >=
+												Math.ceil(
+													totalItems / pageSize,
+												),
+										}
 									: undefined
 							}
 						/>
@@ -1306,8 +1325,14 @@ const ClientsList = () => {
 											}
 										>
 											<Button
+												type="button"
 												variant="messaging"
 												className="group !p-2"
+												onClick={() =>
+													handleOpenGmail(
+														customer.email,
+													)
+												}
 											>
 												<Icon
 													name="messaging"
@@ -1319,9 +1344,9 @@ const ClientsList = () => {
 									<TableCell className="p-4">
 										<div
 											ref={(el) =>
-											(buttonRefs.current[
-												customer.id
-											] = el)
+												(buttonRefs.current[
+													customer.id
+												] = el)
 											}
 											className="menu-container relative inline-block"
 										>
@@ -1334,10 +1359,11 @@ const ClientsList = () => {
 													);
 													e.stopPropagation();
 												}}
-												className={`p-2 hover:bg-[var(--color-neutral-secondary-bg)] rounded-lg ${menuOpen === customer.id
+												className={`p-2 hover:bg-[var(--color-neutral-secondary-bg)] rounded-lg ${
+													menuOpen === customer.id
 														? "bg-[var(--color-neutral-secondary-bg)] shadow-[0_0_0_2px_var(--color-shadow-actionmenu)] rounded-lg"
 														: ""
-													}`}
+												}`}
 											>
 												<BsThreeDotsVertical className="w-5 h-5 text-[var(--color-stroke-brand)]" />
 											</button>
@@ -1347,7 +1373,7 @@ const ClientsList = () => {
 														item.id === "logs" ? (
 															<Link
 																key={item.id}
-																href="/clients/clientlogs"
+																href={`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`}
 																className="block"
 															>
 																<div
@@ -1413,7 +1439,7 @@ const ClientsList = () => {
 															{quickActions.map(
 																(item) =>
 																	item.id ===
-																		"faqs" ? (
+																	"faqs" ? (
 																		<Link
 																			key={
 																				item.id

@@ -15,6 +15,7 @@ import { showError, showSuccess } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { usePermissions } from "@/context/PermissionContext";
 import { useAuth } from "@/context/AuthContext";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 import { customerService } from "@/api/services/customerService";
 import { useDebounce, useDebouncedCallback } from "use-debounce";
 import {
@@ -66,11 +67,17 @@ export default function GrubpacsPage() {
 		items: [],
 		source: null,
 	});
+	const [loading, setLoading] = useState(true);
+	const [selectedAssignmentState, setSelectedAssignmentState] =
+		useState(null);
 
 	const { permissionsByModule, user } = usePermissions();
 
 	const [debouncedSearchValue] = useDebounce(searchValue, DEBOUNCE_TIME);
-	const safeCurrentPage = Math.min(currentPage, Math.max(1, Math.ceil(totalItems / pageSize)));
+	const safeCurrentPage = Math.min(
+		currentPage,
+		Math.max(1, Math.ceil(totalItems / pageSize)),
+	);
 	const onDebouncedSearchValueChange = useDebouncedCallback(() => {
 		setCurrentPage(1);
 	}, DEBOUNCE_TIME);
@@ -86,7 +93,7 @@ export default function GrubpacsPage() {
 				client: g.client ?? null,
 				customerId: g.client?.id ?? null,
 				status: g.status,
-			statusDisplay: g.status === "suspended" ? "Inactive" : g.status,
+				statusDisplay: g.status === "suspended" ? "Inactive" : g.status,
 				updatedOn: new Date(g.updated_at).toLocaleDateString("en-GB", {
 					day: "2-digit",
 					month: "short",
@@ -169,15 +176,17 @@ export default function GrubpacsPage() {
 		if (isAuthenticated) {
 			fetchGrubpacs();
 		}
-	}, [
-		isAuthenticated,
-		selectedRole,
-		debouncedSearchValue,
-	]);
+	}, [isAuthenticated, selectedRole, debouncedSearchValue, safeCurrentPage]);
 
 	useEffect(() => {
 		setCurrentPage(1);
 	}, [searchValue, selectedRole, groupByRole]);
+
+	useEffect(() => {
+		if (currentPage > totalPages) {
+			setCurrentPage(totalPages);
+		}
+	}, [currentPage, totalPages]);
 
 	useEffect(() => {
 		if (isAuthenticated && forceRefresh) {
@@ -234,18 +243,22 @@ export default function GrubpacsPage() {
 	const handleDeleteConfirm = async () => {
 		try {
 			const ids = deleteModal.items?.length
-				? deleteModal.items.map(i => i.id)
-				: deleteModal.item ? [deleteModal.item.id] : [];
+				? deleteModal.items.map((i) => i.id)
+				: deleteModal.item
+					? [deleteModal.item.id]
+					: [];
 			if (ids.length === 0) return;
-			const res = await boxService.deleteBoxes(ids);
+			const res = await boxService.deleteBoxes({ box_ids: ids });
 			if (res?.success) {
 				showSuccess("Deleted", "Boxes deleted successfully.");
 				closeDeleteModal();
 				setForceRefresh(true);
 			} else {
+				console.error("Delete boxes failed:", res);
 				showError(res?.error || "Failed to delete boxes.");
 			}
 		} catch (e) {
+			console.error("Failed to delete boxes:", e);
 			showError("Failed to delete boxes.");
 		}
 	};
@@ -310,7 +323,19 @@ export default function GrubpacsPage() {
 
 				// If we came from delete, reopen the delete modal now that it's unassigned
 				if (source === "delete") {
-					setDeleteModal({ open: true, item, items });
+					const updatedItems = items?.map((box) => ({
+						...box,
+						assignment: "unassigned",
+					}));
+					const updatedItem = item
+						? { ...item, assignment: "unassigned" }
+						: null;
+
+					setDeleteModal({
+						open: true,
+						item: updatedItem,
+						items: updatedItems,
+					});
 				}
 			} else {
 				showError(res?.error || "Failed to unassign boxes.");
@@ -324,23 +349,51 @@ export default function GrubpacsPage() {
 
 	const handleBulkDelete = () => {
 		if (selectedItems.length === 0) return;
-		const items = processedGrubpacs.filter(g => selectedItems.includes(g.id));
+		const items = processedGrubpacs.filter((g) =>
+			selectedItems.includes(g.id),
+		);
 		setDeleteModal({ open: true, item: null, items });
 	};
 
-	const customActionButtons = null;
+	const selectedAssignedItems = useMemo(
+		() =>
+			processedGrubpacs.filter(
+				(g) =>
+					selectedItems.includes(g.id) && g.assignment === "assigned",
+			),
+		[selectedItems, processedGrubpacs],
+	);
+
+	const handleBulkUnassign = () => {
+		if (selectedAssignedItems.length === 0) return;
+		openUnassignModal(selectedAssignedItems, "unassign");
+	};
+
+	const customActionButtons =
+		selectedAssignedItems.length > 0
+			? [
+					{
+						key: "remove-assignment",
+						label: "Remove box assignment",
+						icon: (
+							<AiOutlineCloseSquare className="w-5 h-5 text-[var(--color-stroke-brand)] group-hover:text-[var(--notif-border)]" />
+						),
+						onClick: handleBulkUnassign,
+					},
+				]
+			: null;
 
 	const handleSelectAllInSection = (items, checked) => {
 		if (checked) {
-			setSelectedItems(items.map(i => i.id));
+			setSelectedItems(items.map((i) => i.id));
 		} else {
 			setSelectedItems([]);
 		}
 	};
 
 	const handleSelectItem = (itemId, checked) => {
-		setSelectedItems(prev =>
-			checked ? [...prev, itemId] : prev.filter(id => id !== itemId),
+		setSelectedItems((prev) =>
+			checked ? [...prev, itemId] : prev.filter((id) => id !== itemId),
 		);
 	};
 
@@ -350,6 +403,9 @@ export default function GrubpacsPage() {
 				setAssignModal({ open: true, item, items: [item] });
 				break;
 			case "unassign":
+				openUnassignModal([item], "unassign");
+				break;
+			case "remove-assignment":
 				openUnassignModal([item], "unassign");
 				break;
 			case "edit":
@@ -375,8 +431,12 @@ export default function GrubpacsPage() {
 	};
 
 	const fetchGrubpacs = async () => {
+		setLoading(true);
 		try {
-			const params = { page_number: safeCurrentPage, page_size: pageSize };
+			const params = {
+				page_number: safeCurrentPage,
+				page_size: pageSize,
+			};
 			if (searchValue) params.query = searchValue;
 			if (selectedRole.length > 0) params.verticals = selectedRole;
 			const res = await boxService.getBoxes(params);
@@ -386,6 +446,8 @@ export default function GrubpacsPage() {
 			}
 		} catch (e) {
 			console.error("Failed to fetch grubpacs:", e);
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -396,6 +458,10 @@ export default function GrubpacsPage() {
 	const onVerticalGroupClose = () => setCurrentOpenVertical(null);
 	const onVerticalGroupOpen = (value) => setCurrentOpenVertical(value);
 
+	const handleSectionToggle = (section) => {
+		setActiveSection((prev) => (prev === section ? null : section));
+	};
+
 	const onStateGroupsClick = (value) => {
 		setSelectedAssignmentState((prev) => (prev === value ? null : value));
 	};
@@ -405,6 +471,16 @@ export default function GrubpacsPage() {
 	const onStateGroupOpen = (value) => {
 		if (value) setSelectedAssignmentState(value);
 	};
+
+	if (authLoading || !isAuthenticated) return null;
+
+	if (loading) {
+		return (
+			<div className="min-h-[calc(100vh-150px)]">
+				<LoadingDetails entity="GrubPacs" />
+			</div>
+		);
+	}
 
 	return (
 		<div className="w-full">
@@ -536,11 +612,7 @@ export default function GrubpacsPage() {
 								}
 								onSelectItem={handleSelectItem}
 								onRowAction={(action, item, assignment) => {
-									handleRowAction(
-										action,
-										item,
-										"Assigned",
-									);
+									handleRowAction(action, item, "Assigned");
 								}}
 							/>
 						)}
@@ -576,11 +648,7 @@ export default function GrubpacsPage() {
 								}
 								onSelectItem={handleSelectItem}
 								onRowAction={(action, item, assignment) => {
-									handleRowAction(
-										action,
-										item,
-										"Unassigned",
-									);
+									handleRowAction(action, item, "Unassigned");
 								}}
 							/>
 						)}

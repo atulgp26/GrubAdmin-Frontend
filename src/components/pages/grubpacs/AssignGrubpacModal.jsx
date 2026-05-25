@@ -10,6 +10,7 @@ import {
 	DEFAULT_PAGE_SIZE,
 } from "@/constants/config";
 import { customerService } from "@/api/services/customerService";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 
 export default function AssignGrubpacModal({
 	open,
@@ -22,36 +23,30 @@ export default function AssignGrubpacModal({
 	const [totalItemsCount, setTotalItemsCount] = useState(0);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedClientId, setSelectedClientId] = useState(null);
+	const [internalLoading, setInternalLoading] = useState(false);
 
 	const vertical = useMemo(() => {
-		if (open) {
-			return grubpacs[0]?.vertical?.name;
+		if (!open || !grubpacs?.length) {
+			return null;
 		}
 
-		return null;
-	}, [grubpacs]);
+		const boxVertical = grubpacs[0]?.vertical;
+		if (!boxVertical) {
+			return null;
+		}
+
+		const verticalName =
+			typeof boxVertical === "string"
+				? boxVertical
+				: boxVertical?.name || boxVertical?.id;
+
+		return verticalName?.toString().toLowerCase();
+	}, [grubpacs, open]);
 
 	const [debouncedSearchValue] = useDebounce(searchTerm, DEBOUNCE_TIME);
 	const onDebouncedSearchValueChange = useDebouncedCallback(() => {
 		// setCurrentPage(1);
 	}, DEBOUNCE_TIME);
-
-	const customers = useMemo(
-		() =>
-			clients.map((c) => ({
-				id: c.id,
-				name: c.name,
-				code: c.client_id,
-				organization: c.organization_name,
-				region: `${c.state}, ${c.country}`,
-				addedOn: new Date(c.created_at).toLocaleDateString("en-GB", {
-					day: "2-digit",
-					month: "short",
-					year: "2-digit",
-				}),
-			})),
-		[clients],
-	);
 
 	const onSearchKeywordChange = (e) => {
 		setSearchTerm(e?.target.value ?? "");
@@ -59,24 +54,55 @@ export default function AssignGrubpacModal({
 	};
 
 	const fetchCustomers = async () => {
-		const params = {};
+		const params = {
+			page_number: 1,
+			page_size: DEFAULT_PAGE_SIZE,
+			order_factor: "created_at",
+			order: "desc",
+		};
 
 		if (vertical) {
-			params.filter = vertical;
+			params.vertical = vertical;
 		}
 
-		params.page_number = 1;
-		params.page_size = DEFAULT_PAGE_SIZE;
-
-		if (debouncedSearchValue !== undefined) {
+		if (debouncedSearchValue !== undefined && debouncedSearchValue !== "") {
 			params.query = debouncedSearchValue;
 		}
 
-		const response = await customerService.getCustomers(params);
-
-		if (response.success && response.code === 200) {
-			setClients(response.data.customers ?? []);
-			setTotalItemsCount(response.data.count ?? 0);
+		setInternalLoading(true);
+		try {
+			const response = await customerService.getCustomers(params);
+			if (response?.success && response?.code === 200) {
+				const customersList = response.data.customers ?? [];
+				// Transform API response to match UI expectations
+				const transformedClients = customersList.map((c) => ({
+					id: c.id,
+					name: c.name,
+					code: c.client_id,
+					client_id: c.client_id,
+					organization: c.organization_name,
+					organization_name: c.organization_name,
+					region: `${c.state}, ${c.country}`,
+					state: c.state,
+					country: c.country,
+					addedOn: new Date(c.created_at).toLocaleDateString(
+						"en-GB",
+						{
+							day: "2-digit",
+							month: "short",
+							year: "2-digit",
+						},
+					),
+					created_at: c.created_at,
+				}));
+				setClients(transformedClients);
+				setTotalItemsCount(response.data.count ?? 0);
+			} else {
+				setClients([]);
+				setTotalItemsCount(0);
+			}
+		} finally {
+			setInternalLoading(false);
 		}
 	};
 
@@ -106,6 +132,7 @@ export default function AssignGrubpacModal({
 			return haystack.includes(term);
 		});
 	}, [clients, searchTerm]);
+	const isLoading = loading || internalLoading;
 
 	const selectedClient = useMemo(
 		() =>
@@ -167,9 +194,11 @@ export default function AssignGrubpacModal({
 						/>
 					</div>
 					<span className="text-sm text-[var(--color-stroke-brand)]">
-						{loading
-							? "Loading entries..."
-							: `${totalItemsCount} entries`}
+						{isLoading ? (
+							<LoadingDetails entity="entries" variant="inline" />
+						) : (
+							`${totalItemsCount} entries`
+						)}
 					</span>
 				</div>
 
@@ -183,16 +212,14 @@ export default function AssignGrubpacModal({
 						<span className="text-right"></span>
 					</div>
 					<div className="flex-1 overflow-y-auto max-h-[360px]">
-						{loading ? (
-							<div className="flex items-center justify-center py-12 text-[var(--color-neutral-secondary)] text-sm">
-								Loading clients...
-							</div>
+						{isLoading ? (
+							<LoadingDetails entity="clients" />
 						) : filteredClients.length === 0 ? (
 							<div className="flex items-center justify-center py-12 text-[var(--color-stroke-brand)] text-sm">
 								No clients found. Try a different search.
 							</div>
 						) : (
-							customers.map((client, idx) => {
+							filteredClients.map((client, idx) => {
 								const isSelected =
 									selectedClientId === client.id;
 								return (

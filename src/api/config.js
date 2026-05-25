@@ -1,7 +1,7 @@
 export const API_CONFIG = {
 	BASE_URL:
 		process.env.NEXT_PUBLIC_API_BASE_URL ||
-		"https://bm63v5xd-8000.inc1.devtunnels.ms/api/v1",
+		"http://43.204.34.10:8000/api/v1",
 };
 
 // API Endpoints

@@ -3,82 +3,86 @@ import Button from "@/components/ui/Button";
 import { IoCheckmark } from "react-icons/io5";
 
 const FILTER_GROUPS = [
-	{
-		id: "employee",
-		title: "Employees - List",
-		options: [
-			{ id: "create", label: "Creation" },
-			{ id: "update", label: "Updation" },
-			{ id: "delete", label: "Deletion" },
-			{ id: "suspend", label: "Suspension" },
-			{ id: "activate", label: "Activation" },
-		],
-	},
-	{
-		id: "roles",
-		title: "Employee - Roles",
-		options: [
-			{ id: "create", label: "Creation" },
-			{ id: "update", label: "Updation" },
-			{ id: "delete", label: "Deletion" },
-		],
-	},
-	{
-		id: "client",
-		title: "Clients - List",
-		options: [
-			{ id: "create", label: "Creation" },
-			{ id: "update", label: "Updation" },
-		],
-	},
-	{
-		id: "clients-platform",
-		title: "Clients - Platform action",
-		options: [
-			{ id: "client-viewing", label: "Viewing" },
-			{ id: "client-suspension", label: "Suspension" },
-			{ id: "client-transferring", label: "Transferring" },
-			{ id: "client-creation-action", label: "Creation" },
-			{ id: "client-activation", label: "Activation" },
-			{ id: "client-updation-action", label: "Updation" },
-			{ id: "client-deletion", label: "Deletion" },
-			{ id: "client-export", label: "Export" },
-		],
-	},
-	{
-		id: "support_categories",
-		title: "Support - Categories",
-		options: [
-			{ id: "create", label: "Create" },
-			{ id: "update", label: "Updation" },
-			{ id: "delete", label: "Deletion" },
-			{ id: "re-order", label: "Reorder" },
-			{ id: "suspend", label: "Suspension" },
-			{ id: "activate", label: "Activation" },
-		],
-	},
-	{
-		id: "FAQ",
-		title: "Support - FAQs",
-		options: [
-			{ id: "create", label: "Create" },
-			{ id: "update", label: "Updation" },
-			{ id: "delete", label: "Deletion" },
-		],
-	},
-	{
-		id: "grubpac",
-		title: "GrubPac",
-		options: [
-			{ id: "assignment", label: "Assignment" },
-			{ id: "create", label: "Creation" },
-			{ id: "delete", label: "Deletion" },
-			{ id: "suspend", label: "Suspension" },
-			{ id: "activate", label: "Activation" },
-		],
-	},
+    {
+        id: "Employee",
+        uniqueKey: "Employee",
+        title: "Employees - List",
+        options: [
+            { id: "Creation", label: "Creation" },
+            { id: "Updation", label: "Updation" },
+            { id: "Deletion", label: "Deletion" },
+            { id: "Suspension", label: "Suspension" },
+            { id: "Activation", label: "Activation" },
+        ],
+    },
+    {
+        id: "Profile",
+        uniqueKey: "Profile",
+        title: "Employee - Roles",
+        options: [
+            { id: "Creation", label: "Creation" },
+            { id: "Updation", label: "Updation" },
+            { id: "Deletion", label: "Deletion" },
+        ],
+    },
+    {
+        id: "Restaurant",
+        uniqueKey: "Restaurant_list",
+        title: "Clients - List",
+        options: [
+            { id: "Creation", label: "Creation" },
+            { id: "Updation", label: "Updation" },
+        ],
+    },
+    {
+        id: "Restaurant",
+        uniqueKey: "Restaurant_platform",
+        title: "Clients - Platform action",
+        options: [
+            { id: "Access", label: "Viewing" },
+            { id: "Suspension", label: "Suspension" },
+            { id: "Ownership", label: "Transferring" },
+            { id: "Creation", label: "Creation" },
+            { id: "Activation", label: "Activation" },
+            { id: "Updation", label: "Updation" },
+            { id: "Deletion", label: "Deletion" },
+        ],
+    },
+    {
+        id: "GrubLock",
+        uniqueKey: "GrubLock_categories",
+        title: "Support - Categories",
+        options: [
+            { id: "Creation", label: "Creation" },
+            { id: "Updation", label: "Updation" },
+            { id: "Deletion", label: "Deletion" },
+            { id: "Suspension", label: "Suspension" },
+            { id: "Activation", label: "Activation" },
+        ],
+    },
+    {
+        id: "GrubLock",
+        uniqueKey: "GrubLock_faq",
+        title: "Support - FAQs",
+        options: [
+            { id: "Creation", label: "Creation" },
+            { id: "Updation", label: "Updation" },
+            { id: "Deletion", label: "Deletion" },
+        ],
+    },
+    {
+        id: "GrubPac",
+        uniqueKey: "GrubPac",
+        title: "GrubPac",
+        options: [
+            { id: "Reassignment", label: "Assignment" },
+            { id: "Creation", label: "Creation" },
+            { id: "Deletion", label: "Deletion" },
+            { id: "Suspension", label: "Suspension" },
+            { id: "Activation", label: "Activation" },
+        ],
+    },
 ];
-
 const ToggleCheckbox = ({ checked }) => (
 	<div
 		className={`w-5 h-5 border rounded flex items-center justify-center ${checked

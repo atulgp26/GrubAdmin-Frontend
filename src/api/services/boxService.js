@@ -33,6 +33,7 @@ export const boxService = {
 	},
 
 	deleteBoxes: async (params) => {
-		return httpClient.delete(API_ENDPOINTS.GRUBPAC.DELETE_BOX, params);
+		const payload = Array.isArray(params) ? { box_ids: params } : params;
+		return httpClient.delete(API_ENDPOINTS.GRUBPAC.DELETE_BOX, payload);
 	},
 };

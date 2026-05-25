@@ -129,8 +129,8 @@ export default function HelpPage() {
       <div className="mt-4">
         <DetailsCollapse
           title="Delivery"
-          open={openCollapse === "food"}
-          onClick={() => setOpenCollapse(openCollapse === "food" ? "" : "food")}
+          open={openCollapse === "delivery"}
+          onClick={() => setOpenCollapse(openCollapse === "delivery" ? "" : "delivery")}
           exportModal={true}
         >
           {/* Intentionally left blank for now */}
