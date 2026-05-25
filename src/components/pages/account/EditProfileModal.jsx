@@ -37,7 +37,7 @@ export default function EditProfileModal({
 	const otpRefs = [useRef(), useRef(), useRef(), useRef()];
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
-
+const dateRef = useRef(null);
 	// Password change states
 	const [showPasswordModal, setShowPasswordModal] = useState(false);
 
@@ -754,28 +754,24 @@ const hasChanges =
 										(optional)
 									</span>
 								</h3>
-								<div className="relative">
-									<Input
-										type="date"
-										placeholder="Select date"
-										value={formData.joiningDate}
-										onChange={(e) =>
-											handleInputChange(
-												"joiningDate",
-												e.target.value,
-											)
-										}
-										onFocus={() =>
-											handleFocus("joiningDate")
-										}
-										onBlur={handleBlur}
-										isFocused={
-											focusedField === "joiningDate"
-										}
-										className="pr-10"
-									/>
-									<MdCalendarToday className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--info-panel-view-bg)] pointer-events-none" />
-								</div>
+							<div className="relative">
+    <Input
+    ref={dateRef}
+    type="date"
+    placeholder="Select date"
+    value={formData.joiningDate}
+    onChange={(e) => handleInputChange("joiningDate", e.target.value)}
+    onFocus={() => handleFocus("joiningDate")}
+    onBlur={handleBlur}
+    isFocused={focusedField === "joiningDate"}
+    className="pr-10 custom-date-input"
+    max={new Date().toISOString().split("T")[0]}
+/>
+    <MdCalendarToday
+        onClick={() => dateRef.current?.showPicker()}
+        className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--info-panel-view-bg)] cursor-pointer"
+    />
+</div>
 							</div>
 						</div>
 						<div className="space-y-4">
