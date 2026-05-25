@@ -1,197 +1,14 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/ui/Icon";
 import SearchWithSuggestions from "@/components/ui/SearchWithSuggestions";
 import { RiInformationLine } from "react-icons/ri";
-import Button from "@/components/ui/Button";
-import { Trash2 } from "lucide-react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import FilterButton from "@/components/ui/FilterButton";
 import { usePathname } from "next/navigation";
-import { RxCrossCircled } from "react-icons/rx";
-import EmployeeProfileDetails from "../employees/EmployeeProfileDetails";
-import ExportListModal from "../employees/ExportListModal";
-import EditEmployeeModal from "../employees/EditEmployeeModal";
 import Badge from "@/components/ui/Badge";
-import { defaultClientSidebarEntries } from "./ClientLogsSidebar";
-
-const midLevelData = [
-  { id: "delivery", label: "Delivery" },
-  { id: "hospitality", label: "Hospitality" },
-  { id: "medical", label: "Medical" },
-  { id: "camping", label: "Camping" },
-];
-
-const actionOptions = [
-  {
-    group: "Dashboard",
-    title: "Dashboard",
-    items: [
-      {
-        id: "viewdashboard",
-        label: "View dashboard",
-        type: "checkbox",
-        disabled: true,
-      },
-      {
-        id: "exportdashboard",
-        label: "Export dashboard",
-        type: "checkbox",
-        disabled: true,
-      },
-    ],
-  },
-  {
-    group: "details",
-    title: "Employees",
-    items: [
-      {
-        id: "activeemployees",
-        label: "View active employees",
-        type: "checkbox",
-        disabled: true,
-      },
-      {
-        id: "employeeLogs",
-        label: "View employee logs",
-        type: "checkbox",
-        disabled: true,
-      },
-      {
-        id: "suspendedemployees",
-        label: "View suspended employees",
-        type: "checkbox",
-        disabled: true,
-      },
-      {
-        id: "dismissedemployees",
-        label: "View dismissed employees",
-        type: "checkbox",
-        disabled: true,
-      },
-      {
-        id: "addemployees",
-        label: "Add employees",
-        type: "checkbox",
-        disabled: true,
-      },
-      {
-        id: "editemployees",
-        label: "Edit employees",
-        type: "checkbox",
-        disabled: true,
-      },
-      {
-        id: "deleteemployees",
-        label: "Delete employees",
-        type: "checkbox",
-        disabled: true,
-      },
-      {
-        id: "suspendemployees",
-        label: "Suspend employees",
-        type: "checkbox",
-        disabled: true,
-      },
-      {
-        id: "activateemployees",
-        label: "Activate employees",
-        type: "checkbox",
-        disabled: true,
-      },
-      {
-        id: "exportemployees",
-        label: "Export employees",
-        type: "checkbox",
-        disabled: true,
-      },
-    ],
-  },
-];
-
-const defaultLogs = [
-  {
-    type: "Employees",
-    action: "Suspended Handler: John D.",
-    timestamp: "06 Jun '25, 10:45:10",
-    name: "Ravi Kumar",
-    role: "Support",
-    icon: <Icon name="users" className="w-6 h-6 text-[var(--color-neutral-light)]" />,
-  },
-  {
-    type: "Employees",
-    action: "Suspended Handler: John D.",
-    timestamp: "06 Jun '25, 10:45:10",
-    name: "Ravi Kumar",
-    role: "Support",
-    icon: <Icon name="users" className="w-6 h-6 text-[var(--color-neutral-light)]" />,
-  },
-  {
-    type: "GrubPacs",
-    action: "Changed temperature range for Box #2456",
-    timestamp: "06 Jun '25, 10:45:10",
-    name: "Ravi Kumar",
-    role: "Support",
-    icon: <Icon name="inventory" className="w-6 h-6 text-[var(--color-neutral-light)]" />,
-  },
-  {
-    type: "Employees",
-    action: "Suspended Handler: John D.",
-    timestamp: "06 Jun '25, 10:45:10",
-    name: "Ravi Kumar",
-    role: "Support",
-    icon: <Icon name="users" className="w-6 h-6 text-[var(--color-neutral-light)]" />,
-  },
-  {
-    type: "Employees",
-    action: "Suspended Handler: John D.",
-    timestamp: "06 Jun '25, 10:45:10",
-    name: "Ravi Kumar",
-    role: "Support",
-    icon: <Icon name="users" className="w-6 h-6 text-[var(--color-neutral-light)]" />,
-  },
-  {
-    type: "GrubPacs",
-    action: "Changed temperature range for Box #2456",
-    timestamp: "06 Jun '25, 10:45:10",
-    name: "Ravi Kumar",
-    role: "Support",
-    icon: <Icon name="inventory" className="w-6 h-6 text-[var(--color-neutral-light)]" />,
-  },
-];
-
-// Search suggestions data
-const searchSuggestions = [
-  { id: 1, name: "Account suspended", code: "account-suspended" },
-  { id: 2, name: "Account created", code: "account-created" },
-  { id: 3, name: "Role updated", code: "role-updated" },
-  { id: 4, name: "Boxes assigned", code: "boxes-assigned" },
-  { id: 5, name: "Employee activated", code: "employee-activated" },
-  { id: 6, name: "Employee dismissed", code: "employee-dismissed" },
-  { id: 7, name: "System log", code: "system-log" },
-  { id: 8, name: "Action log", code: "action-log" },
-];
-
-const LogItem = ({ log }) => (
-  <tr className="border-b border-[var(--color-stroke-neutral)] last:border-b-0">
-    <td className="px-4 py-4 font-semibold text-[var(--color-neutral-secondary)] align-top">
-      {log.timestamp}
-    </td>
-    <td className="px-4 py-4 align-top">
-      <div className="flex gap-4">
-        {log.icon}
-        <div className="flex flex-col gap-1">
-          <div className="font-medium text-[var(--color-neutral-secondary)]">
-            {log.type}
-          </div>
-        </div>
-      </div>
-    </td>
-    <td className="px-4 py-4 align-top">
-      <p className="text-[var(--color-neutral-secondary)]">{log.action}</p>
-    </td>
-  </tr>
-);
+import { logsService } from "@/api/services/logsService";
+import EmptyState from "@/components/ui/EmptyState";
 
 const verticalIconClassMap = {
   medical: "text-[var(--color-icon-medical)]",
@@ -200,46 +17,120 @@ const verticalIconClassMap = {
   camping: "text-[var(--color-icon-camping)]",
 };
 
-export default function EmployeeLogs({ client }) {
+const LogItem = ({ log }) => {
+  const timestamp = log.createdAt
+    ? new Date(log.createdAt).toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : log.timestamp || "";
+
+  const logType = log.category || log.type || "General";
+  const logAction = log.description || log.action || "";
+  const actorName = log.actor?.name || log.admin_name || "";
+  const actorRole = log.actor?.role || log.role_name || "";
+
+  return (
+    <tr className="border-b border-[var(--color-stroke-neutral)] last:border-b-0">
+      <td className="px-4 py-4 font-semibold text-[var(--color-neutral-secondary)] align-top">
+        {timestamp}
+      </td>
+      <td className="px-4 py-4 align-top">
+        <div className="flex gap-4">
+          <Icon name="profile_note" className="w-6 h-6 text-[var(--color-neutral-light)]" />
+          <div className="flex flex-col gap-1">
+            <div className="font-medium text-[var(--color-neutral-secondary)]">
+              {logType}
+            </div>
+            {actorName && (
+              <div className="text-sm text-[var(--color-stroke-brand)]">
+                {actorName}{actorRole ? ` - ${actorRole}` : ""}
+              </div>
+            )}
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-4 align-top">
+        <p className="text-[var(--color-neutral-secondary)]">{logAction}</p>
+      </td>
+    </tr>
+  );
+};
+
+export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
   const [search, setSearch] = useState("");
-  const [filteredLogs, setFilteredLogs] = useState(defaultLogs);
+  const [logs, setLogs] = useState([]);
+  const [filteredLogs, setFilteredLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 20;
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
-  const [showFilterModal, setShowFilterModal] = useState(false)
-  const [employeeProfileModal, setEmployeeProfileModal] = useState(false)
-  const [exportModal, setExportModal] = useState(false)
-  const [editEmployeeModal, setEditEmployeeModal] = useState(false)
-  const [options, setOptions] = useState([]);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [footer, setFooter] = useState("");
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const pathname = usePathname();
+  const fetchIdRef = useRef(0);
 
-  const activeClient = useMemo(() => {
-    if (client) return client;
-    return defaultClientSidebarEntries[0] ?? null;
-  }, [client]);
+  const displayName = clientName || "Client";
+  const vertical = (clientVertical || "medical").toLowerCase();
 
-  const activeLogs = useMemo(() => {
-    if (client?.logs?.length) return client.logs;
-    const fallbackName =
-      client?.name ?? defaultClientSidebarEntries[0]?.name ?? "Ravi Kumar";
-    return defaultLogs.map((log) => ({
-      ...log,
-      name: fallbackName,
-    }));
-  }, [client]);
+  const fetchLogs = useCallback(async (page) => {
+    if (!clientId) return;
 
-  let status = "Active";
-  if (pathname === "/employees/suspendedlogs") status = "Suspended";
-  if (pathname === "/employees/dismissedlogs") status = "Dismissed";
+    const fetchId = ++fetchIdRef.current;
+    setLoading(true);
+    setError(null);
 
+    try {
+      const response = await logsService.getClientLogs(clientId, {
+        page_number: page,
+        page_size: pageSize,
+      });
 
-  if (activeClient?.statusLabel) {
-    status = activeClient.statusLabel;
-  }
+      if (fetchId !== fetchIdRef.current) return;
 
-  const isDismissPage = pathname === "/employees/dismissedlogs" || pathname === "/employees/suspendedlogs";
+      if (response?.success && response?.code === 200) {
+        const logsData = response.data?.logs || [];
+        const count = response.data?.count || 0;
+        const metaTotalPages = response.meta?.total_pages || 1;
+        setLogs(logsData);
+        setTotalCount(count);
+        setTotalPages(metaTotalPages);
+        setCurrentPage(page);
+      } else {
+        setLogs([]);
+        setTotalCount(0);
+        setTotalPages(1);
+      }
+    } catch (err) {
+      if (fetchId !== fetchIdRef.current) return;
+      setError("Failed to load logs. Please try again.");
+      setLogs([]);
+    } finally {
+      if (fetchId === fetchIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [clientId]);
+
+  useEffect(() => {
+    setLogs([]);
+    setFilteredLogs([]);
+    setCurrentPage(1);
+    setTotalCount(0);
+    setTotalPages(1);
+    setSearch("");
+    setError(null);
+    if (clientId) {
+      fetchLogs(1);
+    }
+  }, [clientId, fetchLogs]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -252,35 +143,37 @@ export default function EmployeeLogs({ client }) {
   }, []);
 
   useEffect(() => {
-    setSearch("");
-  }, [activeClient]);
+    setFilteredLogs(logs);
+  }, [logs]);
 
-  useEffect(() => {
-    setFilteredLogs(activeLogs);
-  }, [activeLogs]);
-
-  // Filter logs based on search term
   useEffect(() => {
     if (!search.trim()) {
-      setFilteredLogs(activeLogs);
+      setFilteredLogs(logs);
       return;
     }
-
-    const filtered = activeLogs.filter(log =>
-      log.action.toLowerCase().includes(search.toLowerCase()) ||
-      log.logType?.toLowerCase().includes(search.toLowerCase()) ||
-      log.type.toLowerCase().includes(search.toLowerCase())
-    );
+    const filtered = logs.filter((log) => {
+      const searchable = [
+        log.description,
+        log.action,
+        log.category,
+        log.type,
+        log.actor?.name,
+        log.admin_name,
+        log.actor?.role,
+        log.role_name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return searchable.includes(search.toLowerCase());
+    });
     setFilteredLogs(filtered);
-  }, [search, activeLogs]);
+  }, [search, logs]);
 
-  const handleEditDetails = () => {
-    setTitle("Mid-level admin");
-    setDescription(null);
-    setOptions(actionOptions);
-    setExportModal(true)
-    setFooter("23 of 52 permissions")
-  }
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    fetchLogs(newPage);
+  };
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -294,33 +187,61 @@ export default function EmployeeLogs({ client }) {
     setSearch("");
   };
 
-  // Employee data for the edit modal
-  const employeeData = {
-    id: activeClient?.id ?? "1",
-    name: activeClient?.name ?? "Ravi Kumar",
-    phone: "+91 98000 00000",
-    email: "ravikr@gmail.com",
-    role: activeClient?.role ?? "Manager",
-    location: activeClient?.location ?? "North India",
-    empId: activeClient?.code ?? "#DL12345",
-    joinDate: "12 June '25",
-    status: status
-  };
-
-  const clientVertical = (activeClient?.status ?? "medical").toLowerCase();
   const formattedVertical =
-    clientVertical.charAt(0).toUpperCase() + clientVertical.slice(1);
+    vertical.charAt(0).toUpperCase() + vertical.slice(1);
   const badgeIconClass =
-    verticalIconClassMap[clientVertical] ?? "text-[var(--color-icon-medical)]";
+    verticalIconClassMap[vertical] ?? "text-[var(--color-icon-medical)]";
 
-  const handleEditEmployee = () => {
-    setEditEmployeeModal(true);
-  };
+  const isDismissPage =
+    pathname === "/employees/dismissedlogs" ||
+    pathname === "/employees/suspendedlogs";
 
-  const handleEditConfirm = (updatedData) => {
-    // Here you would typically update the employee data in your state/API
-    console.log("Employee updated:", updatedData);
-    setEditEmployeeModal(false);
+  const renderContent = () => {
+    if (!clientId) {
+      return (
+        <tr>
+          <td colSpan={3} className="px-4 py-12 text-center text-[var(--color-neutral-secondary)] text-sm">
+            Select a client to view their logs.
+          </td>
+        </tr>
+      );
+    }
+
+    if (loading && logs.length === 0) {
+      return (
+        <tr>
+          <td colSpan={3} className="px-4 py-12 text-center text-[var(--color-neutral-secondary)] text-sm">
+            Loading logs...
+          </td>
+        </tr>
+      );
+    }
+
+    if (error) {
+      return (
+        <tr>
+          <td colSpan={3} className="px-4 py-12 text-center text-red-500 text-sm">
+            {error}
+          </td>
+        </tr>
+      );
+    }
+
+    if (filteredLogs.length === 0) {
+      return (
+        <tr>
+          <td colSpan={3} className="px-4 py-12 text-center text-[var(--color-neutral-secondary)] text-sm">
+            {search.trim()
+              ? "No logs match your search."
+              : "No logs found for this client."}
+          </td>
+        </tr>
+      );
+    }
+
+    return filteredLogs.map((log, index) => (
+      <LogItem key={log.id || log._id || index} log={log} />
+    ));
   };
 
   return (
@@ -328,54 +249,26 @@ export default function EmployeeLogs({ client }) {
       <div className="flex flex-col gap-6 p-6 w-full">
         <div className="flex justify-between">
           <h1 className="flex items-center gap-2 text-[var(--color-neutral-primary)] font-semibold text-2xl">
-            <RiInformationLine onClick={() => setEmployeeProfileModal(true)} className="cursor-pointer w-6 h-6 text-[var(--color-stroke-brand)]" />
-            {activeClient?.name ?? "Ravi Kumar"}
+            <RiInformationLine className="cursor-pointer w-6 h-6 text-[var(--color-stroke-brand)]" />
+            {displayName}
           </h1>
-          <div className={`flex gap-4 ${isDismissPage ? "hidden" : ""} `}>
+          <div className="flex gap-4">
             <Badge
-              color={clientVertical}
+              color={vertical}
               className="leading-none flex items-center space-x-2 w-max cursor-pointer"
             >
               <Icon
                 name="inventory"
                 className={`w-4 h-4 ${badgeIconClass}`}
               />
-              {`${formattedVertical} (12)`}
+              {formattedVertical}
             </Badge>
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setOpen((prev) => !prev)}
-                className={`p-2 cursor-pointer ${open ? "bg-[var(--color-neutral-secondary-bg)] shadow-[0_0_0_2px_var(--color-shadow-actionmenu)] rounded-lg" : ""}`}
-              >
-                <BsThreeDotsVertical className="w-5 h-5 text-[var(--color-stroke-brand)]" />
-              </button>
-
-              {open && (
-                <div className="absolute right-0 mt-2 w-52 bg-white border border-[var(--color-stroke-neutral)] divide-y divide-[var(--color-stroke-neutral)] rounded-lg shadow-[4px_4px_8px_0_var(--color-notif-shadow-soft),0px_0px_4px_0_var(--color-notif-shadow-strong)] z-50">
-                  <Button
-                    variant="profile"
-                    className="w-full text-left px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] !text-sm"
-                  >
-                    <RxCrossCircled
-                      className="w-5 h-5 !text-[var(--color-neutral-light)]"
-                    />
-                    Suspend employee
-                  </Button>
-                  <Button
-                    variant="profile"
-                    className="w-full text-left px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] !text-sm"
-                  >
-                    <Trash2 className="w-5 h-5 text-[var(--notif-error)]" />
-                    Delete employee
-                  </Button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
+
         <div className="flex-shrink-0 flex justify-between items-center rounded-lg">
           <SearchWithSuggestions
-            data={searchSuggestions}
+            data={[]}
             value={search}
             onChange={handleSearchChange}
             onSelect={handleSuggestionSelect}
@@ -390,14 +283,12 @@ export default function EmployeeLogs({ client }) {
           />
           <div className="flex items-center gap-4">
             <span className="text-sm text-[var(--color-stroke-brand)]">
-              Showing {filteredLogs.length} of {activeLogs.length}
+              {loading ? "Loading..." : `Showing ${filteredLogs.length} of ${totalCount}`}
             </span>
-            <input
-              type="date"
-              defaultValue="2025-06-06"
-              className="border cursor-pointer border-[var(--color-stroke-neutral)] hover:bg-[var(--color-neutral-secondary-bg)] rounded-md text-sm p-2 text-[var(--color-neutral-secondary)]"
+            <FilterButton
+              open={showFilterModal}
+              handleFilterClick={() => setShowFilterModal(true)}
             />
-            <FilterButton open={showFilterModal} handleFilterClick={() => setShowFilterModal(true)} />
           </div>
         </div>
 
@@ -417,45 +308,34 @@ export default function EmployeeLogs({ client }) {
                   </th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredLogs.map((log, index) => (
-                  <LogItem key={index} log={log} />
-                ))}
-                {filteredLogs.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={3}
-                      className="px-4 py-12 text-center text-[var(--color-neutral-secondary)] text-sm"
-                    >
-                      No logs match your search.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+              <tbody>{renderContent()}</tbody>
             </table>
           </div>
         </div>
-        <EmployeeProfileDetails
-          open={employeeProfileModal}
-          onClose={() => setEmployeeProfileModal(false)}
-          onEdit={handleEditDetails}
-          status={status}
-        />
-        <ExportListModal
-          open={exportModal}
-          onClose={() => setExportModal(false)}
-          options={options}
-          title={title}
-          description={description}
-          footer={footer}
-          midLevelData={midLevelData}
-        />
-        <EditEmployeeModal
-          open={editEmployeeModal}
-          onClose={() => setEditEmployeeModal(false)}
-          employeeData={employeeData}
-          onConfirm={handleEditConfirm}
-        />
+
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center py-2 px-4 bg-[var(--color-neutral-secondary-bg)]">
+            <span className="text-sm text-[var(--color-stroke-brand)]">
+              Page {currentPage} of {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

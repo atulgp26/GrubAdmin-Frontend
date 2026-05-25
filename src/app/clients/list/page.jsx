@@ -1373,7 +1373,7 @@ const ClientsList = () => {
 														item.id === "logs" ? (
 															<Link
 																key={item.id}
-																href="/clients/clientlogs"
+																href={`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`}
 																className="block"
 															>
 																<div

@@ -1,23 +1,41 @@
 "use client";
 import ClientLogs from "@/components/pages/clients/ClientLogs";
-import ClientLogsSidebar, { defaultClientSidebarEntries } from "@/components/pages/clients/ClientLogsSidebar";
+import ClientLogsSidebar from "@/components/pages/clients/ClientLogsSidebar";
 import Button from "@/components/ui/Button";
 import { ArrowLeft } from "lucide-react";
-import React, { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { customerService } from "@/api/services/customerService";
 
-const page = () => {
+function ClientLogsContent() {
   const router = useRouter();
-  const [selectedClientId, setSelectedClientId] = useState(
-    defaultClientSidebarEntries[0]?.id ?? null
-  );
+  const searchParams = useSearchParams();
 
-  const selectedClient = useMemo(
-    () =>
-      defaultClientSidebarEntries.find((client) => client.id === selectedClientId) ??
-      null,
-    [selectedClientId]
-  );
+  const clientIdFromUrl = searchParams.get("clientId") || "";
+  const clientNameFromUrl = searchParams.get("name") || "";
+  const clientVerticalFromUrl = searchParams.get("vertical") || "";
+
+  const [clients, setClients] = useState([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
+
+  const fetchClients = useCallback(async () => {
+    try {
+      setClientsLoading(true);
+      const response = await customerService.getCustomers({ fetch_all: true });
+      if (response?.success && response?.code === 200) {
+        const customers = response.data?.customers || [];
+        setClients(customers);
+      }
+    } catch (error) {
+      console.error("Failed to fetch clients list:", error);
+    } finally {
+      setClientsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   return (
     <div className="flex flex-col">
@@ -33,14 +51,26 @@ const page = () => {
       </div>
       <div className="flex flex-1">
         <ClientLogsSidebar
-          clients={defaultClientSidebarEntries}
-          currentId={selectedClientId}
-          onSelect={setSelectedClientId}
+          clients={clients}
+          currentId={clientIdFromUrl}
+          loading={clientsLoading}
         />
-        <ClientLogs client={selectedClient} />
+        <ClientLogs
+          clientId={clientIdFromUrl}
+          clientName={clientNameFromUrl}
+          clientVertical={clientVerticalFromUrl}
+        />
       </div>
     </div>
-  )
+  );
 }
 
-export default page
+const page = () => {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-[60vh]">Loading...</div>}>
+      <ClientLogsContent />
+    </Suspense>
+  );
+};
+
+export default page;
