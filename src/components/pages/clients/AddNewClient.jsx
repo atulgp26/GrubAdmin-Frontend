@@ -121,28 +121,17 @@ const AddNewClient = ({
 		);
 	};
 
-	// :white_check_mark: Form validation check
+	// Form validation check
 	useEffect(() => {
-		// const allFilled = Object.values(form).map((val) => val?.trim() !== "");
-
 		let isFormValid = true;
 
 		for (const key of Object.keys(form)) {
-			if (
-				key === "orgName" &&
-				!isOrganizationDisabled &&
-				form[key] === ""
-			) {
+			if (key === "orgName") continue;
+			if (form[key] === "" || form[key] == null) {
 				isFormValid = false;
-			} else if (key === "orgName") {
-				isFormValid = true;
-			} else if (form[key] !== "") {
-				isFormValid = false;
+				break;
 			}
 		}
-
-		console.log("isFormValid", isFormValid);
-		console.log(form);
 
 		setIsFormValid(isFormValid);
 	}, [form]);
