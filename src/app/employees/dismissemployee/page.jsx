@@ -205,9 +205,11 @@ const DismissEmployees = () => {
 		const permissionsJson = employee.originalData.role.permissions_json;
 		let totalCount = 0;
 		Object.keys(permissionsJson).forEach((sectionKey) => {
-			const permissionList = permissionsJson[sectionKey] || [];
-			totalCount += permissionList.length;
-		});
+    const permissionList = permissionsJson[sectionKey];
+    if (Array.isArray(permissionList)) {
+        totalCount += permissionList.length;
+    }
+});
 		return totalCount;
 	};
 

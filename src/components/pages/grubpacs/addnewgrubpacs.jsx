@@ -78,15 +78,17 @@ const AddNewGrubPac = ({
 		setFocusedField("");
 	}, [open, isEdit, initialData]);
 
-	const handleInputChange = (field, value) => {
-		if (isEdit && (field === "boxId" || field === "vertical")) {
-			return;
-		}
-		setFormData((prev) => ({
-			...prev,
-			[field]: value,
-		}));
-	};
+const handleInputChange = (field, value) => {
+    if (isEdit && (field === "boxId" || field === "vertical")) {
+        return;
+    }
+    if (field === "box_id") {
+        const cleaned = value.startsWith("#") ? value.slice(1) : value;
+        setFormData((prev) => ({ ...prev, [field]: cleaned }));
+        return;
+    }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+};
 
 	const handleFocus = (field) => {
 		if (isEdit && (field === "boxId" || field === "vertical")) return;
@@ -161,25 +163,22 @@ const AddNewGrubPac = ({
 							Box ID
 						</h3>
 						<div className="relative">
-							<Input
-								type="text"
-								placeholder="# Box ID"
-								value={formData.box_id}
-								onChange={(e) =>
-									handleInputChange("box_id", e.target.value)
-								}
-								onFocus={() => handleFocus("box_id")}
-								onBlur={handleBlur}
-								isFocused={focusedField === "box_id"}
-								padding="!py-3 !px-4"
-								disabled={isEdit}
-								disabledClass={
-									isEdit
-										? "!bg-[var(--color-neutral-secondary-bg)] cursor-not-allowed"
-										: ""
-								}
-							/>
-						</div>
+    <Input
+        type="text"
+        placeholder="Box ID"
+        value={formData.box_id}
+        onChange={(e) => handleInputChange("box_id", e.target.value)}
+        onFocus={() => handleFocus("box_id")}
+        onBlur={handleBlur}
+        isFocused={focusedField === "box_id"}
+        padding="!py-3 !px-8" 
+        disabled={isEdit}
+        disabledClass={isEdit ? "!bg-[var(--color-neutral-secondary-bg)] cursor-not-allowed" : ""}
+    />
+    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-neutral-light)] text-sm pointer-events-none z-10">
+        #
+    </span>
+</div>
 					</div>
 					<div className="space-y-4">
 						<h3 className="text-[var(--color-neutral-secondary)] text-base">

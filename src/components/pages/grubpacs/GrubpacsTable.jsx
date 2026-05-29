@@ -137,97 +137,68 @@ export default function GrubPacsTable({
 										<div className="text-[var(--color-neutral-secondary)] font-semibold">
 											{item.name}
 										</div>
-										<div className="text-[var(--color-stroke-brand)] text-sm">
-											{item.code}
-										</div>
+									<div className="text-[var(--color-stroke-brand)] text-sm">
+    {item.code?.startsWith("#") ? item.code : `#${item.code}`}
+</div>
 									</div>
 								</TableCell>
 								<TableCell className="!text-right text-[var(--color-stroke-brand)]">
-									<div className="flex justify-end">
-										<BoxCountBadge
-											asText={groupName === "Assigned"}
-											tooltipSide="bottom"
-											tooltipAlign="end"
-											tooltipTextColor="text-[var(--color-neutral-secondary)]"
-											tooltipText={
-												groupName === "Unassigned"
-													? "Click To Assign"
-													: undefined
-											}
-											onClick={
-												groupName === "Unassigned"
-													? () =>
-															onRowAction(
-																"assign",
-																item,
-																groupName,
-															)
-													: undefined
-											}
-											tooltipContent={
-												groupName === "Assigned" ? (
-													<div className="space-y-2">
-														<div className="flex flex-col text-[var(--color-stroke-brand)] text-xs">
-															<div className="text-right text-[var(--color-stroke-brand)]">
-																Assigned to{" "}
-																<span className="text-[var(--info-panel-view-bg)] text-sm font-semibold cursor-pointer hover:underline">
-																	{
-																		item
-																			.client
-																			?.name
-																	}
-																	{item.client
-																		?.organization_name &&
-																		`(${
-																			item
-																				.client
-																				?.organization_name
-																		})`}
-																</span>
-															</div>
-															<div className="text-right text-sm text-[var(--color-stroke-brand)] font-medium">
-																(
-																{
-																	item.client
-																		?.country_code
-																}{" "}
-																{
-																	item.client
-																		?.mobile_number
-																}{" "}
-																|{" "}
-																{
-																	item.client
-																		?.email
-																}
-																)
-															</div>
-														</div>
-													</div>
-												) : (
-													<div className="text-right text-sm text-[var(--color-stroke-brand)]">
-														Click to assign box to a
-														client
-													</div>
-												)
-											}
-										>
-											<Badge
-												color={badgeColor}
-												className="leading-none group hover:bg-[var(--color-admin-profile-border)] hover:border-[var(--info-panel-view-bg)] flex items-center cursor-pointer"
-											>
-												<Icon
-													name="crown"
-													className={`w-4 h-4 ${crownColor} group-hover:text-[var(--info-panel-view-bg)]`}
-												/>
-												<span className="text-xs font-medium text-[var(--color-neutral-secondary)]">
-													{item.clientName?.trim()
-														? item.clientName
-														: ""}
-												</span>
-											</Badge>
-										</BoxCountBadge>
-									</div>
+									<div
+    className="flex justify-end"
+    onClick={
+        assignmentState === "unassigned"
+            ? () => onRowAction("assign", item, groupName)
+            : undefined
+    }
+>
+    <BoxCountBadge
+        asText={groupName === "Assigned"}
+        tooltipSide="bottom"
+        tooltipAlign="end"
+        tooltipTextColor="text-[var(--color-neutral-secondary)]"
+        tooltipText={
+            groupName === "Unassigned" ? "Click To Assign" : undefined
+        }
+        tooltipContent={
+            groupName === "Assigned" ? (
+                <div className="space-y-2">
+                    <div className="flex flex-col text-[var(--color-stroke-brand)] text-xs">
+                        <div className="text-right text-[var(--color-stroke-brand)]">
+                            Assigned to{" "}
+                            <span className="text-[var(--info-panel-view-bg)] text-sm font-semibold cursor-pointer hover:underline">
+                                {item.client?.name}
+                                {item.client?.organization_name &&
+                                    `(${item.client?.organization_name})`}
+                            </span>
+                        </div>
+                        <div className="text-right text-sm text-[var(--color-stroke-brand)] font-medium">
+                            ({item.client?.country_code}{" "}
+                            {item.client?.mobile_number} |{" "}
+                            {item.client?.email})
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="text-right text-sm text-[var(--color-stroke-brand)]">
+                    Click to assign box to a client
+                </div>
+            )
+        }
+    >
+        <Badge
+            color={badgeColor}
+            className="leading-none group hover:bg-[var(--color-admin-profile-border)] hover:border-[var(--info-panel-view-bg)] flex items-center cursor-pointer"
+        >
+            <Icon
+                name="crown"
+                className={`w-4 h-4 ${crownColor} group-hover:text-[var(--info-panel-view-bg)]`}
+            />
+            <span className="text-xs font-medium text-[var(--color-neutral-secondary)]">
+                {item.clientName?.trim() ? item.clientName : ""}
+            </span>
+        </Badge>
+    </BoxCountBadge>
+</div>
 								</TableCell>
 
 								{!hideVerticalColumn && (

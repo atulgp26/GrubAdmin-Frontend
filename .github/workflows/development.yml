@@ -1,54 +1,47 @@
-name: Frontend CI/CD
+name: Development Build
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+    push:
+        branches:
+            - ajay_dev
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+    deployment:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
 
-    steps:
-      - uses: actions/checkout@v4
+            - name: Setup SSH key
+              run: |
+                  mkdir -p ~/.ssh
+                  echo "${{ secrets.SSH_PRODUCTION_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+                  chmod 600 ~/.ssh/id_ed25519
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
+            - name: Add EC2 host to known_hosts
+              run: |
+                  ssh-keyscan -t ed25519 -H ${{ secrets.SSH_PRODUCTION_HOST }} >> ~/.ssh/known_hosts
 
-      - run: npm ci
+            - name: Build & Deploy
+              run: |
+                  ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_PRODUCTION_USER_NAME }}@${{ secrets.SSH_PRODUCTION_HOST }} << 'EOF'
+                    source ~/.zshrc
+                    source ~/.bashrc
+                    source ~/.profile
+                    ls
+                    cd admin_grubpac
+                    git stash
+                    git pull origin ajay_dev
+                    export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")" && \
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
+                    export BUN_INSTALL="$HOME/.bun" && \
+                    export PATH="$BUN_INSTALL/bin:$PATH" && \
+                    source ~/.bashrc && \
+                    npm i && \
+                    npm run build && \
+                    /home/ubuntu/.nvm/versions/node/v22.20.0/bin/pm2 list && \
+                    /home/ubuntu/.nvm/versions/node/v22.20.0/bin/pm2 restart "${{ secrets.PRODUCTION_PM2_ID }}" && \
+                    /home/ubuntu/.nvm/versions/node/v22.20.0/bin/pm2 list
 
-      - run: npm run build
-
-  deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/key.pem
-          chmod 600 ~/.ssh/key.pem
-
-      - name: Deploy
-        run: |
-          ssh -o StrictHostKeyChecking=no \
-              -i ~/.ssh/key.pem \
-              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-
-          cd ~/grubadmin-frontend
-
-          git fetch origin
-          git checkout main
-          git reset --hard origin/main
-
-          docker compose build frontend
-          docker compose up -d frontend
-
-          EOF
+            - name: Done
+              run: |
+                  echo "Build Done"

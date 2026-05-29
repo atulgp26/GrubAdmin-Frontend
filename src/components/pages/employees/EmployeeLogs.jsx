@@ -14,9 +14,13 @@ import ExportListModal from "./ExportListModal";
 import EditEmployeeModal from "./EditEmployeeModal";
 import { usePathname } from "next/navigation";
 import { RxCrossCircled } from "react-icons/rx";
+import { employeeService } from "@/api/services/employeeService";
 import Input from "@/components/ui/Input";
+import { showSuccess, showError } from "@/components/ui/toast";
 import { MdCalendarToday } from "react-icons/md";
 import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown";
+import SuspendEmployeeModal from "./SuspendEmployeeModal";
+import DeleteEmployeeModal from "./DeleteEmployeeModal";
 import {
 	Table,
 	TableHead,
@@ -123,6 +127,8 @@ const actionOptions = [
 	},
 ];
 
+
+
 const categoryOptions = [
 	{ id: "system", label: "System log" },
 	{ id: "action", label: "Action log" },
@@ -225,7 +231,10 @@ const LogTableRow = ({ log }) => (
 	</TableRow>
 );
 
-export default function EmployeeLogs({ employee }) {
+
+
+
+export default function EmployeeLogs({ employee, onSelect, onRemoved }) {
 	const [logs, setLogs] = useState([]);
 	const [logsLoading, setLogsLoading] = useState(false);
 	const [logsError, setLogsError] = useState(null);
@@ -372,29 +381,165 @@ export default function EmployeeLogs({ employee }) {
 		(currentPage - 1) * pageSize + pageSize,
 	);
 
-	const handleEditDetails = () => {
-		setTitle("Mid-level admin");
-		setDescription(null);
-		setOptions(actionOptions);
-		setExportModal(true);
-		setFooter("23 of 52 permissions");
-	};
+const handleEditDetails = () => {
+    const role = employee?.originalData?.role;
+
+    let permissionsCount = 0;
+    if (role?.permissions_json) {
+        Object.keys(role.permissions_json).forEach((sectionKey) => {
+            const permissionList = role.permissions_json[sectionKey];
+            if (Array.isArray(permissionList)) {
+                permissionsCount += permissionList.length;
+            }
+        });
+    }
+
+    setTitle(role?.name || employee?.role || "Employee role");
+    setFooter(permissionsCount > 0 ? `${permissionsCount} permissions` : "");
+    setOptions(actionOptions);
+    setExportModal(true);
+};
 
 	const handleSearchChange = (e) => setSearch(e.target.value);
 	const handleSuggestionSelect = (suggestion) => setSearch(suggestion.name);
 	const handleSearchClear = () => setSearch("");
 
-	const employeeData = {
-		id: employee?.id,
-		name: employee?.name,
-		phone: employee?.phone,
-		email: employee?.email,
-		role: employee?.role,
-		location: employee?.location,
-		empId: employee?.empId,
-		joinDate: employee?.joinDate,
-		status,
-	};
+	const [roleOptions, setRoleOptions] = useState([]);
+	
+const [suspendModal, setSuspendModal] = useState(false);
+const [deleteModal, setDeleteModal] = useState(false);
+
+
+const handleEditConfirm = async (updatedEmployeeData) => {
+    if (!employee?.originalData) {
+        showError("Employee data not found. Please try again.");
+        return;
+    }
+
+    try {
+        const originalAdmin = employee.originalData;
+        const adminId = originalAdmin.id;
+
+        const nameParts = updatedEmployeeData.name
+            ? updatedEmployeeData.name.split(" ").filter((p) => p.trim())
+            : [];
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        const payload = {
+            id: adminId,
+            email: updatedEmployeeData.email || originalAdmin.email,
+            first_name: firstName,
+            last_name: lastName,
+        };
+
+        if (updatedEmployeeData.location !== undefined) {
+            payload.location = updatedEmployeeData.location || originalAdmin.location || "";
+        }
+        if (updatedEmployeeData.role_id) {
+            payload.role = updatedEmployeeData.role_id;
+        }
+        if (updatedEmployeeData.joinDate) {
+            const parsedDate = new Date(updatedEmployeeData.joinDate);
+            if (!isNaN(parsedDate.getTime())) {
+                payload.joining_date = parsedDate.toISOString();
+            }
+        }
+        if (updatedEmployeeData.phone) {
+            const phoneStr = updatedEmployeeData.phone.trim();
+            let countryCode = originalAdmin.country_code || "+91";
+            let mobileNumber = "";
+            if (phoneStr.startsWith("+91")) {
+                countryCode = "+91";
+                mobileNumber = phoneStr.substring(3).replace(/\D/g, "");
+            } else {
+                mobileNumber = phoneStr.replace(/\D/g, "");
+            }
+            if (mobileNumber) {
+                payload.mobile_number = mobileNumber;
+                payload.country_code = countryCode;
+            }
+        }
+        if (updatedEmployeeData.employee_id) {
+            payload.employee_id = updatedEmployeeData.employee_id.replace(/^#\s*/, "");
+        }
+
+        const response = await employeeService.updateAdmin(payload);
+
+        if (response.success && response.code === 200) {
+            showSuccess("Success!", `${updatedEmployeeData.name || "Employee"} details updated successfully.`);
+            setEditEmployeeModal(false);
+      if (onSelect) {
+    onSelect({
+        ...employee,
+        name: updatedEmployeeData.name,
+        phone: updatedEmployeeData.phone,
+        email: updatedEmployeeData.email,
+        role: updatedEmployeeData.role,
+        location: updatedEmployeeData.location,
+        empId: updatedEmployeeData.empId,
+        joinDate: updatedEmployeeData.joinDate,
+        originalData: {
+            ...employee.originalData,
+            first_name: updatedEmployeeData.name?.split(" ")[0] || "",
+            last_name: updatedEmployeeData.name?.split(" ").slice(1).join(" ") || "",
+            email: updatedEmployeeData.email,
+            location: updatedEmployeeData.location,
+            joining_date: updatedEmployeeData.joinDate,
+        }
+    });
+}
+        } else {
+            showError(response.error || response.message || "Failed to update employee.");
+        }
+    } catch (error) {
+        console.error("Error updating employee:", error);
+        showError("Failed to update employee. Please try again.");
+    }
+};
+
+const handleSuspend = async () => {
+    try {
+        const response = await employeeService.suspendAdmin([employee.id]);
+        if (response.success && response.code === 200) {
+            showSuccess("Success!", `${employee.name} has been suspended.`);
+            setSuspendModal(false);
+			if (onRemoved) onRemoved();
+        } else {
+            showError(response.error || response.message || "Failed to suspend employee.");
+        }
+    } catch (error) {
+        showError("Failed to suspend employee. Please try again.");
+    }
+};
+
+const handleDelete = async () => {
+    try {
+        const res = await employeeService.deleteAdmins({ adminIds: [employee.id] });
+        if (res?.success && res.code === 200) {
+            showSuccess("Success!", `${employee.name} has been deleted.`);
+            setDeleteModal(false);
+			if (onRemoved) onRemoved();
+        } else {
+            showError(res?.error || res?.message || "Failed to delete employee.");
+        }
+    } catch (e) {
+        showError("Failed to delete employee. Please try again.");
+    }
+};
+
+const employeeData = {
+    id: employee?.id,
+    name: employee?.name,
+    phone: employee?.phone,
+    email: employee?.email,
+    role: employee?.role,
+    location: employee?.location,
+    empId: employee?.empId,
+    joinDate: employee?.joinDate,
+    status,
+    originalData: employee?.originalData,  
+};
 
 	return (
 		<>
@@ -427,14 +572,20 @@ export default function EmployeeLogs({ employee }) {
 							</button>
 							{open && (
 								<div className="absolute right-0 mt-2 w-52 bg-white border border-[var(--color-stroke-neutral)] divide-y divide-[var(--color-stroke-neutral)] rounded-lg shadow-[4px_4px_8px_0_var(--color-notif-shadow-soft),0px_0px_4px_0_var(--color-notif-shadow-strong)] z-50">
-									<button className="w-full text-left px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm">
-										<RxCrossCircled className="w-5 h-5 !text-[var(--color-neutral-light)]" />
-										Suspend employee
-									</button>
-									<button className="w-full text-left px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm">
-										<Trash2 className="w-5 h-5 text-[var(--notif-error)]" />
-										Delete employee
-									</button>
+									<button
+    onClick={() => { setOpen(false); setSuspendModal(true); }}
+    className="w-full text-left px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+>
+    <RxCrossCircled className="w-5 h-5 !text-[var(--color-neutral-light)]" />
+    Suspend employee
+</button>
+<button
+    onClick={() => { setOpen(false); setDeleteModal(true); }}
+    className="w-full text-left px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+>
+    <Trash2 className="w-5 h-5 text-[var(--notif-error)]" />
+    Delete employee
+</button>
 								</div>
 							)}
 						</div>
@@ -550,6 +701,7 @@ export default function EmployeeLogs({ employee }) {
 					onClose={() => setEmployeeProfileModal(false)}
 					onEdit={handleEditDetails}
 					status={status}
+					 employee={employeeData}
 				/>
 				<ExportListModal
 					open={exportModal}
@@ -564,10 +716,7 @@ export default function EmployeeLogs({ employee }) {
 					open={editEmployeeModal}
 					onClose={() => setEditEmployeeModal(false)}
 					employeeData={employeeData}
-					onConfirm={(updatedData) => {
-						console.log("Employee updated:", updatedData);
-						setEditEmployeeModal(false);
-					}}
+				  onConfirm={handleEditConfirm}
 				/>
 				<SystemLogsFilterModal
 					open={showFilterModal}
@@ -576,6 +725,22 @@ export default function EmployeeLogs({ employee }) {
 					onChange={setAdvancedFilters}
 					onApply={() => setShowFilterModal(false)}
 				/>
+
+				<SuspendEmployeeModal
+    open={suspendModal}
+    onClose={() => setSuspendModal(false)}
+    onSuspend={handleSuspend}
+    selectedCount={1}
+    firstSelectedName={employee?.name || "selected employee"}
+/>
+<DeleteEmployeeModal
+    open={deleteModal}
+    onDelete={handleDelete}
+    onClose={() => setDeleteModal(false)}
+    onSuspend={() => { setDeleteModal(false); setSuspendModal(true); }}
+    selectedCount={1}
+    firstSelectedName={employee?.name || "selected account"}
+/>
 			</div>
 		</>
 	);
