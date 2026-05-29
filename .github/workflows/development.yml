@@ -36,8 +36,8 @@ jobs:
                     cd grubadmin-frontend
                     git stash
                     git pull origin main
-                    docker compose down
-                    docker compose up --build -d
+                    docker compose -f docker-compose.frontend.yml down
+                    docker compose -f docker-compose.frontend.yml up --build -d
 
             - name: Done
               run: |
