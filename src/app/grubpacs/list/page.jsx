@@ -17,7 +17,7 @@ import { usePermissions } from "@/context/PermissionContext";
 import { useAuth } from "@/context/AuthContext";
 import LoadingDetails from "@/components/ui/LoadingDetails";
 import { customerService } from "@/api/services/customerService";
-import { useDebounce, useDebouncedCallback } from "use-debounce";
+import { useDebounce } from "use-debounce";
 import {
 	DEBOUNCE_TIME,
 	DEFAULT_PAGE_SIZE,
@@ -38,7 +38,6 @@ export default function GrubpacsPage() {
 	const [activeSection, setActiveSection] = useState("assigned");
 	const [currentOpenVertical, setCurrentOpenVertical] = useState(null);
 	const [groupByRole, setGroupByRole] = useState(false);
-	// const [openIndex, setOpenIndex] = useState(null);
 	const [selectedItems, setSelectedItems] = useState([]);
 	const [verticals, setVerticals] = useState([]);
 	const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -67,10 +66,9 @@ export default function GrubpacsPage() {
 		items: [],
 		source: null,
 	});
-const [initialLoading, setInitialLoading] = useState(true);
-const [fetching, setFetching] = useState(false);
-	const [selectedAssignmentState, setSelectedAssignmentState] =
-		useState(null);
+	const [initialLoading, setInitialLoading] = useState(true);
+	const [fetching, setFetching] = useState(false);
+	const [selectedAssignmentState, setSelectedAssignmentState] = useState(null);
 
 	const { permissionsByModule, user } = usePermissions();
 
@@ -79,7 +77,6 @@ const [fetching, setFetching] = useState(false);
 		currentPage,
 		Math.max(1, Math.ceil(totalItems / pageSize)),
 	);
-	
 
 	const processedGrubpacs = useMemo(
 		() =>
@@ -170,12 +167,12 @@ const [fetching, setFetching] = useState(false);
 		}
 	}, [permissionsByModule, user, isAuthenticated]);
 
-useEffect(() => {
-    if (isAuthenticated) {
-        const isInitial = grubpacs.length === 0 && !debouncedSearchValue;
-        fetchGrubpacs(isInitial);
-    }
-}, [isAuthenticated, selectedRole, debouncedSearchValue, safeCurrentPage]);
+	useEffect(() => {
+		if (isAuthenticated) {
+			const isInitial = grubpacs.length === 0 && !debouncedSearchValue;
+			fetchGrubpacs(isInitial);
+		}
+	}, [isAuthenticated, selectedRole, debouncedSearchValue, safeCurrentPage]);
 
 	useEffect(() => {
 		setCurrentPage(1);
@@ -188,15 +185,15 @@ useEffect(() => {
 	}, [currentPage, totalPages]);
 
 	useEffect(() => {
-    setCurrentPage(1);
-}, [debouncedSearchValue]);
+		setCurrentPage(1);
+	}, [debouncedSearchValue]);
 
-useEffect(() => {
-    if (isAuthenticated && forceRefresh) {
-        fetchGrubpacs(false); 
-        setForceRefresh(false);
-    }
-}, [isAuthenticated, forceRefresh]);
+	useEffect(() => {
+		if (isAuthenticated && forceRefresh) {
+			fetchGrubpacs(false);
+			setForceRefresh(false);
+		}
+	}, [isAuthenticated, forceRefresh]);
 
 	const handleAddGrubpac = () => {
 		setModalState({ open: true, mode: "create", data: null });
@@ -324,7 +321,6 @@ useEffect(() => {
 				});
 				setForceRefresh(true);
 
-				// If we came from delete, reopen the delete modal now that it's unassigned
 				if (source === "delete") {
 					const updatedItems = items?.map((box) => ({
 						...box,
@@ -432,28 +428,29 @@ useEffect(() => {
 			console.error("Failed to fetch verticals:", e);
 		}
 	};
-const fetchGrubpacs = async (isInitial = false) => {
-    if (isInitial) setInitialLoading(true);
-    else setFetching(true);
-    try {
-        const params = {
-            page_number: safeCurrentPage,
-            page_size: pageSize,
-        };
-        if (debouncedSearchValue) params.query = debouncedSearchValue;
-        if (selectedRole.length > 0) params.verticals = selectedRole;
-        const res = await boxService.getBoxes(params);
-        if (res?.success && res?.data) {
-            setGrubpacs(res.data.boxes || []);
-            setTotalItems(res.data.count || 0);
-        }
-    } catch (e) {
-        console.error("Failed to fetch grubpacs:", e);
-    } finally {
-        setInitialLoading(false);
-        setFetching(false);
-    }
-};
+
+	const fetchGrubpacs = async (isInitial = false) => {
+		if (isInitial) setInitialLoading(true);
+		else setFetching(true);
+		try {
+			const params = {
+				page_number: safeCurrentPage,
+				page_size: pageSize,
+			};
+			if (debouncedSearchValue) params.query = debouncedSearchValue;
+			if (selectedRole.length > 0) params.verticals = selectedRole;
+			const res = await boxService.getBoxes(params);
+			if (res?.success && res?.data) {
+				setGrubpacs(res.data.boxes || []);
+				setTotalItems(res.data.count || 0);
+			}
+		} catch (e) {
+			console.error("Failed to fetch grubpacs:", e);
+		} finally {
+			setInitialLoading(false);
+			setFetching(false);
+		}
+	};
 
 	const onVerticalGroupClick = (value) => {
 		setCurrentOpenVertical(currentOpenVertical === value ? null : value);
@@ -478,7 +475,7 @@ const fetchGrubpacs = async (isInitial = false) => {
 
 	if (authLoading || !isAuthenticated) return null;
 
-if (initialLoading) {
+	if (initialLoading) {
 		return (
 			<div className="min-h-[calc(100vh-150px)]">
 				<LoadingDetails entity="GrubPacs" />
@@ -516,10 +513,7 @@ if (initialLoading) {
 				</div>
 
 				<div className="flex items-center gap-4 flex-wrap">
-					<span className="text-sm text-[var(--color-stroke-brand)]">
-						{/*TODO: Need to implement this*/}
-						{/*Showing {filteredCount} of {allItems.length} grubpacs*/}
-					</span>
+					<span className="text-sm text-[var(--color-stroke-brand)]"></span>
 
 					{!groupByRole && (
 						<div className="w-48">
@@ -546,58 +540,46 @@ if (initialLoading) {
 
 			{groupByRole ? (
 				<>
-					{groups.map((group) => (
-						<CollapseTable
-							key={group.value}
-							groupName={group.name}
-							renderTable={() => (
-								<GrubPacsTable
-									data={processedGrubpacs}
-									selectedItems={selectedItems}
-									groupName={group.name}
-									onSelectAll={(checked) =>
-										handleSelectAllInSection(
-											processedGrubpacs,
-											checked,
-										)
-									}
-									onSelectItem={handleSelectItem}
-									onRowAction={(action, item, assignment) => {
-										handleRowAction(
-											action,
-											item,
-											assignment ?? group.name,
-										);
-									}}
-								/>
-							)}
-							data={processedGrubpacs}
-							onClose={() => onVerticalGroupClose()}
-							onClick={() => onVerticalGroupClick(group.value)}
-							onOpen={() => onVerticalGroupOpen(group.value)}
-							isOpen={currentOpenVertical === group.value}
-							pagination={
-								currentOpenVertical === group.value &&
-								totalItems > 0
-									? {
-											rangeText: `Showing ${pageStartDisplay}-${pageEndDisplay}`,
-											onPrev: () =>
-												setCurrentPage((p) =>
-													Math.max(1, p - 1),
-												),
-											onNext: () =>
-												setCurrentPage((p) =>
-													Math.min(totalPages, p + 1),
-												),
-											disablePrev: safeCurrentPage <= 1,
-											disableNext:
-												safeCurrentPage >= totalPages,
+					{groups.map((group) => {
+						const groupData = processedGrubpacs.filter(
+							(g) => g.vertical === group.value
+						);
+						return (
+							<CollapseTable
+								key={group.value}
+								groupName={group.name}
+								renderTable={() => (
+									<GrubPacsTable
+										data={groupData}
+										selectedItems={selectedItems}
+										groupName={group.name}
+										onSelectAll={(checked) =>
+											handleSelectAllInSection(groupData, checked)
 										}
-									: undefined
-							}
-							emptyResult={`There are no boxes from ${group.name} vertical`}
-						/>
-					))}
+										onSelectItem={handleSelectItem}
+										onRowAction={(action, item, assignment) => {
+											handleRowAction(action, item, assignment ?? group.name);
+										}}
+									/>
+								)}
+								data={groupData}
+								onClose={() => onVerticalGroupClose()}
+								onClick={() => onVerticalGroupClick(group.value)}
+								onOpen={() => onVerticalGroupOpen(group.value)}
+								isOpen={currentOpenVertical === group.value}
+								pagination={
+									currentOpenVertical === group.value && groupData.length > 0
+										? {
+											rangeText: `Showing 1-${groupData.length}`,
+											disablePrev: true,
+											disableNext: true,
+										}
+										: undefined
+								}
+								emptyResult={`There are no boxes from ${group.name} vertical`}
+							/>
+						);
+					})}
 				</>
 			) : (
 				<>
@@ -609,13 +591,10 @@ if (initialLoading) {
 								selectedItems={selectedItems}
 								groupName="Assigned"
 								onSelectAll={(checked) =>
-									handleSelectAllInSection(
-										assignedGrubpacs,
-										checked,
-									)
+									handleSelectAllInSection(assignedGrubpacs, checked)
 								}
 								onSelectItem={handleSelectItem}
-								onRowAction={(action, item, assignment) => {
+								onRowAction={(action, item) => {
 									handleRowAction(action, item, "Assigned");
 								}}
 							/>
@@ -626,13 +605,12 @@ if (initialLoading) {
 						onClick={() => handleSectionToggle("assigned")}
 						isOpen={activeSection === "assigned"}
 						pagination={
-							activeSection === "assigned" &&
-							assignedGrubpacs.length > 0
+							activeSection === "assigned" && assignedGrubpacs.length > 0
 								? {
-										rangeText: `Showing 1-${assignedGrubpacs.length}`,
-										disablePrev: true,
-										disableNext: true,
-									}
+									rangeText: `Showing 1-${assignedGrubpacs.length}`,
+									disablePrev: true,
+									disableNext: true,
+								}
 								: undefined
 						}
 						emptyResult="There are no assigned boxes"
@@ -645,13 +623,10 @@ if (initialLoading) {
 								selectedItems={selectedItems}
 								groupName="Unassigned"
 								onSelectAll={(checked) =>
-									handleSelectAllInSection(
-										unassignedGrubpacs,
-										checked,
-									)
+									handleSelectAllInSection(unassignedGrubpacs, checked)
 								}
 								onSelectItem={handleSelectItem}
-								onRowAction={(action, item, assignment) => {
+								onRowAction={(action, item) => {
 									handleRowAction(action, item, "Unassigned");
 								}}
 							/>
@@ -662,19 +637,19 @@ if (initialLoading) {
 						onClick={() => handleSectionToggle("unassigned")}
 						isOpen={activeSection === "unassigned"}
 						pagination={
-							activeSection === "unassigned" &&
-							unassignedGrubpacs.length > 0
+							activeSection === "unassigned" && unassignedGrubpacs.length > 0
 								? {
-										rangeText: `Showing 1-${unassignedGrubpacs.length}`,
-										disablePrev: true,
-										disableNext: true,
-									}
+									rangeText: `Showing 1-${unassignedGrubpacs.length}`,
+									disablePrev: true,
+									disableNext: true,
+								}
 								: undefined
 						}
 						emptyResult="There are no unassigned boxes"
 					/>
 				</>
 			)}
+
 			<AddNewGrubPac
 				open={modalState.open}
 				onClose={closeModal}
@@ -687,7 +662,6 @@ if (initialLoading) {
 				onClose={closeDeleteModal}
 				onConfirm={handleDeleteConfirm}
 				onRequireUnassign={() => {
-					// Close delete modal before opening unassign modal to avoid overlap and confusion
 					const currentItems = deleteModal.items;
 					const currentItem = deleteModal.item;
 					setDeleteModal({ open: false, item: null, items: [] });
@@ -730,11 +704,7 @@ if (initialLoading) {
 					unassignModal.items?.length ||
 					(unassignModal.item ? 1 : undefined)
 				}
-				ctaLabel={
-					unassignModal.source === "delete"
-						? "I UNDERSTAND. UNASSIGN"
-						: "I UNDERSTAND. UNASSIGN"
-				}
+				ctaLabel="I UNDERSTAND. UNASSIGN"
 			/>
 			{selectedItems.length > 0 && (
 				<TableActionBar
