@@ -11,6 +11,16 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
+            - name: Check required secrets
+              run: |
+                  if [ -z "${{ secrets.SSH_PRODUCTION_HOST }}" ] || \
+                     [ -z "${{ secrets.SSH_PRODUCTION_PRIVATE_KEY }}" ] || \
+                     [ -z "${{ secrets.SSH_PRODUCTION_USER_NAME }}" ] || \
+                     [ -z "${{ secrets.PRODUCTION_PM2_ID }}" ]; then
+                      echo "One or more required secrets are empty or not set"
+                      exit 1
+                  fi
+
             - name: Setup SSH key
               run: |
                   mkdir -p ~/.ssh
