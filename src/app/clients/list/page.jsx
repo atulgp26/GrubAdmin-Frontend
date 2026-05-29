@@ -52,6 +52,7 @@ import {
 	DEFAULT_PAGE_SIZE,
 } from "@/constants/config";
 import CollapseTable from "@/components/shared/CollapseTable";
+import ClientBoxesModal from "@/components/pages/clients/ClientBoxesModal";
 
 const actionOptions = [
 	{
@@ -196,6 +197,7 @@ const ClientsList = () => {
 	const { isAuthenticated, isLoading: authLoading } = useAuth();
 	const pageSize = DEFAULT_PAGE_SIZE;
 	const { permissionsByModule, user, can } = usePermissions();
+	const [selectedBoxClient, setSelectedBoxClient] = useState(null);
 	const canViewClients =
 		can("view clients list", "clients") ||
 		can("view entries", "clients") ||
@@ -781,6 +783,22 @@ const ClientsList = () => {
 		}
 	};
 
+	const onVerticalGroupClick = (verticalName) => {
+    setCurrentOpenVertical((prev) =>
+        prev === verticalName ? null : verticalName
+    );
+};
+
+const onVerticalGroupOpen = (verticalName) => {
+    setCurrentOpenVertical(verticalName);
+};
+
+const onVerticalGroupClose = (verticalName) => {
+    setCurrentOpenVertical((prev) =>
+        prev === verticalName ? null : prev
+    );
+};
+
 	// Group employees by vertical from API data (include empty verticals)
 	const groupEmployeesByRole = () => {
 		const groupedEmployees = {};
@@ -877,25 +895,20 @@ const ClientsList = () => {
 									</div>
 								</TableCell>
 								<TableCell className="p-4">
-									<div className="w-max">
-										<CustomTooltip
-											title="View list"
-											placement="bottom"
-											arrowPosition="left"
-										>
-											<Badge
-												color={`${customer.vertical.toLowerCase()}`}
-												className="leading-none flex items-center space-x-2 w-max cursor-pointer"
-											>
-												<Icon
-													name="inventory"
-													className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
-												/>
-												({customer.boxCount || 0})
-											</Badge>
-										</CustomTooltip>
-									</div>
-								</TableCell>
+    <div className="w-max">
+        <Badge
+            color={`${customer.vertical.toLowerCase()}`}
+            className="leading-none flex items-center space-x-2 w-max cursor-pointer"
+            onClick={() => setSelectedBoxClient(customer)}
+        >
+            <Icon
+                name="inventory"
+                className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
+            />
+            {customer.vertical} ({customer.boxCount || 0})
+        </Badge>
+    </div>
+</TableCell>
 								<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
 									<BoxCountBadge
 										asText
@@ -1261,27 +1274,21 @@ const ClientsList = () => {
 											{customer.region}
 										</div>
 									</TableCell>
-									<TableCell className="p-4 ">
-										<div className="w-max">
-											<CustomTooltip
-												title="View list"
-												placement="bottom"
-												arrowPosition="left"
-											>
-												<Badge
-													color={`${customer.vertical.toLowerCase()}`}
-													className="leading-none flex items-center space-x-2 w-max cursor-pointer"
-												>
-													<Icon
-														name="inventory"
-														className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
-													/>
-													{customer.vertical} (
-													{customer.boxCount || 0})
-												</Badge>
-											</CustomTooltip>
-										</div>
-									</TableCell>
+									<TableCell className="p-4">
+    <div className="w-max">
+        <Badge
+            color={`${customer.vertical.toLowerCase()}`}
+            className="leading-none flex items-center space-x-2 w-max cursor-pointer"
+            onClick={() => setSelectedBoxClient(customer)}
+        >
+            <Icon
+                name="inventory"
+                className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
+            />
+            {customer.vertical} ({customer.boxCount || 0})
+        </Badge>
+    </div>
+</TableCell>
 									<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
 										<BoxCountBadge
 											asText
@@ -1564,6 +1571,13 @@ const ClientsList = () => {
 				onConfirm={onCreateCustomer}
 				isCreating={isCreatingCustomer}
 			/>
+			<ClientBoxesModal
+    open={!!selectedBoxClient}
+    onClose={() => setSelectedBoxClient(null)}
+    clientId={selectedBoxClient?.id}
+    clientName={selectedBoxClient?.name}
+    vertical={selectedBoxClient?.vertical}
+/>
 		</div>
 	);
 };
