@@ -1226,23 +1226,27 @@ const EmployeesList = () => {
 				return String(rid) === String(roleId);
 			});
 			const permissionsCount =
-				roleEmployees.length > 0 &&
-				roleEmployees[0]?.originalData?.role?.permissions_json
-					? (() => {
-							const permissionsJson =
-								roleEmployees[0].originalData.role
-									.permissions_json;
-							let totalCount = 0;
-							Object.keys(permissionsJson).forEach(
-								(sectionKey) => {
-									const permissionList =
-										permissionsJson[sectionKey] || [];
-									totalCount += permissionList.length;
-								},
-							);
-							return totalCount;
-						})()
-					: 0;
+    roleEmployees.length > 0 &&
+    roleEmployees[0]?.originalData?.role?.permissions_json
+        ? (() => {
+              const permissionsJson =
+			  
+                  roleEmployees[0].originalData.role.permissions_json;
+				  
+              let totalCount = 0;
+              Object.keys(permissionsJson).forEach((sectionKey) => {
+                  const permissionList = permissionsJson[sectionKey];
+                  if (Array.isArray(permissionList)) {
+                      totalCount += permissionList.length;
+                  } else if (permissionList && typeof permissionList === "object") {
+                      // Handle nested object structure (e.g. Super Admin)
+                      totalCount += Object.keys(permissionList).length;
+                  }
+              });
+              return totalCount;
+          })()
+		  
+        : 0;
 
 			groups.push({
 				name: (
