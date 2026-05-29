@@ -74,14 +74,17 @@ const AddNewClient = ({
 	const handleFocus = (field) => setFocusedField(field);
 	const handleBlur = () => setFocusedField("");
 	const handleChange = (field, value) => {
-		console.log(field, value);
-		if (field === "country") {
-			setSelectedIso(value);
-			setForm((prev) => ({ ...prev, [field]: value }));
-		} else {
-			setForm((prev) => ({ ...prev, [field]: value }));
-		}
-	};
+    if (field === "country") {
+        setSelectedIso(value);
+        setForm((prev) => ({ ...prev, [field]: value }));
+    } else if (field === "clientId") {
+        // Remove leading # if user types it
+        const cleaned = value.startsWith("#") ? value.slice(1) : value;
+        setForm((prev) => ({ ...prev, [field]: cleaned }));
+    } else {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    }
+};
 
 	const fetchVerticals = async () => {
 		const verticalsResponse = await customerService.getVerticals();
@@ -120,32 +123,30 @@ const AddNewClient = ({
 			})),
 		);
 	};
+useEffect(() => {
+    let isFormValid = true;
 
-	// :white_check_mark: Form validation check
-	useEffect(() => {
-		// const allFilled = Object.values(form).map((val) => val?.trim() !== "");
+    for (const key of Object.keys(form)) {
+        if (key === "orgName" && !isOrganizationDisabled && form[key] === "") {
+            isFormValid = false;
+            break;
+        } else if (key === "orgName") {
+            continue;
+        } else if (key === "phone") {
+            // country_code (3 chars) + 10 digit number = 13 chars minimum
+            const phoneNumber = form.phone.slice(3);
+            if (phoneNumber.length !== 10) {
+                isFormValid = false;
+                break;
+            }
+        } else if (form[key] === "") {
+            isFormValid = false;
+            break;
+        }
+    }
 
-		let isFormValid = true;
-
-		for (const key of Object.keys(form)) {
-			if (
-				key === "orgName" &&
-				!isOrganizationDisabled &&
-				form[key] === ""
-			) {
-				isFormValid = false;
-			} else if (key === "orgName") {
-				isFormValid = true;
-			} else if (form[key] !== "") {
-				isFormValid = false;
-			}
-		}
-
-		console.log("isFormValid", isFormValid);
-		console.log(form);
-
-		setIsFormValid(isFormValid);
-	}, [form]);
+    setIsFormValid(isFormValid);
+}, [form]);
 
 	useEffect(() => {
 		if (open) {
@@ -176,7 +177,7 @@ const AddNewClient = ({
 			...form,
 			name: form.fullName,
 			country: country.name,
-			client_id: form.clientId,
+	client_id: `#${form.clientId}`,
 			country_code: form.phone.slice(0, 3),
 			mobile_number: form.phone.slice(3),
 			organization_name: form.orgName ? form.orgName : undefined,
@@ -273,15 +274,18 @@ onClose();
 						</h3>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 							<div>
-								<MobileNumberInput
-									value={form.phone}
-									onChange={(val) =>
-										handleChange("phone", val)
-									}
-									placeholder="00000 00000"
-									padding="!py-3 !px-4"
-								/>
-							</div>
+    <MobileNumberInput
+        value={form.phone}
+        onChange={(val) => handleChange("phone", val)}
+        placeholder="00000 00000"
+        padding="!py-3 !px-4"
+    />
+    {form.phone.length > 3 && form.phone.slice(3).length !== 10 && (
+        <p className="text-red-500 text-xs mt-1 ml-1">
+            Mobile number must be 10 digits
+        </p>
+    )}
+</div>
 							<div>
 								<Input
 									placeholder="Email address"
