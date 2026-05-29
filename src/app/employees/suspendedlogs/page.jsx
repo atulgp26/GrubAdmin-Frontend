@@ -3,10 +3,10 @@ import EmployeeLogs from "@/components/pages/employees/EmployeeLogs";
 import LogsSidebar from "@/components/pages/employees/LogsSidebar";
 import Button from "@/components/ui/Button";
 import { ArrowLeft } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const page = () => {
+const SuspendedLogsContent = () => {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const employeeIdFromUrl = searchParams.get("id");
@@ -15,7 +15,6 @@ const page = () => {
 
 	const handleEmployeeSelect = (employee) => {
 		setSelectedEmployee(employee);
-		// Clear preSelectId once we've selected
 		setPreSelectId(null);
 	};
 
@@ -43,4 +42,12 @@ const page = () => {
 	);
 };
 
-export default page;
+const Page = () => {
+	return (
+		<Suspense fallback={null}>
+			<SuspendedLogsContent />
+		</Suspense>
+	);
+};
+
+export default Page;
