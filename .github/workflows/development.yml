@@ -13,10 +13,9 @@ jobs:
 
             - name: Check required secrets
               run: |
-                  if [ -z "${{ secrets.SSH_PRODUCTION_HOST }}" ] || \
-                     [ -z "${{ secrets.SSH_PRODUCTION_PRIVATE_KEY }}" ] || \
-                     [ -z "${{ secrets.SSH_PRODUCTION_USER_NAME }}" ] || \
-                     [ -z "${{ secrets.PRODUCTION_PM2_ID }}" ]; then
+                  if [ -z "${{ secrets.EC2_HOST }}" ] || \
+                     [ -z "${{ secrets.EC2_SSH_KEY }}" ] || \
+                     [ -z "${{ secrets.EC2_USER }}" ]; then
                       echo "One or more required secrets are empty or not set"
                       exit 1
                   fi
@@ -24,16 +23,16 @@ jobs:
             - name: Setup SSH key
               run: |
                   mkdir -p ~/.ssh
-                  echo "${{ secrets.SSH_PRODUCTION_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+                  echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
                   chmod 600 ~/.ssh/id_ed25519
 
             - name: Add EC2 host to known_hosts
               run: |
-                  ssh-keyscan -t ed25519 -H ${{ secrets.SSH_PRODUCTION_HOST }} >> ~/.ssh/known_hosts
+                  ssh-keyscan -t ed25519 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
             - name: Build & Deploy
               run: |
-                  ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_PRODUCTION_USER_NAME }}@${{ secrets.SSH_PRODUCTION_HOST }} << 'EOF'
+                  ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
                     source ~/.zshrc
                     source ~/.bashrc
                     source ~/.profile
@@ -47,10 +46,7 @@ jobs:
                     export PATH="$BUN_INSTALL/bin:$PATH" && \
                     source ~/.bashrc && \
                     npm i && \
-                    npm run build && \
-                    /home/ubuntu/.nvm/versions/node/v22.20.0/bin/pm2 list && \
-                    /home/ubuntu/.nvm/versions/node/v22.20.0/bin/pm2 restart "${{ secrets.PRODUCTION_PM2_ID }}" && \
-                    /home/ubuntu/.nvm/versions/node/v22.20.0/bin/pm2 list
+                    npm run build
 
             - name: Done
               run: |
