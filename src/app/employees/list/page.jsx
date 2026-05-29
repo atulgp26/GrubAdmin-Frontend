@@ -790,10 +790,12 @@ const EmployeesList = () => {
 		if (!employee?.originalData?.role?.permissions_json) return 0;
 		const permissionsJson = employee.originalData.role.permissions_json;
 		let totalCount = 0;
-		Object.keys(permissionsJson).forEach((sectionKey) => {
-			const permissionList = permissionsJson[sectionKey] || [];
-			totalCount += permissionList.length;
-		});
+	Object.keys(permissionsJson).forEach((sectionKey) => {
+    const permissionList = permissionsJson[sectionKey];
+    if (Array.isArray(permissionList)) {
+        totalCount += permissionList.length;
+    }
+});
 		return totalCount;
 	};
 
@@ -1238,10 +1240,7 @@ const EmployeesList = () => {
                   const permissionList = permissionsJson[sectionKey];
                   if (Array.isArray(permissionList)) {
                       totalCount += permissionList.length;
-                  } else if (permissionList && typeof permissionList === "object") {
-                      // Handle nested object structure (e.g. Super Admin)
-                      totalCount += Object.keys(permissionList).length;
-                  }
+				  }
               });
               return totalCount;
           })()

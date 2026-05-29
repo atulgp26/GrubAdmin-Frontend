@@ -728,10 +728,12 @@ const SuspendedEmployees = () => {
 		if (!employee?.originalData?.role?.permissions_json) return 0;
 		const permissionsJson = employee.originalData.role.permissions_json;
 		let totalCount = 0;
-		Object.keys(permissionsJson).forEach((sectionKey) => {
-			const permissionList = permissionsJson[sectionKey] || [];
-			totalCount += permissionList.length;
-		});
+	Object.keys(permissionsJson).forEach((sectionKey) => {
+    const permissionList = permissionsJson[sectionKey];
+    if (Array.isArray(permissionList)) {
+        totalCount += permissionList.length;
+    }
+});
 		return totalCount;
 	};
 
@@ -972,9 +974,13 @@ const groupEmployeesByRole = () => {
             const permissionsJson =
               roleEmployees[0].originalData.role.permissions_json;
             let totalCount = 0;
-            Object.keys(permissionsJson).forEach((sectionKey) => {
-              totalCount += (permissionsJson[sectionKey] || []).length;
-            });
+        Object.keys(permissionsJson).forEach((sectionKey) => {
+    const permissionList = permissionsJson[sectionKey];
+    if (Array.isArray(permissionList)) {
+        totalCount += permissionList.length;
+    }
+    // Skip non-array sections (inconsistent backend data)
+});
             return totalCount;
           })()
         : 0;
