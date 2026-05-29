@@ -33,20 +33,11 @@ jobs:
             - name: Build & Deploy
               run: |
                   ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-                    source ~/.zshrc
-                    source ~/.bashrc
-                    source ~/.profile
-                    ls
-                    cd admin_grubpac
+                    cd grubadmin-frontend
                     git stash
                     git pull origin main
-                    export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")" && \
-                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
-                    export BUN_INSTALL="$HOME/.bun" && \
-                    export PATH="$BUN_INSTALL/bin:$PATH" && \
-                    source ~/.bashrc && \
-                    npm i && \
-                    npm run build
+                    docker compose down
+                    docker compose up --build -d
 
             - name: Done
               run: |
