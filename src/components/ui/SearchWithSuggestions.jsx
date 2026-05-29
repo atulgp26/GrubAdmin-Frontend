@@ -13,28 +13,26 @@ export default function SearchWithSuggestions({
 	onClear = null,
 	className = "",
 	openOnFocus = true,
-	minChars = 0,
+	minChars = 1,
 }) {
 	const [showSuggestions, setShowSuggestions] = useState(false);
 	const [highlighted, setHighlighted] = useState(-1);
 	const ref = useRef(null);
 
-	const suggestions = value
-		? data.filter(
-				(item) =>
-					getLabel(item)
-						.toLowerCase()
-						.includes(value.toLowerCase()) ||
-					(getSubLabel(item) &&
-						getSubLabel(item)
+	// Only filter when value meets minChars — never show all data
+	const suggestions =
+		value && value.trim().length >= minChars
+			? data.filter(
+					(item) =>
+						getLabel(item)
 							.toLowerCase()
-							.includes(value.toLowerCase())) ||
-					(item.timestamp &&
-						item.timestamp
-							.toLowerCase()
-							.includes(value.toLowerCase())),
-			)
-		: data;
+							.includes(value.toLowerCase()) ||
+						(getSubLabel(item) &&
+							getSubLabel(item)
+								.toLowerCase()
+								.includes(value.toLowerCase())),
+				)
+			: [];
 
 	useEffect(() => {
 		if (!showSuggestions) return;
@@ -74,111 +72,96 @@ export default function SearchWithSuggestions({
 
 	const highlightText = (text) => {
 		if (!value || !text) return text;
-
 		const index = text.toLowerCase().indexOf(value.toLowerCase());
 		if (index === -1) return text;
-
 		const before = text.slice(0, index);
 		const match = text.slice(index, index + value.length);
 		const after = text.slice(index + value.length);
-
 		return (
 			<>
-				                {before}
-				                
+				{before}
 				<span className="text-[var(--color-neutral-secondary)] font-semibold">
-					                    {match}
-					                
+					{match}
 				</span>
-				                {after}
-				            
+				{after}
 			</>
 		);
 	};
 
+	const shouldShow =
+		showSuggestions && value.trim().length >= minChars && suggestions.length > 0;
+
 	return (
 		<div
-			className={`relative w-auto transition-shadow rounded-lg ${showSuggestions ? "shadow-[0_0_0_2px_var(--color-shadow-select)] border ring-0 outline-none border-[var(--color-brand-default)]" : ""} ${className}`}
+			className={`relative w-auto transition-shadow rounded-lg ${
+				showSuggestions
+					? "shadow-[0_0_0_2px_var(--color-shadow-select)] border ring-0 outline-none border-[var(--color-brand-default)]"
+					: ""
+			} ${className}`}
 			ref={ref}
 		>
-			            
 			<SearchInput
 				value={value}
 				onChange={(e) => {
 					onChange(e);
 					const nextVal = (e && e.target ? e.target.value : e) || "";
-					setShowSuggestions(
-						String(nextVal).trim().length >= minChars,
-					);
+					setShowSuggestions(String(nextVal).trim().length >= minChars);
 					setHighlighted(-1);
 				}}
 				onFocus={() => {
-					const currentLen = String(value || "").trim().length;
-					setShowSuggestions(openOnFocus && currentLen >= minChars);
+					if (openOnFocus && String(value || "").trim().length >= minChars) {
+						setShowSuggestions(true);
+					}
 				}}
 				onKeyDown={handleKeyDown}
 				placeholder={placeholder}
 				clearable={clearable}
-				onClear={onClear}
+				onClear={() => {
+					if (onClear) onClear();
+					setShowSuggestions(false);
+					setHighlighted(-1);
+				}}
 				showSuggestions
 			/>
-			            
-			{showSuggestions &&
-				String(value || "").trim().length >= minChars && (
-					<div
-						className="absolute left-0 right-0 mt-2 bg-white  divide-y divide-[var(--color-stroke-neutral)] rounded-lg z-20 shadow-[4px_4px_8px_0_var(--color-notif-shadow-soft),0px_0px_4px_0_var(--color-notif-shadow-strong)] max-h-60 overflow-auto scrollbar-hide"
-						onMouseDown={(e) => e.stopPropagation()}
-					>
-						                        
-						{value && suggestions.length === 0 && (
-							<div className="px-4 py-2 text-[var(--color-neutral-light)] text-sm">
-								                                No results
-								found.                             
-							</div>
-						)}
-						                        
-						{suggestions.map((item, idx) => {
-							const isActive = highlighted === idx;
-							const label = getLabel(item);
-							const subLabel = getSubLabel(item);
 
-							return (
-								<div
-									key={item.id || idx}
-									className={`px-4 py-2 cursor-pointer hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)] ${
-										isActive ? "" : ""
-									} `}
-									onMouseDown={(e) => {
-										e.preventDefault();
-										e.stopPropagation();
-										onSelect(item);
-										setShowSuggestions(false);
-										setHighlighted(-1);
-									}}
-									onMouseEnter={() => setHighlighted(idx)}
-								>
-									                                    
-									<div className="font-medium text-sm text-[var(--color-neutral-secondary)]">
-										                                        
-										{highlightText(label)}
-										                                    
-									</div>
-									                                    
-									{subLabel && (
-										<div className="text-xs text-[var(--color-stroke-brand)]">
-											                                            
-											{highlightText(subLabel)}
-											                                        
-										</div>
-									)}
-									                                
+			{shouldShow && (
+				<div
+					className="absolute left-0 right-0 mt-2 bg-white divide-y divide-[var(--color-stroke-neutral)] rounded-lg z-20 shadow-[4px_4px_8px_0_var(--color-notif-shadow-soft),0px_0px_4px_0_var(--color-notif-shadow-strong)] max-h-60 overflow-auto scrollbar-hide"
+					onMouseDown={(e) => e.stopPropagation()}
+				>
+					{suggestions.map((item, idx) => {
+						const isActive = highlighted === idx;
+						const label = getLabel(item);
+						const subLabel = getSubLabel(item);
+
+						return (
+							<div
+								key={item.id || idx}
+								className={`px-4 py-2 cursor-pointer hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)] ${
+									isActive ? "bg-[var(--sidebar-active-bg)]" : ""
+								}`}
+								onMouseDown={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									onSelect(item);
+									setShowSuggestions(false);
+									setHighlighted(-1);
+								}}
+								onMouseEnter={() => setHighlighted(idx)}
+							>
+								<div className="font-medium text-sm text-[var(--color-neutral-secondary)]">
+									{highlightText(label)}
 								</div>
-							);
-						})}
-						                    
-					</div>
-				)}
-			        
+								{subLabel && (
+									<div className="text-xs text-[var(--color-stroke-brand)]">
+										{highlightText(subLabel)}
+									</div>
+								)}
+							</div>
+						);
+					})}
+				</div>
+			)}
 		</div>
 	);
 }

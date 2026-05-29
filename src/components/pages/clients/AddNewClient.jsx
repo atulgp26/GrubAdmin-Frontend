@@ -74,14 +74,17 @@ const AddNewClient = ({
 	const handleFocus = (field) => setFocusedField(field);
 	const handleBlur = () => setFocusedField("");
 	const handleChange = (field, value) => {
-		console.log(field, value);
-		if (field === "country") {
-			setSelectedIso(value);
-			setForm((prev) => ({ ...prev, [field]: value }));
-		} else {
-			setForm((prev) => ({ ...prev, [field]: value }));
-		}
-	};
+    if (field === "country") {
+        setSelectedIso(value);
+        setForm((prev) => ({ ...prev, [field]: value }));
+    } else if (field === "clientId") {
+        // Remove leading # if user types it
+        const cleaned = value.startsWith("#") ? value.slice(1) : value;
+        setForm((prev) => ({ ...prev, [field]: cleaned }));
+    } else {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    }
+};
 
 	const fetchVerticals = async () => {
 		const verticalsResponse = await customerService.getVerticals();
@@ -120,21 +123,30 @@ const AddNewClient = ({
 			})),
 		);
 	};
+useEffect(() => {
+    let isFormValid = true;
 
-	// Form validation check
-	useEffect(() => {
-		let isFormValid = true;
+    for (const key of Object.keys(form)) {
+        if (key === "orgName" && !isOrganizationDisabled && form[key] === "") {
+            isFormValid = false;
+            break;
+        } else if (key === "orgName") {
+            continue;
+        } else if (key === "phone") {
+            // country_code (3 chars) + 10 digit number = 13 chars minimum
+            const phoneNumber = form.phone.slice(3);
+            if (phoneNumber.length !== 10) {
+                isFormValid = false;
+                break;
+            }
+        } else if (form[key] === "") {
+            isFormValid = false;
+            break;
+        }
+    }
 
-		for (const key of Object.keys(form)) {
-			if (key === "orgName") continue;
-			if (form[key] === "" || form[key] == null) {
-				isFormValid = false;
-				break;
-			}
-		}
-
-		setIsFormValid(isFormValid);
-	}, [form]);
+    setIsFormValid(isFormValid);
+}, [form]);
 
 	useEffect(() => {
 		if (open) {
@@ -156,47 +168,40 @@ const AddNewClient = ({
 		}
 	}, [open]);
 
-	const ULID_REGEX = /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/i;
-
 	const handleSave = async () => {
 		if (!isFormValid) return;
 
 		const country = Country.getCountryByCode(form.country);
 
 		const data = {
+			...form,
 			name: form.fullName,
-			client_id: form.clientId,
-			email: form.email,
+			country: country.name,
+	client_id: `#${form.clientId}`,
 			country_code: form.phone.slice(0, 3),
 			mobile_number: form.phone.slice(3),
-			country: country.name,
-			state: form.state,
 			organization_name: form.orgName ? form.orgName : undefined,
 			vertical_id: form.vertical,
 		};
 
-		console.log("Customer Payload", data);
-		console.log("vertical_id:", data.vertical_id, "type:", typeof data.vertical_id, "length:", data.vertical_id?.length);
+		console.log(data);
 
-		if (!data.vertical_id || !ULID_REGEX.test(data.vertical_id)) {
-			console.error("Invalid vertical_id ULID:", data.vertical_id);
-			showError("Please select a valid vertical");
-			return;
-		}
+		console.log("Saving client:", data);
 
-		const result = await onConfirm(data);
+	const result = await onConfirm(data);
 
-		if (result?.error) {
-			showError(result.error);
-			return;
-		}
+if (result?.error) {
+    showError(result.error);
+    return;
+}
+
 
 		showSuccess("Success", result?.message);
 
-		setForm({ fullName: "", clientId: "", phone: "", email: "", country: "", state: "", vertical: "", orgName: "" });
-		setSelectedIso("");
-		setCountryOptions([]);
-		onClose();
+	setForm({ fullName: "", clientId: "", phone: "", email: "", country: "", state: "", vertical: "", orgName: "" });
+setSelectedIso("");
+setCountryOptions([]);
+onClose();
 	};
 	return (
 		<FullPageModal open={open} onClose={onClose}>
@@ -269,15 +274,18 @@ const AddNewClient = ({
 						</h3>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 							<div>
-								<MobileNumberInput
-									value={form.phone}
-									onChange={(val) =>
-										handleChange("phone", val)
-									}
-									placeholder="00000 00000"
-									padding="!py-3 !px-4"
-								/>
-							</div>
+    <MobileNumberInput
+        value={form.phone}
+        onChange={(val) => handleChange("phone", val)}
+        placeholder="00000 00000"
+        padding="!py-3 !px-4"
+    />
+    {form.phone.length > 3 && form.phone.slice(3).length !== 10 && (
+        <p className="text-red-500 text-xs mt-1 ml-1">
+            Mobile number must be 10 digits
+        </p>
+    )}
+</div>
 							<div>
 								<Input
 									placeholder="Email address"

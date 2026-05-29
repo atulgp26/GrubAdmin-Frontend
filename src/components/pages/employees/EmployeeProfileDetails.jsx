@@ -4,15 +4,15 @@ import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { ArrowUpRight } from "lucide-react";
 
-export default function EmployeeProfileDetails({ open, onClose, onEdit,status }) {
+export default function EmployeeProfileDetails({ open, onClose, onEdit, status, employee }) {
   const details = [
-    { label: "Status", value: status },
-    { label: "Employee ID", value: "#DP1234" },
+    { label: "Status", value: status || employee?.status || "Active" },
+    { label: "Employee ID", value: employee?.empId || "—" },
     {
       label: "Role",
       value: (
         <div className="flex gap-42 text-[var(--color-neutral-secondary)]">
-          <p>Manager</p>
+          <p>{employee?.role || "—"}</p>
           <p><ArrowUpRight className="w-5 h-5 text-[var(--color-stroke-brand)]"/></p>
         </div>
       ),
@@ -21,13 +21,13 @@ export default function EmployeeProfileDetails({ open, onClose, onEdit,status })
       label: "Contact details",
       value: (
         <div className="flex flex-col gap-6 text-[var(--color-neutral-secondary)]">
-          <p>+91 98000 00000</p>
-          <p>ravikr@gmail.com</p>
+          <p>{employee?.phone || "—"}</p>
+          <p>{employee?.email || "—"}</p>
         </div>
       ),
     },
-    { label: "Location", value: "North India" },
-    { label: "Joining date", value: "12 June ‘25" },
+    { label: "Location", value: employee?.location || "—" },
+    { label: "Joining date", value: employee?.joinDate || "—" },
   ];
 
   return (

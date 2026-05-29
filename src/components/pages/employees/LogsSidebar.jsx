@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { employeeService } from "@/api/services/employeeService";
 
-export default function LogsSidebar({ currentId, preSelectId, onSelect }) {
+export default function LogsSidebar({ currentId, preSelectId, onSelect, updatedEmployee }) {
 	const [employees, setEmployees] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
@@ -22,15 +22,20 @@ export default function LogsSidebar({ currentId, preSelectId, onSelect }) {
 					response.code === 200 &&
 					response.data?.admins
 				) {
-					const mapped = response.data.admins.map((admin) => ({
-						id: admin.id,
-						name: `${admin.first_name} ${admin.last_name}`.trim(),
-						empId: admin.employee_id
-							? `#${admin.employee_id}`
-							: null,
-						role: admin.role?.name || "—",
-						status: admin.status,
-					}));
+				const mapped = response.data.admins.map((admin) => ({
+    id: admin.id,
+    name: `${admin.first_name} ${admin.last_name}`.trim(),
+    empId: admin.employee_id ? `#${admin.employee_id}` : null,
+    role: admin.role?.name || "—",
+    status: admin.status,
+    phone: admin.country_code && admin.mobile_number 
+        ? `${admin.country_code} ${admin.mobile_number}` 
+        : admin.mobile_number || "",
+    email: admin.email || "",
+    location: admin.location || "",
+    joinDate: admin.joining_date || "",
+    originalData: admin,  // ADD THIS
+}));
 					setEmployees(mapped);
 
 					// Auto-select employee: if preSelectId is set, use it; otherwise use first
@@ -64,6 +69,22 @@ export default function LogsSidebar({ currentId, preSelectId, onSelect }) {
 
 		fetchEmployees();
 	}, []);
+
+	useEffect(() => {
+    if (!updatedEmployee) return;
+    setEmployees((prev) =>
+        prev.map((emp) =>
+            emp.id === updatedEmployee.id
+                ? {
+                      ...emp,
+                      name: updatedEmployee.name,
+                      role: updatedEmployee.role,
+                      empId: updatedEmployee.empId,
+                  }
+                : emp,
+        ),
+    );
+}, [updatedEmployee]);
 
 	return (
 		<div className="w-60 bg-white flex flex-col h-full">

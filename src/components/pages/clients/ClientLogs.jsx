@@ -27,35 +27,63 @@ const LogItem = ({ log }) => {
         minute: "2-digit",
         second: "2-digit",
       })
-    : log.timestamp || "";
+    : "";
 
-  const logType = log.category || log.type || "General";
-  const logAction = log.description || log.action || "";
-  const actorName = log.actor?.name || log.admin_name || "";
-  const actorRole = log.actor?.role || log.role_name || "";
+  const logCategory = log.category || "";       
+  const logType = log.type || "";              
+  const actorName = log.actor?.name || "";      
+  const actorRole = log.actor?.role || "";       
+  const actorIp = log.actor?.ip || "";         
+  const description = log.description || "";    
+  const subjectName = log.subject?.name || "";   
+  const subjectType = log.subject?.type || "";   
 
   return (
     <tr className="border-b border-[var(--color-stroke-neutral)] last:border-b-0">
-      <td className="px-4 py-4 font-semibold text-[var(--color-neutral-secondary)] align-top">
+      <td className="px-4 py-4 font-semibold text-[var(--color-neutral-secondary)] align-top whitespace-nowrap">
         {timestamp}
       </td>
       <td className="px-4 py-4 align-top">
-        <div className="flex gap-4">
-          <Icon name="profile_note" className="w-6 h-6 text-[var(--color-neutral-light)]" />
+        <div className="flex gap-3">
+          <Icon name="profile_note" className="w-6 h-6 text-[var(--color-neutral-light)] mt-0.5" />
           <div className="flex flex-col gap-1">
-            <div className="font-medium text-[var(--color-neutral-secondary)]">
-              {logType}
+            {/* Category + Type badge */}
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-[var(--color-neutral-secondary)]">
+                {logCategory}
+              </span>
+              {logType && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-neutral-secondary-bg)] text-[var(--color-stroke-brand)]">
+                  {logType}
+                </span>
+              )}
             </div>
+            {/* Actor */}
             {actorName && (
               <div className="text-sm text-[var(--color-stroke-brand)]">
-                {actorName}{actorRole ? ` - ${actorRole}` : ""}
+                {actorName}{actorRole ? ` · ${actorRole}` : ""}
+              </div>
+            )}
+            {/* Actor IP */}
+            {actorIp && (
+              <div className="text-xs text-[var(--color-neutral-light)]">
+                IP: {actorIp}
               </div>
             )}
           </div>
         </div>
       </td>
-      <td className="px-4 py-4 align-top">
-        <p className="text-[var(--color-neutral-secondary)]">{logAction}</p>
+      <td className="px-4 py-4 align-top max-w-sm">
+        {/* Clean description */}
+        <p className="text-[var(--color-neutral-secondary)] text-sm leading-relaxed">
+          {description}
+        </p>
+        {/* Subject pill */}
+        {subjectName && (
+          <span className="inline-block mt-1.5 text-xs px-2 py-0.5 rounded-full bg-[var(--color-neutral-secondary-bg)] text-[var(--color-stroke-brand)]">
+            {subjectType ? `${subjectType}: ` : ""}{subjectName}
+          </span>
+        )}
       </td>
     </tr>
   );
@@ -145,6 +173,8 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
   useEffect(() => {
     setFilteredLogs(logs);
   }, [logs]);
+
+ 
 
   useEffect(() => {
     if (!search.trim()) {

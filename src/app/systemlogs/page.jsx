@@ -1,15 +1,15 @@
+"use client";
 import { Suspense } from "react";
 import SystemLogs from "@/components/pages/system/SystemLogs";
 
 const Page = () => {
   return (
-    <Suspense fallback={null}>
-      <div className="flex">
+    <div className="flex">
+      <Suspense fallback={null}>
         <SystemLogs />
-      </div>
-    </Suspense>
+      </Suspense>
+    </div>
   );
 };
 
 export default Page;
-
