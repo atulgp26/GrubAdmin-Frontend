@@ -13,12 +13,18 @@ const page = () => {
 	const employeeIdFromUrl = searchParams.get("id");
 	const [selectedEmployee, setSelectedEmployee] = useState(null);
 	const [preSelectId, setPreSelectId] = useState(employeeIdFromUrl);
+	const [updatedEmployee, setUpdatedEmployee] = useState(null);
+	const [sidebarKey, setSidebarKey] = useState(0);
 
-	const handleEmployeeSelect = (employee) => {
-		setSelectedEmployee(employee);
-		// Clear preSelectId once we've selected
-		setPreSelectId(null);
-	};
+const handleEmployeeSelect = (employee) => {
+    setSelectedEmployee(employee);
+    setPreSelectId(null);
+};
+
+const handleEmployeeRemoved = () => {
+    setSelectedEmployee(null);
+    setPreSelectId(null);
+};
 
 	return (
 		<div className="flex flex-col">
@@ -33,12 +39,24 @@ const page = () => {
 				</Button>
 			</div>
 			<div className="flex">
-				<LogsSidebar
-					currentId={selectedEmployee?.id}
-					preSelectId={preSelectId}
-					onSelect={handleEmployeeSelect}
-				/>
-				<EmployeeLogs employee={selectedEmployee} />
+			<LogsSidebar
+    key={sidebarKey}
+    currentId={selectedEmployee?.id}
+    preSelectId={preSelectId}
+    onSelect={handleEmployeeSelect}
+    updatedEmployee={updatedEmployee}
+/>
+<EmployeeLogs
+    employee={selectedEmployee}
+    onSelect={(emp) => {
+        handleEmployeeSelect(emp);
+        setUpdatedEmployee(emp);
+    }}
+    onRemoved={() => {
+        setSelectedEmployee(null);
+        setSidebarKey((k) => k + 1);  // forces LogsSidebar to re-fetch
+    }}
+/>
 			</div>
 		</div>
 	);
