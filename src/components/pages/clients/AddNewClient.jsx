@@ -126,27 +126,20 @@ const AddNewClient = ({
 useEffect(() => {
     let isFormValid = true;
 
-    for (const key of Object.keys(form)) {
-        if (key === "orgName" && !isOrganizationDisabled && form[key] === "") {
-            isFormValid = false;
-            break;
-        } else if (key === "orgName") {
-            continue;
-        } else if (key === "phone") {
-            // country_code (3 chars) + 10 digit number = 13 chars minimum
-            const phoneNumber = form.phone.slice(3);
-            if (phoneNumber.length !== 10) {
-                isFormValid = false;
-                break;
-            }
-        } else if (form[key] === "") {
-            isFormValid = false;
-            break;
-        }
-    }
+	// Form validation check
+	useEffect(() => {
+		let isFormValid = true;
 
-    setIsFormValid(isFormValid);
-}, [form]);
+		for (const key of Object.keys(form)) {
+			if (key === "orgName") continue;
+			if (form[key] === "" || form[key] == null) {
+				isFormValid = false;
+				break;
+			}
+		}
+
+		setIsFormValid(isFormValid);
+	}, [form]);
 
 	useEffect(() => {
 		if (open) {
@@ -168,40 +161,47 @@ useEffect(() => {
 		}
 	}, [open]);
 
+	const ULID_REGEX = /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/i;
+
 	const handleSave = async () => {
 		if (!isFormValid) return;
 
 		const country = Country.getCountryByCode(form.country);
 
 		const data = {
-			...form,
 			name: form.fullName,
-			country: country.name,
-	client_id: `#${form.clientId}`,
+			client_id: form.clientId,
+			email: form.email,
 			country_code: form.phone.slice(0, 3),
 			mobile_number: form.phone.slice(3),
+			country: country.name,
+			state: form.state,
 			organization_name: form.orgName ? form.orgName : undefined,
 			vertical_id: form.vertical,
 		};
 
-		console.log(data);
+		console.log("Customer Payload", data);
+		console.log("vertical_id:", data.vertical_id, "type:", typeof data.vertical_id, "length:", data.vertical_id?.length);
 
-		console.log("Saving client:", data);
+		if (!data.vertical_id || !ULID_REGEX.test(data.vertical_id)) {
+			console.error("Invalid vertical_id ULID:", data.vertical_id);
+			showError("Please select a valid vertical");
+			return;
+		}
 
-	const result = await onConfirm(data);
+		const result = await onConfirm(data);
 
-if (result?.error) {
-    showError(result.error);
-    return;
-}
-
+		if (result?.error) {
+			showError(result.error);
+			return;
+		}
 
 		showSuccess("Success", result?.message);
 
-	setForm({ fullName: "", clientId: "", phone: "", email: "", country: "", state: "", vertical: "", orgName: "" });
-setSelectedIso("");
-setCountryOptions([]);
-onClose();
+		setForm({ fullName: "", clientId: "", phone: "", email: "", country: "", state: "", vertical: "", orgName: "" });
+		setSelectedIso("");
+		setCountryOptions([]);
+		onClose();
 	};
 	return (
 		<FullPageModal open={open} onClose={onClose}>
