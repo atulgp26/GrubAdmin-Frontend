@@ -67,7 +67,8 @@ export default function GrubpacsPage() {
 		items: [],
 		source: null,
 	});
-	const [loading, setLoading] = useState(true);
+const [initialLoading, setInitialLoading] = useState(true);
+const [fetching, setFetching] = useState(false);
 	const [selectedAssignmentState, setSelectedAssignmentState] =
 		useState(null);
 
@@ -78,9 +79,7 @@ export default function GrubpacsPage() {
 		currentPage,
 		Math.max(1, Math.ceil(totalItems / pageSize)),
 	);
-	const onDebouncedSearchValueChange = useDebouncedCallback(() => {
-		setCurrentPage(1);
-	}, DEBOUNCE_TIME);
+	
 
 	const processedGrubpacs = useMemo(
 		() =>
@@ -143,7 +142,6 @@ export default function GrubpacsPage() {
 
 	const onSearchValueChange = (e) => {
 		setSearchValue(e.target.value);
-		onDebouncedSearchValueChange();
 	};
 
 	const onGroupByRoleClick = (e) => {
@@ -172,11 +170,12 @@ export default function GrubpacsPage() {
 		}
 	}, [permissionsByModule, user, isAuthenticated]);
 
-	useEffect(() => {
-		if (isAuthenticated) {
-			fetchGrubpacs();
-		}
-	}, [isAuthenticated, selectedRole, debouncedSearchValue, safeCurrentPage]);
+useEffect(() => {
+    if (isAuthenticated) {
+        const isInitial = grubpacs.length === 0 && !debouncedSearchValue;
+        fetchGrubpacs(isInitial);
+    }
+}, [isAuthenticated, selectedRole, debouncedSearchValue, safeCurrentPage]);
 
 	useEffect(() => {
 		setCurrentPage(1);
@@ -189,11 +188,15 @@ export default function GrubpacsPage() {
 	}, [currentPage, totalPages]);
 
 	useEffect(() => {
-		if (isAuthenticated && forceRefresh) {
-			fetchGrubpacs();
-			setForceRefresh(false);
-		}
-	}, [isAuthenticated, forceRefresh]);
+    setCurrentPage(1);
+}, [debouncedSearchValue]);
+
+useEffect(() => {
+    if (isAuthenticated && forceRefresh) {
+        fetchGrubpacs(false); 
+        setForceRefresh(false);
+    }
+}, [isAuthenticated, forceRefresh]);
 
 	const handleAddGrubpac = () => {
 		setModalState({ open: true, mode: "create", data: null });
@@ -429,27 +432,28 @@ export default function GrubpacsPage() {
 			console.error("Failed to fetch verticals:", e);
 		}
 	};
-
-	const fetchGrubpacs = async () => {
-		setLoading(true);
-		try {
-			const params = {
-				page_number: safeCurrentPage,
-				page_size: pageSize,
-			};
-			if (searchValue) params.query = searchValue;
-			if (selectedRole.length > 0) params.verticals = selectedRole;
-			const res = await boxService.getBoxes(params);
-			if (res?.success && res?.data) {
-				setGrubpacs(res.data.boxes || []);
-				setTotalItems(res.data.count || 0);
-			}
-		} catch (e) {
-			console.error("Failed to fetch grubpacs:", e);
-		} finally {
-			setLoading(false);
-		}
-	};
+const fetchGrubpacs = async (isInitial = false) => {
+    if (isInitial) setInitialLoading(true);
+    else setFetching(true);
+    try {
+        const params = {
+            page_number: safeCurrentPage,
+            page_size: pageSize,
+        };
+        if (debouncedSearchValue) params.query = debouncedSearchValue;
+        if (selectedRole.length > 0) params.verticals = selectedRole;
+        const res = await boxService.getBoxes(params);
+        if (res?.success && res?.data) {
+            setGrubpacs(res.data.boxes || []);
+            setTotalItems(res.data.count || 0);
+        }
+    } catch (e) {
+        console.error("Failed to fetch grubpacs:", e);
+    } finally {
+        setInitialLoading(false);
+        setFetching(false);
+    }
+};
 
 	const onVerticalGroupClick = (value) => {
 		setCurrentOpenVertical(currentOpenVertical === value ? null : value);
@@ -474,7 +478,7 @@ export default function GrubpacsPage() {
 
 	if (authLoading || !isAuthenticated) return null;
 
-	if (loading) {
+if (initialLoading) {
 		return (
 			<div className="min-h-[calc(100vh-150px)]">
 				<LoadingDetails entity="GrubPacs" />
