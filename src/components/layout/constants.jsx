@@ -23,13 +23,7 @@ export const NAV_ITEMS = [
     icon: "grubpacs",
     href: "/grubpacs/list",
   },
-  // {
-  //   id: "help",
-  //   label: "help",
-  //   icon: "help",
-  //   href: "/help",
-  // },
-    {
+  {
     id: "support",
     label: "Support",
     icon: "help",
@@ -41,6 +35,32 @@ export const NAV_ITEMS = [
     icon: "system_logs",
     href: "/systemlogs",
   },
+];
 
-]
+export const CLIENT_NAV_ITEMS = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: "dashboard",
+    href: "/dashboard",
+  },
+  {
+    id: "grubpacs",
+    label: "GrubPacs",
+    icon: "grubpacs",
+    href: "/grubpacs/list",
+  },
+  {
+    id: "employees",
+    label: "Employees",
+    icon: "users",
+    href: "/employees",
+  },
+  {
+    id: "support",
+    label: "Support",
+    icon: "help",
+    href: "/support",
+  },
+];
   

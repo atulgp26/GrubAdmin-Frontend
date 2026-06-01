@@ -44,6 +44,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import InfoPanel from "@/components/common/InfoPanel";
 import { usePermissions } from "@/context/PermissionContext";
 import { useAuth } from "@/context/AuthContext";
+import { useImpersonation } from "@/context/ImpersonationContext";
 import AddNewClient from "@/components/pages/clients/AddNewClient";
 import { useDebounce, useDebouncedCallback } from "use-debounce";
 import {
@@ -197,6 +198,7 @@ const ClientsList = () => {
 	const { isAuthenticated, isLoading: authLoading } = useAuth();
 	const pageSize = DEFAULT_PAGE_SIZE;
 	const { permissionsByModule, user, can } = usePermissions();
+	const { startImpersonation } = useImpersonation();
 	const [selectedBoxClient, setSelectedBoxClient] = useState(null);
 	const canViewClients =
 		can("view clients list", "clients") ||
@@ -711,6 +713,47 @@ const ClientsList = () => {
 				error.message ||
 				"Failed to export customers. Please try again.";
 			showError(errorMessage);
+		}
+	};
+
+	// Handle Access Complete Account - impersonate client
+	const handleAccessAccount = async (customer) => {
+		setMenuOpen(null);
+		try {
+			showSuccess("Accessing...", "Initiating client account access.");
+			const response = await customerService.impersonateClient(customer.id);
+			if (response?.success && response?.code === 200) {
+				const { token, client, redirect_url } = response.data;
+
+				startImpersonation(client, token);
+
+				if (redirect_url) {
+					window.open(redirect_url, "_blank", "noopener,noreferrer");
+				}
+
+				// Restore admin session cookie immediately to prevent auth issues
+				await customerService.exitImpersonation();
+
+				showSuccess(
+					response.message_toast_title || "Access Granted",
+					response.message_toast_description || "Client account access granted.",
+				);
+			} else {
+				const errorMsg =
+					response?.message ||
+					response?.error ||
+					response?.data?.error ||
+					"Failed to access client account";
+				showError(errorMsg);
+			}
+		} catch (error) {
+			console.error("[Access Account] Error:", error);
+			const errorMsg =
+				error?.response?.data?.message ||
+				error?.message ||
+				error?.data?.error ||
+				"An unexpected error occurred. Please try again.";
+			showError(errorMsg);
 		}
 	};
 
@@ -1409,6 +1452,36 @@ const onVerticalGroupClose = (verticalName) => {
 																	</div>
 																</div>
 															</Link>
+														) : item.id === "account" ? (
+															<div
+																key={item.id}
+																onClick={() =>
+																	handleAccessAccount(customer)
+																}
+																className="border gap-1 border-[var(--color-stroke-neutral)] rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                   flex items-center gap-3 px-4 py-3 mb-2"
+															>
+																<div className="flex gap-2 justify-center">
+																	<Icon
+																		name={
+																			item.icon
+																		}
+																		className="w-5 h-5 text-[var(--color-neutral-light)] group-active:text-[var(--color-stroke-brand)]"
+																	/>
+																</div>
+																<div className="flex-1">
+																	<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																		{
+																			item.title
+																		}
+																	</h3>
+																	<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																		{
+																			item.description
+																		}
+																	</p>
+																</div>
+															</div>
 														) : (
 															<div
 																key={item.id}

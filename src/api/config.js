@@ -37,6 +37,8 @@ export const API_ENDPOINTS = {
 		GET_CUSTOMERS: "/admin/customer",
 		CREATE_CUSTOMER: "/admin/customer",
 		EXPORT_CUSTOMERS: "/admin/customer/export",
+		IMPERSONATE_CLIENT: "/admin/customer/:id/impersonate",
+		EXIT_IMPERSONATION: "/admin/customer/exit-impersonation",
 	},
 
 	// Common

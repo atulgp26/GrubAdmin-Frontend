@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import NavItem from "./NavItem";
 import Icon from "@/components/ui/Icon";
-import { NAV_ITEMS } from "./constants";
+import { NAV_ITEMS, CLIENT_NAV_ITEMS } from "./constants";
 import Image from "next/image";
 import Link from "next/link";
 import ProfileMenu from "@/components/layout/ProfileMenu";
@@ -11,14 +11,19 @@ import { useProfileData } from "@/hooks/useProfileData";
 import React from "react";
 import LoadingDetails from "@/components/ui/LoadingDetails";
 import { usePermissions } from "@/context/PermissionContext";
+import { useImpersonation } from "@/context/ImpersonationContext";
 
 export default function Sidebar({ collapsed, onClose }) {
 	const pathname = usePathname();
 	const { userData } = useProfileData();
 	const { can, loading } = usePermissions();
+	const { isImpersonating, impersonation } = useImpersonation();
 
 	const visibleNavItems = React.useMemo(() => {
-		// Show default sidebar while loading
+		if (isImpersonating) {
+			return CLIENT_NAV_ITEMS;
+		}
+
 		if (loading) {
 			return NAV_ITEMS;
 		}
@@ -47,7 +52,7 @@ export default function Sidebar({ collapsed, onClose }) {
 		};
 
 		return NAV_ITEMS.filter((item) => checks[item.id] !== false);
-	}, [can, loading]);
+	}, [can, loading, isImpersonating]);
 
 	return (
 		<>
@@ -95,6 +100,19 @@ export default function Sidebar({ collapsed, onClose }) {
 						</div>
 					</nav>
 					<div className="p-4 space-y-4">
+						{isImpersonating && impersonation && (
+							<div className="bg-[var(--notif-warning)]/10 rounded-lg p-3 space-y-1">
+								<div className="text-xs font-semibold text-[var(--notif-warning)] uppercase tracking-wide">
+									Client View
+								</div>
+								<div className="text-sm font-medium text-[var(--color-neutral-secondary)] truncate">
+									{impersonation.clientName}
+								</div>
+								<div className="text-xs text-[var(--color-stroke-brand)] truncate">
+									{impersonation.clientEmail || ""}
+								</div>
+							</div>
+						)}
 						<div className="space-y-4">
 							<div className="text-[var(--color-stroke-brand)] text-sm font-medium">
 								PRIVACY POLICY

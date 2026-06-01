@@ -23,19 +23,12 @@ export const customerService = {
 
 	// Export customers - returns blob for file download
 	exportCustomers: async (params = {}) => {
-		// Build query string
-		// return httpClient.get(API_ENDPOINTS.CUSTOMER.EXPORT_CUSTOMERS, params);
 		const queryString = new URLSearchParams(params).toString();
 		const fullUrl = `${API_BASE_URL}${API_ENDPOINTS.CUSTOMER.EXPORT_CUSTOMERS}${queryString ? "?" + queryString : ""}`;
 
 		console.log("Export API URL:", fullUrl);
 		console.log("Export params:", params);
 
-		// Fetch with blob response
-		// const response = await fetch(fullUrl, {
-		// 	method: "GET",
-		// 	headers: getHeaders(),
-		// });
 		const response = await httpClient.get(
 			API_ENDPOINTS.CUSTOMER.EXPORT_CUSTOMERS,
 			params,
@@ -111,6 +104,17 @@ export const customerService = {
 				`customers_export_${new Date().toISOString().split("T")[0]}.csv`,
 			contentType,
 		};
+	},
+
+	// Impersonate a client (Access Complete Account)
+	impersonateClient: async (clientId) => {
+		const url = API_ENDPOINTS.CUSTOMER.IMPERSONATE_CLIENT.replace(":id", clientId);
+		return httpClient.post(url);
+	},
+
+	// Exit impersonation - restore admin session
+	exitImpersonation: async () => {
+		return httpClient.post(API_ENDPOINTS.CUSTOMER.EXIT_IMPERSONATION);
 	},
 };
 

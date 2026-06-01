@@ -2,6 +2,7 @@ import "./globals.css";
 import ClientLayout from "@/components/layout/ClientLayout";
 import { PermissionProvider } from "@/context/PermissionContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { ImpersonationProvider } from "@/context/ImpersonationContext";
 import ToastProvider from "@/components/ui/ToastProvider";
 // import MobileNotSupported from "@/components/ui/MobileNotSupported";
 
@@ -18,7 +19,9 @@ export default function RootLayout({ children }) {
         <ToastProvider />
         <AuthProvider>
           <PermissionProvider>
-            <ClientLayout>{children}</ClientLayout>
+            <ImpersonationProvider>
+              <ClientLayout>{children}</ClientLayout>
+            </ImpersonationProvider>
           </PermissionProvider>
         </AuthProvider>
       </body>

@@ -8,8 +8,10 @@ import { FiArrowUpRight } from "react-icons/fi";
 import { FaRegCircleCheck } from "react-icons/fa6";
 import { PiWarningFill } from "react-icons/pi";
 import { AiTwotoneWarning } from "react-icons/ai";
+import { RiAdminLine } from "react-icons/ri";
 import Button from "../ui/Button";
 import { useAuth } from "@/context/AuthContext";
+import { useImpersonation } from "@/context/ImpersonationContext";
 import { notificationsService } from "@/api/services/notificationsService";
 
 const mockNotifications = [
@@ -49,6 +51,8 @@ export default function Header({ onToggleSidebar, collapsed }) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const { isAuthenticated, isInitialized } = useAuth();
+	const { isImpersonating, impersonation, stopImpersonation } = useImpersonation();
+	const [isExiting, setIsExiting] = useState(false);
 	const [active, setactive] = useState(false);
 	const [showDropdown, setShowDropdown] = useState(false);
 	const dropdownRef = useRef(null);
@@ -142,7 +146,43 @@ export default function Header({ onToggleSidebar, collapsed }) {
 	};
 
 	return (
-		<header className="bg-white border-b border-[var(--color-stroke-neutral)] pl-3 pr-6 py-3">
+		<>
+			{isImpersonating && impersonation && (
+				<div className="bg-[var(--notif-warning)]/10 border-b border-[var(--notif-warning)]/30 px-6 py-2 flex items-center justify-between">
+					<div className="flex items-center gap-2 text-sm">
+						<RiAdminLine className="w-4 h-4 text-[var(--notif-warning)]" />
+						<span className="text-[var(--color-neutral-secondary)]">
+							<strong>Impersonating:</strong>{" "}
+							{impersonation.clientName}
+							{impersonation.clientEmail && (
+								<span className="text-[var(--color-stroke-brand)]">
+									{" "}
+									({impersonation.clientEmail})
+								</span>
+							)}
+						</span>
+					</div>
+					<button
+						onClick={async () => {
+							if (isExiting) return;
+							setIsExiting(true);
+							try {
+								const { customerService } = await import("@/api/services/customerService");
+								await customerService.exitImpersonation();
+							} catch (_) {
+								// Proceed even if API call fails
+							}
+							stopImpersonation();
+							router.push("/clients");
+						}}
+						disabled={isExiting}
+						className="text-sm font-medium text-[var(--color-brand-default)] hover:underline flex items-center gap-1 disabled:opacity-50"
+					>
+						{isExiting ? "Exiting..." : "Exit Account Access"}
+					</button>
+				</div>
+			)}
+			<header className="bg-white border-b border-[var(--color-stroke-neutral)] pl-3 pr-6 py-3">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center">
 					<button
@@ -259,5 +299,6 @@ export default function Header({ onToggleSidebar, collapsed }) {
 				</div>
 			</div>
 		</header>
+		</>
 	);
 }
