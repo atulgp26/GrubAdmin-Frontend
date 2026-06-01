@@ -5,6 +5,24 @@ import Header from "@/components/layout/Header";
 import { usePathname } from "next/navigation";
 import ToastProvider from "@/components/ui/ToastProvider";
 
+const VERTICAL_DASHBOARDS = [
+  "/delivery/dashboard",
+];
+
+function isImpersonationRoute(pathname) {
+  if (pathname === "/impersonate" || pathname.startsWith("/impersonate/")) return true;
+  return VERTICAL_DASHBOARDS.includes(pathname);
+}
+
+function isBareRoute(pathname) {
+  if (pathname === "/" || pathname === "/login") return true;
+  if (pathname === "/employees/activelogs" || pathname === "/employees/suspendedlogs" || pathname === "/employees/dismissedlogs") return true;
+  if (pathname.startsWith("/support/") && !pathname.startsWith("/support/categories")) return true;
+  if (pathname === "/clients/clientlogs" || pathname === "/details" || pathname.startsWith("/details/")) return true;
+  if (/^\/grublock\/[^/]+$/.test(pathname) && !["/grublock/list"].includes(pathname)) return true;
+  return false;
+}
+
 export default function ClientLayout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const pathname = usePathname();
@@ -12,22 +30,25 @@ export default function ClientLayout({ children }) {
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
   const closeSidebar = () => setSidebarCollapsed(true);
 
-  if (
-    pathname === "/" ||
-    pathname === "/login" ||
-    pathname === "/employees/activelogs" ||
-    pathname === "/support/supportlogs" ||
-    pathname === "/support/supportdefaultlogs" ||
-    pathname === "/support/support-blank" ||
-    pathname === "/employees/suspendedlogs" ||
-    pathname === "/employees/dismissedlogs" ||
-    pathname === "/clients/clientlogs" ||
-    pathname === "/details" ||
-    pathname.startsWith("/details/") ||
-    (/^\/grublock\/[^/]+$/.test(pathname) &&
-      !["/grublock/list"].includes(pathname))
-  ) {
+  if (isBareRoute(pathname)) {
     return <>{children}</>;
+  }
+
+  if (isImpersonationRoute(pathname)) {
+    return (
+      <>
+        <ToastProvider />
+        <div className="flex">
+          <div className="flex-1 flex flex-col">
+            <Header
+              onToggleSidebar={toggleSidebar}
+              collapsed={sidebarCollapsed}
+            />
+            <main className="flex-1 p-6">{children}</main>
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (
