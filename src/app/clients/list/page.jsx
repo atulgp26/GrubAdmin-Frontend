@@ -1513,43 +1513,18 @@ const onVerticalGroupClose = (verticalName) => {
 															Quick actions
 														</h1>
 														<div className="flex flex-col gap-2">
-															{quickActions.map(
-																(item) =>
-																	item.id ===
-																	"faqs" ? (
-																		<Link
-																			key={
-																				item.id
-																			}
-																			href="/help/customer-faqs"
-																			className="block"
-																		>
-																			<div
-																				className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
-                                       border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
-																			>
-																				<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
-																					{
-																						item.title
-																					}
-																				</h3>
-																				<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
-																					{
-																						item.description
-																					}
-																				</p>
-																			</div>
-																		</Link>
-																	) : (
+														{quickActions.map(
+															(item) =>
+																item.id ===
+																"faqs" ? (
+																	<Link
+																		key={
+																			item.id
+																		}
+																		href="/help/customer-faqs"
+																		className="block"
+																	>
 																		<div
-																			key={
-																				item.id
-																			}
-																			onClick={() =>
-																				handleActionClick(
-																					item.id,
-																				)
-																			}
 																			className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
 																		>
@@ -1564,8 +1539,63 @@ const onVerticalGroupClose = (verticalName) => {
 																				}
 																			</p>
 																		</div>
-																	),
-															)}
+																	</Link>
+																) : item.id ===
+																  "checkgrubpacs" ? (
+																	<Link
+																		key={
+																			item.id
+																		}
+																		href={`/grubpacs/list?client_id=${encodeURIComponent(customer.id)}&client_name=${encodeURIComponent(customer.name)}`}
+																		onClick={() =>
+																			setMenuOpen(
+																				null,
+																			)
+																		}
+																		className="block"
+																	>
+																		<div
+																			className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                       border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
+																		>
+																			<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																				{
+																					item.title
+																				}
+																			</h3>
+																			<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																				{
+																					item.description
+																				}
+																			</p>
+																		</div>
+																	</Link>
+																) : (
+																	<div
+																		key={
+																			item.id
+																		}
+																		onClick={() =>
+																			handleActionClick(
+																				item.id,
+																			)
+																		}
+																		className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                       border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
+																	>
+																		<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																			{
+																				item.title
+																			}
+																		</h3>
+																		<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																			{
+																				item.description
+																			}
+																		</p>
+																	</div>
+																),
+														)}
 														</div>
 													</div>
 												</div>

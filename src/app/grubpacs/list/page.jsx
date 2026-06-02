@@ -12,7 +12,7 @@ import UnassignBoxModal from "@/components/pages/grubpacs/UnassignBoxModal";
 import TableActionBar from "@/components/ui/TableActionBar";
 import { boxService } from "@/api/services/boxService";
 import { showError, showSuccess } from "@/components/ui/toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { usePermissions } from "@/context/PermissionContext";
 import { useAuth } from "@/context/AuthContext";
 import LoadingDetails from "@/components/ui/LoadingDetails";
@@ -30,6 +30,9 @@ import { RiLoopRightFill } from "react-icons/ri";
 
 export default function GrubpacsPage() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const clientIdFilter = searchParams.get("client_id");
+	const clientNameFilter = searchParams.get("client_name");
 
 	const [grubpacs, setGrubpacs] = useState([]);
 	const [groups, setGroups] = useState(GRUBPAC_GROUP_BY_ASSIGNED_GROUPS);
@@ -172,7 +175,7 @@ export default function GrubpacsPage() {
 			const isInitial = grubpacs.length === 0 && !debouncedSearchValue;
 			fetchGrubpacs(isInitial);
 		}
-	}, [isAuthenticated, selectedRole, debouncedSearchValue, safeCurrentPage]);
+	}, [isAuthenticated, selectedRole, debouncedSearchValue, safeCurrentPage, clientIdFilter]);
 
 	useEffect(() => {
 		setCurrentPage(1);
@@ -439,6 +442,7 @@ export default function GrubpacsPage() {
 			};
 			if (debouncedSearchValue) params.query = debouncedSearchValue;
 			if (selectedRole.length > 0) params.verticals = selectedRole;
+			if (clientIdFilter) params.client_id = clientIdFilter;
 			const res = await boxService.getBoxes(params);
 			if (res?.success && res?.data) {
 				setGrubpacs(res.data.boxes || []);
@@ -494,6 +498,22 @@ export default function GrubpacsPage() {
 					ADD NEW
 				</Button>
 			</div>
+
+			{/* Client Filter Indicator */}
+			{clientIdFilter && clientNameFilter && (
+				<div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+					<span className="text-sm text-blue-700">
+						Showing GrubPacs for: <strong>{decodeURIComponent(clientNameFilter)}</strong>
+					</span>
+					<button
+						onClick={() => router.push("/grubpacs/list")}
+						className="ml-2 p-1 hover:bg-blue-100 rounded text-blue-600 hover:text-blue-800"
+						title="Clear filter"
+					>
+						<AiOutlineCloseSquare className="w-4 h-4" />
+					</button>
+				</div>
+			)}
 
 			{/* Search + Filters */}
 			<div className="flex items-center justify-between gap-6 mb-6 flex-wrap">
