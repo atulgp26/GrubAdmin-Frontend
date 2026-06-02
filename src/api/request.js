@@ -67,9 +67,11 @@ export const makeRequest = async (
 			message: HTTP_ERROR_MESSAGES[0],
 		};
 	}
+
 	// Handle 401 Unauthorized - token expired
 	if (response.status === 401) {
 		clearAuthCookie();
+		clearToken();
 
 		// Only redirect if we're in browser and not already redirecting
 		if (
@@ -80,7 +82,7 @@ export const makeRequest = async (
 			isRedirecting = true;
 			window.location.href = "/login";
 		}
-		// Try to return a structured error response instead of throwing on server
+		// Try to return a structured error response instead of throwing
 		try {
 			const maybeJson = await response.clone().json();
 			return {

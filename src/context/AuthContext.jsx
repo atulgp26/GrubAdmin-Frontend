@@ -60,26 +60,19 @@ export function AuthProvider({ children }) {
 					setToken(response.data.token);
 				}
 
-				// Retry session validation up to 3 times with backoff.
-				// The login succeeds but the follow-up /me call may transiently
-				// fail (e.g. backend still warming up after first request).
-				let sessionValid = false;
-				for (let attempt = 1; attempt <= 3; attempt++) {
-					sessionValid = await loadSession();
-					if (sessionValid) break;
-					if (attempt < 3) {
-						await new Promise(r => setTimeout(r, attempt * 1000));
-					}
-				}
+				// Single session validation — no retry loop.
+				// If the backend is up, one call is enough. If it's down, retrying
+				// just amplifies load and creates more 502s.
+				const sessionValid = await loadSession();
 
 				if (sessionValid) {
-					// Persist token for page-reload recovery (1 day = JWT expiry)
+					// Persist token for page-reload recovery
 					if (response?.data?.token) {
 						setAuthCookie(credentials.email, response.data.token, 1);
 					}
 					return { success: true };
 				}
-				return { success: false, error: "Session validation failed" };
+				return { success: false, error: "Session validation failed. Please try again." };
 			}
 			
 			return { 
