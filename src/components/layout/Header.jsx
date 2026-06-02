@@ -88,10 +88,10 @@ export default function Header({ onToggleSidebar, collapsed }) {
 	);
 
 	useEffect(() => {
-		if (isInitialized && !isAuthenticated) {
+		if (isInitialized && !isAuthenticated && !isImpersonating) {
 			router.push("/login");
 		}
-	}, [isAuthenticated, isInitialized, router]);
+	}, [isAuthenticated, isInitialized, router, isImpersonating]);
 
 	useEffect(() => {
 		if (isAuthenticated) {

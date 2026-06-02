@@ -112,6 +112,11 @@ export const customerService = {
 		return httpClient.post(url);
 	},
 
+	// Exchange impersonation token for delivery session (call from GrubDelivery)
+	getDeliveryImpersonationSession: async (token) => {
+		return httpClient.post(API_ENDPOINTS.DELIVERY.IMPERSONATE, { token });
+	},
+
 	// Exit impersonation - restore admin session
 	exitImpersonation: async () => {
 		return httpClient.post(API_ENDPOINTS.CUSTOMER.EXIT_IMPERSONATION);

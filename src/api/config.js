@@ -41,6 +41,11 @@ export const API_ENDPOINTS = {
 		EXIT_IMPERSONATION: "/admin/customer/exit-impersonation",
 	},
 
+	// Delivery (GrubDelivery)
+	DELIVERY: {
+		IMPERSONATE: "/delivery/auth/impersonate",
+	},
+
 	// Common
 	COMMON: {
 		GET_CONFIG: "/common/config",

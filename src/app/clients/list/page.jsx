@@ -731,12 +731,9 @@ const ClientsList = () => {
 					window.open(redirect_url, "_blank", "noopener,noreferrer");
 				}
 
-				// Restore admin session cookie immediately to prevent auth issues
-				await customerService.exitImpersonation();
-
 				showSuccess(
 					response.message_toast_title || "Access Granted",
-					response.message_toast_description || "Client account access granted.",
+					response.message_toast_description || "Client account access granted. A new tab has been opened with the client's delivery account.",
 				);
 			} else {
 				const errorMsg =

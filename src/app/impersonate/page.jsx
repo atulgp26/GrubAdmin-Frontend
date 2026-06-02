@@ -5,6 +5,7 @@ import { useImpersonation } from "@/context/ImpersonationContext";
 import { setToken } from "@/api/utils";
 import { setAuthCookie } from "@/utils/cookies";
 import { resolveDashboardRoute } from "@/utils/routeResolver";
+import { customerService } from "@/api/services/customerService";
 
 function decodeJwtPayload(token) {
   try {
@@ -15,10 +16,6 @@ function decodeJwtPayload(token) {
   } catch {
     return null;
   }
-}
-
-function getClientEmail(payload) {
-  return payload.client_email || null;
 }
 
 function ImpersonateHandler() {
@@ -51,17 +48,26 @@ function ImpersonateHandler() {
 
     startImpersonation(clientInfo, token);
     setToken(token);
-    setAuthCookie(getClientEmail(payload) || "impersonated", token, 1 / 24);
+    setAuthCookie(clientInfo.name || "impersonated", token, 1 / 24);
 
-    const dashboardRoute = resolveDashboardRoute(verticalName);
-
-    setStatus(`Redirecting to ${dashboardRoute}...`);
-
-    const targetUrl = dashboardRoute.startsWith("http")
-      ? dashboardRoute
-      : dashboardRoute;
-
-    router.replace(targetUrl);
+    // Exchange impersonation token for delivery session
+    customerService
+      .getDeliveryImpersonationSession(token)
+      .then((sessionResponse) => {
+        if (sessionResponse?.success && sessionResponse?.data?.auth_token) {
+          const deliveryToken = sessionResponse.data.auth_token;
+          setToken(deliveryToken);
+          setAuthCookie(clientInfo.name || "impersonated", deliveryToken, 1);
+        }
+      })
+      .catch((err) => {
+        console.error("[Impersonation] Failed to get delivery session:", err);
+      })
+      .finally(() => {
+        const dashboardRoute = resolveDashboardRoute(verticalName);
+        setStatus(`Redirecting to ${dashboardRoute}...`);
+        router.replace(dashboardRoute);
+      });
   }, [searchParams, router, startImpersonation]);
 
   return (
