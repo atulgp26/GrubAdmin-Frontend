@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import SearchWithSuggestions from "@/components/ui/SearchWithSuggestions";
 import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown";
@@ -29,6 +29,14 @@ import { ALL_VERTICALS_OPTION as client } from "@/utils/verticals";
 import { RiLoopRightFill } from "react-icons/ri";
 
 export default function GrubpacsPage() {
+	return (
+		<Suspense fallback={<LoadingDetails entity="GrubPacs" />}>
+			<GrubpacsContent />
+		</Suspense>
+	);
+}
+
+function GrubpacsContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const clientIdFilter = searchParams.get("client_id");
