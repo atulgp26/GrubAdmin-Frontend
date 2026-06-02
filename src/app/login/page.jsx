@@ -115,7 +115,12 @@ export default function LoginPage() {
 		};
 	}, []);
 
+	const loginInProgressRef = useRef(false);
+
 	const handleLogin = async (data) => {
+		// Prevent duplicate concurrent submissions
+		if (loginInProgressRef.current) return;
+		loginInProgressRef.current = true;
 		setIsLoading(true);
 		try {
 			const result = await login({
@@ -134,6 +139,7 @@ export default function LoginPage() {
 			showError(getApiError(error));
 		} finally {
 			setIsLoading(false);
+			loginInProgressRef.current = false;
 		}
 	};
 
