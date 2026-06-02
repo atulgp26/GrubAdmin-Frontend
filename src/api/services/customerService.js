@@ -107,9 +107,9 @@ export const customerService = {
 	},
 
 	// Impersonate a client (Access Complete Account)
-	impersonateClient: async (clientId) => {
+	impersonateClient: async (clientId, data) => {
 		const url = API_ENDPOINTS.CUSTOMER.IMPERSONATE_CLIENT.replace(":id", clientId);
-		return httpClient.post(url);
+		return httpClient.post(url, data ?? {});
 	},
 
 	// Exchange impersonation token for delivery session (call from GrubDelivery)

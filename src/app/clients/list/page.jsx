@@ -573,15 +573,13 @@ const ClientsList = () => {
 		setMenuOpen(null);
 		try {
 			showSuccess("Accessing...", "Opening client's GrubPacs.");
-			const response = await customerService.impersonateClient(customer.id);
+			const response = await customerService.impersonateClient(customer.id, { return_url: "/grubpacs/list" });
 			if (response?.success && response?.code === 200) {
-				const { token, client } = response.data;
+				const { token, client, redirect_url } = response.data;
 
 				startImpersonation(client, token);
 
-				// Navigate to impersonate page with return_url pointing to GrubPacs
-				const impersonateUrl = `/impersonate?token=${encodeURIComponent(token)}&return_url=${encodeURIComponent("/grubpacs/list")}`;
-				window.open(impersonateUrl, "_blank", "noopener,noreferrer");
+				window.open(redirect_url, "_blank", "noopener,noreferrer");
 
 				showSuccess(
 					"Access Granted",
