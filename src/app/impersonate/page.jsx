@@ -64,9 +64,10 @@ function ImpersonateHandler() {
         console.error("[Impersonation] Failed to get delivery session:", err);
       })
       .finally(() => {
-        const dashboardRoute = resolveDashboardRoute(verticalName);
-        setStatus(`Redirecting to ${dashboardRoute}...`);
-        router.replace(dashboardRoute);
+        const isCustomReturn = returnUrl && returnUrl !== "/clients";
+        const targetRoute = isCustomReturn ? returnUrl : resolveDashboardRoute(verticalName);
+        setStatus(`Redirecting to ${targetRoute}...`);
+        router.replace(targetRoute);
       });
   }, [searchParams, router, startImpersonation]);
 

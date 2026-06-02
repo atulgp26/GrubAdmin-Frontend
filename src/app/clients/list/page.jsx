@@ -568,19 +568,21 @@ const ClientsList = () => {
 		}
 	};
 
-	// Handle Check GrubPacs - impersonate client and redirect to GrubPacs page
+	// Handle Check GrubPacs - impersonate client and redirect to GrubDelivery GrubPacs
 	const handleCheckGrubPacs = async (customer) => {
 		setMenuOpen(null);
 		try {
 			showSuccess("Accessing...", "Opening client's GrubPacs.");
 			const response = await customerService.impersonateClient(customer.id);
 			if (response?.success && response?.code === 200) {
-				const { token, client } = response.data;
+				const { token, client, redirect_url } = response.data;
 
 				startImpersonation(client, token);
 
-				// Redirect to GrubPacs page in client's account
-				window.open("/grubpacs/list", "_blank", "noopener,noreferrer");
+				// Append return_url to redirect to GrubPacs page in delivery account
+				const url = new URL(redirect_url, window.location.origin);
+				url.searchParams.set("return_url", "/grubpacs/list");
+				window.open(url.toString(), "_blank", "noopener,noreferrer");
 
 				showSuccess(
 					"Access Granted",
