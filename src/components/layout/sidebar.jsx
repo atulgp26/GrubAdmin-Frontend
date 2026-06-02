@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import NavItem from "./NavItem";
 import Icon from "@/components/ui/Icon";
-import { NAV_ITEMS, CLIENT_NAV_ITEMS } from "./constants";
+import { NAV_ITEMS } from "./constants";
 import Image from "next/image";
 import Link from "next/link";
 import ProfileMenu from "@/components/layout/ProfileMenu";
@@ -20,10 +20,6 @@ export default function Sidebar({ collapsed, onClose }) {
 	const { isImpersonating, impersonation } = useImpersonation();
 
 	const visibleNavItems = React.useMemo(() => {
-		if (isImpersonating) {
-			return CLIENT_NAV_ITEMS;
-		}
-
 		if (loading) {
 			return NAV_ITEMS;
 		}
