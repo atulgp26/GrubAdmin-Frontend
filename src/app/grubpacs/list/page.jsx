@@ -1,5 +1,5 @@
 "use client";
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import SearchWithSuggestions from "@/components/ui/SearchWithSuggestions";
 import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown";
@@ -12,7 +12,7 @@ import UnassignBoxModal from "@/components/pages/grubpacs/UnassignBoxModal";
 import TableActionBar from "@/components/ui/TableActionBar";
 import { boxService } from "@/api/services/boxService";
 import { showError, showSuccess } from "@/components/ui/toast";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { usePermissions } from "@/context/PermissionContext";
 import { useAuth } from "@/context/AuthContext";
 import LoadingDetails from "@/components/ui/LoadingDetails";
@@ -29,18 +29,7 @@ import { ALL_VERTICALS_OPTION as client } from "@/utils/verticals";
 import { RiLoopRightFill } from "react-icons/ri";
 
 export default function GrubpacsPage() {
-	return (
-		<Suspense fallback={<LoadingDetails entity="GrubPacs" />}>
-			<GrubpacsContent />
-		</Suspense>
-	);
-}
-
-function GrubpacsContent() {
 	const router = useRouter();
-	const searchParams = useSearchParams();
-	const clientIdFilter = searchParams.get("client_id");
-	const clientNameFilter = searchParams.get("client_name");
 
 	const [grubpacs, setGrubpacs] = useState([]);
 	const [groups, setGroups] = useState(GRUBPAC_GROUP_BY_ASSIGNED_GROUPS);
@@ -183,7 +172,7 @@ function GrubpacsContent() {
 			const isInitial = grubpacs.length === 0 && !debouncedSearchValue;
 			fetchGrubpacs(isInitial);
 		}
-	}, [isAuthenticated, selectedRole, debouncedSearchValue, safeCurrentPage, clientIdFilter]);
+	}, [isAuthenticated, selectedRole, debouncedSearchValue, safeCurrentPage]);
 
 	useEffect(() => {
 		setCurrentPage(1);
@@ -450,7 +439,6 @@ function GrubpacsContent() {
 			};
 			if (debouncedSearchValue) params.query = debouncedSearchValue;
 			if (selectedRole.length > 0) params.verticals = selectedRole;
-			if (clientIdFilter) params.client_id = clientIdFilter;
 			const res = await boxService.getBoxes(params);
 			if (res?.success && res?.data) {
 				setGrubpacs(res.data.boxes || []);
@@ -506,22 +494,6 @@ function GrubpacsContent() {
 					ADD NEW
 				</Button>
 			</div>
-
-			{/* Client Filter Indicator */}
-			{clientIdFilter && clientNameFilter && (
-				<div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-					<span className="text-sm text-blue-700">
-						Showing GrubPacs for: <strong>{decodeURIComponent(clientNameFilter)}</strong>
-					</span>
-					<button
-						onClick={() => router.push("/grubpacs/list")}
-						className="ml-2 p-1 hover:bg-blue-100 rounded text-blue-600 hover:text-blue-800"
-						title="Clear filter"
-					>
-						<AiOutlineCloseSquare className="w-4 h-4" />
-					</button>
-				</div>
-			)}
 
 			{/* Search + Filters */}
 			<div className="flex items-center justify-between gap-6 mb-6 flex-wrap">

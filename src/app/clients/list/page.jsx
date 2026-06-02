@@ -568,6 +568,43 @@ const ClientsList = () => {
 		}
 	};
 
+	// Handle Check GrubPacs - impersonate client and redirect to GrubPacs page
+	const handleCheckGrubPacs = async (customer) => {
+		setMenuOpen(null);
+		try {
+			showSuccess("Accessing...", "Opening client's GrubPacs.");
+			const response = await customerService.impersonateClient(customer.id);
+			if (response?.success && response?.code === 200) {
+				const { token, client } = response.data;
+
+				startImpersonation(client, token);
+
+				// Redirect to GrubPacs page in client's account
+				window.open("/grubpacs/list", "_blank", "noopener,noreferrer");
+
+				showSuccess(
+					"Access Granted",
+					`Opening ${customer.name}'s GrubPacs in a new tab.`,
+				);
+			} else {
+				const errorMsg =
+					response?.message ||
+					response?.error ||
+					response?.data?.error ||
+					"Failed to access client account";
+				showError(errorMsg);
+			}
+		} catch (error) {
+			console.error("[Check GrubPacs] Error:", error);
+			const errorMsg =
+				error?.response?.data?.message ||
+				error?.message ||
+				error?.data?.error ||
+				"An unexpected error occurred. Please try again.";
+			showError(errorMsg);
+		}
+	};
+
 	const handleExportDetails = () => {
 		setOptions(exportOptions);
 		setExportListModal(true);
@@ -1542,34 +1579,29 @@ const onVerticalGroupClose = (verticalName) => {
 																	</Link>
 																) : item.id ===
 																  "checkgrubpacs" ? (
-																	<Link
+																	<div
 																		key={
 																			item.id
 																		}
-																		href={`/grubpacs/list?client_id=${encodeURIComponent(customer.id)}&client_name=${encodeURIComponent(customer.name)}`}
 																		onClick={() =>
-																			setMenuOpen(
-																				null,
+																			handleCheckGrubPacs(
+																				customer,
 																			)
 																		}
-																		className="block"
-																	>
-																		<div
-																			className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+																		className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
-																		>
-																			<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
-																				{
-																					item.title
-																				}
-																			</h3>
-																			<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
-																				{
-																					item.description
-																				}
-																			</p>
-																		</div>
-																	</Link>
+																	>
+																		<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																			{
+																				item.title
+																			}
+																		</h3>
+																		<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																			{
+																				item.description
+																			}
+																		</p>
+																	</div>
 																) : (
 																	<div
 																		key={
