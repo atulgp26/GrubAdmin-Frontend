@@ -21,6 +21,7 @@ import { showSuccess, showError } from "@/components/ui/toast";
 import { authService } from "@/api/services/authService";
 import { setToken } from "@/api/utils";
 import { setAuthCookie } from "@/utils/cookies";
+import { getApiError } from "@/api/errorHandler";
 import TableCheckbox from "@/components/ui/TableCheckbox";
 import { SEED_EMAIL, SEED_PASSWORD } from "@/constants/config";
 import { useAuth } from "@/context/AuthContext";
@@ -126,18 +127,11 @@ export default function LoginPage() {
 				showSuccess("Login successful!", "", true);
 				router.replace("/dashboard");
 			} else {
-				showError(result.error || "Login failed. Please try again.");
+				showError(getApiError(result));
 			}
 		} catch (error) {
 			console.error("Login error:", error);
-
-			if (error.response?.data?.message) {
-				showError(error.response.data.message);
-			} else if (error.response?.data?.error) {
-				showError(error.response.data.error);
-			} else {
-				showError("Login failed. Please try again.");
-			}
+			showError(getApiError(error));
 		} finally {
 			setIsLoading(false);
 		}
@@ -162,32 +156,11 @@ export default function LoginPage() {
 				setOtp(["", "", "", ""]);
 				showSuccess("OTP sent successfully!", "", true);
 			} else {
-				// Extract error message from API response
-				const errorMessage =
-					response?.message ||
-					response?.error ||
-					response?.data?.message ||
-					response?.data?.error ||
-					(Array.isArray(response?.errors) &&
-					response.errors.length > 0
-						? response.errors[0]
-						: null) ||
-					(response?.data?.errors &&
-					Array.isArray(response.data.errors) &&
-					response.data.errors.length > 0
-						? response.data.errors[0]
-						: null) ||
-					`Failed to send OTP${response?.code ? ` (${response.code})` : ""}. Please try again.`;
-				showError(errorMessage);
+				showError(getApiError(response));
 			}
 		} catch (error) {
 			console.error("Send OTP error:", error);
-			const errorMessage =
-				error?.response?.data?.message ||
-				error?.response?.data?.error ||
-				error?.message ||
-				"Failed to send OTP. Please try again.";
-			showError(errorMessage);
+			showError(getApiError(error));
 		} finally {
 			setIsLoading(false);
 		}
@@ -222,32 +195,11 @@ export default function LoginPage() {
 				setOtp(["", "", "", ""]);
 				showSuccess("OTP sent successfully!", "", true);
 			} else {
-				// Extract error message from API response
-				const errorMessage =
-					response?.message ||
-					response?.error ||
-					response?.data?.message ||
-					response?.data?.error ||
-					(Array.isArray(response?.errors) &&
-					response.errors.length > 0
-						? response.errors[0]
-						: null) ||
-					(response?.data?.errors &&
-					Array.isArray(response.data.errors) &&
-					response.data.errors.length > 0
-						? response.data.errors[0]
-						: null) ||
-					`Failed to send OTP${response?.code ? ` (${response.code})` : ""}. Please try again.`;
-				showError(errorMessage);
+				showError(getApiError(response));
 			}
 		} catch (error) {
 			console.error("Forgot password send OTP error:", error);
-			const errorMessage =
-				error?.response?.data?.message ||
-				error?.response?.data?.error ||
-				error?.message ||
-				"Failed to send OTP. Please try again.";
-			showError(errorMessage);
+			showError(getApiError(error));
 		} finally {
 			setIsLoading(false);
 		}
@@ -269,32 +221,11 @@ export default function LoginPage() {
 				setTimer(12);
 				showSuccess("A new OTP has been sent!", "", true);
 			} else {
-				// Extract error message from API response
-				const errorMessage =
-					response?.message ||
-					response?.error ||
-					response?.data?.message ||
-					response?.data?.error ||
-					(Array.isArray(response?.errors) &&
-					response.errors.length > 0
-						? response.errors[0]
-						: null) ||
-					(response?.data?.errors &&
-					Array.isArray(response.data.errors) &&
-					response.data.errors.length > 0
-						? response.data.errors[0]
-						: null) ||
-					`Failed to resend OTP${response?.code ? ` (${response.code})` : ""}. Please try again.`;
-				showError(errorMessage);
+				showError(getApiError(response));
 			}
 		} catch (error) {
 			console.error("Resend OTP error:", error);
-			const errorMessage =
-				error?.response?.data?.message ||
-				error?.response?.data?.error ||
-				error?.message ||
-				"Failed to resend OTP. Please try again.";
-			showError(errorMessage);
+			showError(getApiError(error));
 		} finally {
 			setIsLoading(false);
 		}
@@ -354,23 +285,7 @@ export default function LoginPage() {
 
 				router.replace("/dashboard");
 			} else {
-				// Extract error message from API response
-				const errorMessage =
-					response?.message ||
-					response?.error ||
-					response?.data?.message ||
-					response?.data?.error ||
-					(Array.isArray(response?.errors) &&
-					response.errors.length > 0
-						? response.errors[0]
-						: null) ||
-					(response?.data?.errors &&
-					Array.isArray(response.data.errors) &&
-					response.data.errors.length > 0
-						? response.data.errors[0]
-						: null) ||
-					`Invalid OTP${response?.code ? ` (${response.code})` : ""}. Please try again.`;
-				showError(errorMessage);
+				showError(getApiError(response));
 				setOtpError(true);
 				setOtp(["", "", "", ""]);
 				if (otpRefs.length > 0 && otpRefs[0].current) {
@@ -379,12 +294,7 @@ export default function LoginPage() {
 			}
 		} catch (error) {
 			console.error("Verify OTP error:", error);
-			const errorMessage =
-				error?.response?.data?.message ||
-				error?.response?.data?.error ||
-				error?.message ||
-				"Invalid OTP. Please try again.";
-			showError(errorMessage);
+			showError(getApiError(error));
 
 			setOtpError(true);
 			setOtp(["", "", "", ""]);
@@ -416,34 +326,11 @@ export default function LoginPage() {
 				setVerifiedOtp("");
 				router.push("/login");
 			} else {
-				// Extract error message from API response - check multiple possible fields
-				const errorMessage =
-					response?.message ||
-					response?.error ||
-					response?.data?.message ||
-					response?.data?.error ||
-					(Array.isArray(response?.errors) &&
-					response.errors.length > 0
-						? response.errors[0]
-						: null) ||
-					(response?.data?.errors &&
-					Array.isArray(response.data.errors) &&
-					response.data.errors.length > 0
-						? response.data.errors[0]
-						: null) ||
-					`Failed to reset password${response?.code ? ` (${response.code})` : ""}. Please try again.`;
-				showError(errorMessage);
+				showError(getApiError(response));
 			}
 		} catch (error) {
 			console.error("Forgot password confirm error:", error);
-
-			// Extract error message from caught error
-			const errorMessage =
-				error?.response?.data?.message ||
-				error?.response?.data?.error ||
-				error?.message ||
-				"Failed to reset password. Please try again.";
-			showError(errorMessage);
+			showError(getApiError(error));
 		} finally {
 			setIsLoading(false);
 		}

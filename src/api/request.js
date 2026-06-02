@@ -5,6 +5,35 @@ import { clearAuthCookie } from "@/utils/cookies";
 // Handle 401 redirect - only run once per session to avoid redirect loops
 let isRedirecting = false;
 
+const HTTP_ERROR_MESSAGES = {
+	502: "Server temporarily unavailable. Please try again.",
+	503: "Service unavailable. Please try again.",
+	504: "Request timeout. Please try again.",
+	500: "Internal server error. Please try again.",
+	429: "Too many requests. Please wait and try again.",
+	403: "Access denied.",
+	404: "Resource not found.",
+	0: "Network request failed. Please check your connection and try again.",
+};
+
+function getFriendlyError(status) {
+	return HTTP_ERROR_MESSAGES[status] || null;
+}
+
+function isHtmlResponse(response) {
+	const contentType = response.headers.get("content-type") || "";
+	return contentType.includes("text/html");
+}
+
+function sanitizeError(status, message) {
+	const friendly = getFriendlyError(status);
+	if (friendly) return friendly;
+	if (typeof message === "string" && /<html|<script|<iframe/i.test(message)) {
+		return "Server temporarily unavailable. Please try again.";
+	}
+	return message;
+}
+
 export const makeRequest = async (
 	url,
 	options = {},
@@ -34,8 +63,8 @@ export const makeRequest = async (
 		return {
 			success: false,
 			code: 0,
-			error: error?.message || "Failed to fetch",
-			message: "Network request failed. Please check your connection and try again.",
+			error: HTTP_ERROR_MESSAGES[0],
+			message: HTTP_ERROR_MESSAGES[0],
 		};
 	}
 	// Handle 401 Unauthorized - token expired
@@ -58,15 +87,15 @@ export const makeRequest = async (
 				success: false,
 				code: 401,
 				...maybeJson,
-				error: maybeJson?.error || "Unauthorized",
-				message: maybeJson?.message || "Session expired",
+				error: maybeJson?.error || "Invalid credentials",
+				message: maybeJson?.message || "Invalid credentials",
 			};
 		} catch (_) {
 			return {
 				success: false,
 				code: 401,
-				error: "Unauthorized",
-				message: "Session expired",
+				error: "Invalid credentials",
+				message: "Invalid credentials",
 			};
 		}
 	}
@@ -76,6 +105,18 @@ export const makeRequest = async (
 	}
 
 	if (!response.ok) {
+		// Check if the response is non-JSON (e.g. Nginx HTML error page)
+		if (isHtmlResponse(response)) {
+			const friendlyError = getFriendlyError(response.status)
+				|| "Server temporarily unavailable. Please try again.";
+			return {
+				success: false,
+				code: response.status,
+				error: friendlyError,
+				message: friendlyError,
+			};
+		}
+
 		// Return structured error instead of throwing to avoid white screens
 		try {
 			const json = await response.clone().json();
@@ -83,16 +124,16 @@ export const makeRequest = async (
 				success: false,
 				code: response.status,
 				...json,
-				error: json?.error || `HTTP ${response.status}`,
-				message: json?.message,
+				error: sanitizeError(response.status, json?.error || `HTTP ${response.status}`),
+				message: sanitizeError(response.status, json?.message),
 			};
 		} catch (_) {
 			const text = await response.text();
 			return {
 				success: false,
 				code: response.status,
-				error: `HTTP ${response.status}`,
-				message: text,
+				error: sanitizeError(response.status, `HTTP ${response.status}`),
+				message: sanitizeError(response.status, text),
 			};
 		}
 	}
@@ -105,7 +146,7 @@ export const makeRequest = async (
 		return {
 			success: false,
 			code: 500,
-			error: "Invalid JSON",
+			error: "Failed to parse server response",
 			message: "Failed to parse server response",
 		};
 	}

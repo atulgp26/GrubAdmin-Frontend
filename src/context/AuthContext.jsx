@@ -10,6 +10,7 @@ import { authService } from "@/api/services/authService";
 import { accountService } from "@/api/services/accountService";
 import { setAuthCookie, clearAuthCookie } from "@/utils/cookies";
 import { setToken, clearToken } from "@/api/utils";
+import { getApiError } from "@/api/errorHandler";
 
 const AuthContext = createContext(null);
 
@@ -71,13 +72,13 @@ export function AuthProvider({ children }) {
 			
 			return { 
 				success: false, 
-				error: response?.message || response?.error || "Login failed" 
+				error: getApiError(response)
 			};
 		} catch (error) {
 			console.error("[AuthContext] Login error:", error);
 			return { 
 				success: false, 
-				error: error?.response?.data?.message || "Login failed" 
+				error: getApiError(error)
 			};
 		} finally {
 			setIsLoading(false);
