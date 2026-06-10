@@ -231,16 +231,18 @@ useEffect(() => {
 
 	const result = await onConfirm(data);
 
-const message =
-    result?.error?.response?.data?.message ||
-    result?.error?.data?.message ||
-    result?.error?.message ||
-    result?.error;
+	const message =
+		(typeof result?.error === "string" && result.error) ||
+		result?.error?.response?.data?.message ||
+		result?.error?.data?.message ||
+		result?.error?.message ||
+		result?.error ||
+		result?.message;
 
-if (message) {
-    showError(message);
-    return;
-}
+	if (result?.error) {
+		showError(typeof message === "string" ? message : "Failed to create client");
+		return;
+	}
 
 		showSuccess("Success", result?.message);
 
