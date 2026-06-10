@@ -277,6 +277,7 @@ const ClientsList = () => {
 			const response = await customerService.getCustomers(params);
 			if (response?.success && response?.code === 200) {
 				setCustomers(response.data?.customers || []);
+				setTotalItems(response.data?.total_count || 0);
 				setError(null);
 			} else {
 				showError("Failed to load customers data");
@@ -573,7 +574,10 @@ const ClientsList = () => {
 		setMenuOpen(null);
 		try {
 			showSuccess("Accessing...", "Opening client's GrubPacs.");
-			const response = await customerService.impersonateClient(customer.id, { return_url: "/grubpacs/list" });
+			const response = await customerService.impersonateClient(
+				customer.id,
+				{ return_url: "/grubpacs/list" },
+			);
 			if (response?.success && response?.code === 200) {
 				const { token, client, redirect_url } = response.data;
 
@@ -757,7 +761,9 @@ const ClientsList = () => {
 		setMenuOpen(null);
 		try {
 			showSuccess("Accessing...", "Initiating client account access.");
-			const response = await customerService.impersonateClient(customer.id);
+			const response = await customerService.impersonateClient(
+				customer.id,
+			);
 			if (response?.success && response?.code === 200) {
 				const { token, client, redirect_url } = response.data;
 
@@ -769,7 +775,8 @@ const ClientsList = () => {
 
 				showSuccess(
 					response.message_toast_title || "Access Granted",
-					response.message_toast_description || "Client account access granted. A new tab has been opened with the client's delivery account.",
+					response.message_toast_description ||
+						"Client account access granted. A new tab has been opened with the client's delivery account.",
 				);
 			} else {
 				const errorMsg =
@@ -860,20 +867,18 @@ const ClientsList = () => {
 	};
 
 	const onVerticalGroupClick = (verticalName) => {
-    setCurrentOpenVertical((prev) =>
-        prev === verticalName ? null : verticalName
-    );
-};
+		setCurrentOpenVertical((prev) =>
+			prev === verticalName ? null : verticalName,
+		);
+	};
 
-const onVerticalGroupOpen = (verticalName) => {
-    setCurrentOpenVertical(verticalName);
-};
+	const onVerticalGroupOpen = (verticalName) => {
+		setCurrentOpenVertical(verticalName);
+	};
 
-const onVerticalGroupClose = (verticalName) => {
-    setCurrentOpenVertical((prev) =>
-        prev === verticalName ? null : prev
-    );
-};
+	const onVerticalGroupClose = (verticalName) => {
+		setCurrentOpenVertical((prev) => (prev === verticalName ? null : prev));
+	};
 
 	// Group employees by vertical from API data (include empty verticals)
 	const groupEmployeesByRole = () => {
@@ -971,20 +976,23 @@ const onVerticalGroupClose = (verticalName) => {
 									</div>
 								</TableCell>
 								<TableCell className="p-4">
-    <div className="w-max">
-        <Badge
-            color={`${customer.vertical.toLowerCase()}`}
-            className="leading-none flex items-center space-x-2 w-max cursor-pointer"
-            onClick={() => setSelectedBoxClient(customer)}
-        >
-            <Icon
-                name="inventory"
-                className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
-            />
-            {customer.vertical} ({customer.boxCount || 0})
-        </Badge>
-    </div>
-</TableCell>
+									<div className="w-max">
+										<Badge
+											color={`${customer.vertical.toLowerCase()}`}
+											className="leading-none flex items-center space-x-2 w-max cursor-pointer"
+											onClick={() =>
+												setSelectedBoxClient(customer)
+											}
+										>
+											<Icon
+												name="inventory"
+												className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
+											/>
+											{customer.vertical} (
+											{customer.boxCount || 0})
+										</Badge>
+									</div>
+								</TableCell>
 								<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
 									<BoxCountBadge
 										asText
@@ -1351,20 +1359,25 @@ const onVerticalGroupClose = (verticalName) => {
 										</div>
 									</TableCell>
 									<TableCell className="p-4">
-    <div className="w-max">
-        <Badge
-            color={`${customer.vertical.toLowerCase()}`}
-            className="leading-none flex items-center space-x-2 w-max cursor-pointer"
-            onClick={() => setSelectedBoxClient(customer)}
-        >
-            <Icon
-                name="inventory"
-                className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
-            />
-            {customer.vertical} ({customer.boxCount || 0})
-        </Badge>
-    </div>
-</TableCell>
+										<div className="w-max">
+											<Badge
+												color={`${customer.vertical.toLowerCase()}`}
+												className="leading-none flex items-center space-x-2 w-max cursor-pointer"
+												onClick={() =>
+													setSelectedBoxClient(
+														customer,
+													)
+												}
+											>
+												<Icon
+													name="inventory"
+													className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
+												/>
+												{customer.vertical} (
+												{customer.boxCount || 0})
+											</Badge>
+										</div>
+									</TableCell>
 									<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
 										<BoxCountBadge
 											asText
@@ -1485,11 +1498,14 @@ const onVerticalGroupClose = (verticalName) => {
 																	</div>
 																</div>
 															</Link>
-														) : item.id === "account" ? (
+														) : item.id ===
+														  "account" ? (
 															<div
 																key={item.id}
 																onClick={() =>
-																	handleAccessAccount(customer)
+																	handleAccessAccount(
+																		customer,
+																	)
 																}
 																className="border gap-1 border-[var(--color-stroke-neutral)] rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
                    flex items-center gap-3 px-4 py-3 mb-2"
@@ -1549,18 +1565,44 @@ const onVerticalGroupClose = (verticalName) => {
 															Quick actions
 														</h1>
 														<div className="flex flex-col gap-2">
-														{quickActions.map(
-															(item) =>
-																item.id ===
-																"faqs" ? (
-																	<Link
-																		key={
-																			item.id
-																		}
-																		href="/help/customer-faqs"
-																		className="block"
-																	>
+															{quickActions.map(
+																(item) =>
+																	item.id ===
+																	"faqs" ? (
+																		<Link
+																			key={
+																				item.id
+																			}
+																			href="/help/customer-faqs"
+																			className="block"
+																		>
+																			<div
+																				className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                       border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
+																			>
+																				<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																					{
+																						item.title
+																					}
+																				</h3>
+																				<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																					{
+																						item.description
+																					}
+																				</p>
+																			</div>
+																		</Link>
+																	) : item.id ===
+																	  "checkgrubpacs" ? (
 																		<div
+																			key={
+																				item.id
+																			}
+																			onClick={() =>
+																				handleCheckGrubPacs(
+																					customer,
+																				)
+																			}
 																			className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
 																		>
@@ -1575,58 +1617,32 @@ const onVerticalGroupClose = (verticalName) => {
 																				}
 																			</p>
 																		</div>
-																	</Link>
-																) : item.id ===
-																  "checkgrubpacs" ? (
-																	<div
-																		key={
-																			item.id
-																		}
-																		onClick={() =>
-																			handleCheckGrubPacs(
-																				customer,
-																			)
-																		}
-																		className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+																	) : (
+																		<div
+																			key={
+																				item.id
+																			}
+																			onClick={() =>
+																				handleActionClick(
+																					item.id,
+																				)
+																			}
+																			className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
-																	>
-																		<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
-																			{
-																				item.title
-																			}
-																		</h3>
-																		<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
-																			{
-																				item.description
-																			}
-																		</p>
-																	</div>
-																) : (
-																	<div
-																		key={
-																			item.id
-																		}
-																		onClick={() =>
-																			handleActionClick(
-																				item.id,
-																			)
-																		}
-																		className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
-                                       border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
-																	>
-																		<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
-																			{
-																				item.title
-																			}
-																		</h3>
-																		<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
-																			{
-																				item.description
-																			}
-																		</p>
-																	</div>
-																),
-														)}
+																		>
+																			<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																				{
+																					item.title
+																				}
+																			</h3>
+																			<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																				{
+																					item.description
+																				}
+																			</p>
+																		</div>
+																	),
+															)}
 														</div>
 													</div>
 												</div>
@@ -1703,12 +1719,12 @@ const onVerticalGroupClose = (verticalName) => {
 				isCreating={isCreatingCustomer}
 			/>
 			<ClientBoxesModal
-    open={!!selectedBoxClient}
-    onClose={() => setSelectedBoxClient(null)}
-    clientId={selectedBoxClient?.id}
-    clientName={selectedBoxClient?.name}
-    vertical={selectedBoxClient?.vertical}
-/>
+				open={!!selectedBoxClient}
+				onClose={() => setSelectedBoxClient(null)}
+				clientId={selectedBoxClient?.id}
+				clientName={selectedBoxClient?.name}
+				vertical={selectedBoxClient?.vertical}
+			/>
 		</div>
 	);
 };

@@ -41,7 +41,7 @@ export default function NotificationsPage() {
 
 	const [debouncedSearchValue] = useDebounce(search, DEBOUNCE_TIME);
 	const onDebouncedSearchValueChange = useDebouncedCallback(
-		() => { },
+		() => {},
 		DEBOUNCE_TIME,
 	);
 
@@ -76,6 +76,18 @@ export default function NotificationsPage() {
 			console.error("Failed to fetch notifications:", error);
 		}
 	}, [selectedTypes, selectedStatuses, debouncedSearchValue]);
+
+	const handleDismiss = useCallback(async (id) => {
+		try {
+			const response = await notificationsService.markAsRead([id]);
+			if (response?.success) {
+				setNotifications((prev) => prev.filter((n) => n.id !== id));
+				showSuccess("Notification dismissed", "", true);
+			}
+		} catch (error) {
+			showError("Failed to dismiss notification.");
+		}
+	}, []);
 
 	const handleMarkAsRead = useCallback(async (ids) => {
 		try {
@@ -115,7 +127,7 @@ export default function NotificationsPage() {
 				}),
 				status: n.status,
 				category: n.item_type || n.type,
-				  itemId: n.item_id,
+				itemId: n.item_id,
 			})),
 		[notifications],
 	);
@@ -137,6 +149,22 @@ export default function NotificationsPage() {
 		[processedNotifications, filter, search],
 	);
 
+	
+	const handleDismissAll = useCallback(async () => {
+		const ids = filtered.map((n) => n.id);
+		try {
+			const response = await notificationsService.markAsRead(ids);
+			if (response?.success) {
+				setNotifications((prev) =>
+					prev.filter((n) => !ids.includes(n.id)),
+				);
+				showSuccess("All notifications dismissed", "", true);
+			}
+		} catch (error) {
+			showError("Failed to dismiss all notifications.");
+		}
+	}, [filtered]);
+
 	const allSelected = useMemo(
 		() => selected.length === filtered.length && filtered.length > 0,
 		[selected, filtered],
@@ -146,8 +174,8 @@ export default function NotificationsPage() {
 		() =>
 			debouncedSearchValue
 				? processedNotifications.filter((n) =>
-					n.title.toLowerCase().includes(search.toLowerCase()),
-				)
+						n.title.toLowerCase().includes(search.toLowerCase()),
+					)
 				: [],
 		[debouncedSearchValue, processedNotifications, search],
 	);
@@ -189,9 +217,20 @@ export default function NotificationsPage() {
 
 	return (
 		<>
-			<h1 className="text-2xl !pl-3 font-semibold mb-6 text-[var(--color-neutral-primary)]">
-				Notifications
-			</h1>
+			<div className="flex items-center justify-between mb-6 !pl-3">
+				<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)]">
+					Notifications
+				</h1>
+				{filtered.length > 0 && (
+					<button
+						onClick={handleDismissAll}
+						className="text-sm uppercase text-normal tracking-widest text-gray-500 transition-opacity"
+					>
+						Dismiss all
+					</button>
+				)}
+			</div>
+
 			<NotificationFilterBar
 				search={search}
 				setSearch={onSearchChange}
@@ -225,6 +264,7 @@ export default function NotificationsPage() {
 				getNotificationIcon={getNotificationIcon}
 				allSelected={allSelected}
 				onMarkAsRead={handleMarkAsRead}
+				onDismiss={handleDismiss}
 			/>
 		</>
 	);

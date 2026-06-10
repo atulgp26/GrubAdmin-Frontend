@@ -16,6 +16,7 @@ export default function Select({
 	padding = "",
 	onOpenChange,
 	disabled,
+	chevronColor = "",
 }) {
 	const [searchTerm, setSearchTerm] = useState("");
 	const selectedOption = options.find((opt) => opt.value === value);
@@ -75,8 +76,11 @@ export default function Select({
 						>
 							{displayValue || placeholder}
 						</span>
-						<HiOutlineChevronDown
+						{/* <HiOutlineChevronDown
 							className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--info-panel-view-bg)] pointer-events-none ${open ? "rotate-180" : "rotate-0"}`}
+						/> */}
+						<HiOutlineChevronDown
+							className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 ${chevronColor || "text-[var(--info-panel-view-bg)]"} pointer-events-none ${open ? "rotate-180" : "rotate-0"}`}
 						/>
 					</Listbox.Button>
 					<Listbox.Options className="absolute z-10 mt-2 w-full bg-white rounded-lg shadow-[4px_4px_8px_0px_var(--color-notif-shadow-soft),0px_0px_4px_0px_var(--color-notif-shadow-strong)] border border-[var(--color-stroke-neutral)] divide-y divide-[var(--color-stroke-neutral)] border border-[var(--color-stroke-neutral)] max-h-60 focus:outline-none overflow-y-auto scrollbar-hide">

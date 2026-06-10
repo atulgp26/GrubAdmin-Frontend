@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { accountService } from "@/api/services/accountService";
+import { useAuth } from "@/context/AuthContext";
 
 // Helper function to get initials from name
 const getInitials = (name) => {
@@ -18,6 +19,7 @@ export const useProfileData = () => {
 		initials: "",
 	});
 	const [loading, setLoading] = useState(true);
+	const { user } = useAuth();
 
 	useEffect(() => {
 		const fetchProfile = async () => {
@@ -50,7 +52,7 @@ export const useProfileData = () => {
 		};
 
 		fetchProfile();
-	}, []);
+	}, [user]);
 
 	return { userData, loading };
 };
