@@ -1035,15 +1035,214 @@ const onVerticalGroupClose = (verticalName) => {
 									</BoxCountBadge>
 								</TableCell>
 								<TableCell className="w-12 p-4">
-									<button
+									<div
 										ref={(el) =>
 											(buttonRefs.current[customer.id] =
 												el)
 										}
-										className={`p-2 hover:bg-[var(--color-neutral-secondary-bg)] rounded-lg`}
+										className="menu-container relative inline-block"
 									>
-										<BsThreeDotsVertical className="w-5 h-5 text-[var(--color-stroke-brand)]" />
-									</button>
+										<button
+											onClick={(e) => {
+												setMenuOpen(
+													menuOpen === customer.id
+														? null
+														: customer.id,
+												);
+												e.stopPropagation();
+											}}
+											className={`p-2 hover:bg-[var(--color-neutral-secondary-bg)] rounded-lg ${
+												menuOpen === customer.id
+													? "bg-[var(--color-neutral-secondary-bg)] shadow-[0_0_0_2px_var(--color-shadow-actionmenu)] rounded-lg"
+													: ""
+											}`}
+										>
+											<BsThreeDotsVertical className="w-5 h-5 text-[var(--color-stroke-brand)]" />
+										</button>
+										{menuOpen === customer.id && (
+											<div className="menu-container absolute right-full mr-2 z-60 w-[400px] p-3 top-1/2 -translate-y-1/2 ml-2  rounded-lg border border-[var(--color-stroke-neutral)] bg-white shadow-[4px_4px_8px_0_var(--color-notif-shadow-soft),0px_0px_4px_0_var(--color-notif-shadow-strong)] divide-y divide-[var(--color-stroke-neutral)] ">
+												{actions.map((item) =>
+													item.id === "logs" ? (
+														<Link
+															key={item.id}
+															href={`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`}
+															className="block"
+														>
+															<div
+																className="border gap-1 border-[var(--color-stroke-neutral)] rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                   flex items-center gap-3 px-4 py-3 mb-2"
+															>
+																<div className="flex gap-2 justify-center">
+																	<Icon
+																		name={
+																			item.icon
+																		}
+																		className="w-5 h-5 text-[var(--color-neutral-light)] group-active:text-[var(--color-stroke-brand)]"
+																	/>
+																</div>
+																<div className="flex-1">
+																	<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																		{
+																			item.title
+																		}
+																	</h3>
+																	<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																		{
+																			item.description
+																		}
+																	</p>
+																</div>
+															</div>
+														</Link>
+													) : item.id === "account" ? (
+														<div
+															key={item.id}
+															onClick={() =>
+																handleAccessAccount(customer)
+															}
+															className="border gap-1 border-[var(--color-stroke-neutral)] rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                   flex items-center gap-3 px-4 py-3 mb-2"
+														>
+															<div className="flex gap-2 justify-center">
+																<Icon
+																	name={
+																		item.icon
+																	}
+																	className="w-5 h-5 text-[var(--color-neutral-light)] group-active:text-[var(--color-stroke-brand)]"
+																/>
+															</div>
+															<div className="flex-1">
+																<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																	{
+																		item.title
+																	}
+																</h3>
+																<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																	{
+																		item.description
+																	}
+																</p>
+															</div>
+														</div>
+													) : (
+														<div
+															key={item.id}
+															className="border gap-1 border-[var(--color-stroke-neutral)] rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                   flex items-center gap-3 px-4 py-3 mb-2"
+														>
+															<div className="flex gap-2 justify-center">
+																<Icon
+																	name={
+																		item.icon
+																	}
+																	className="w-5 h-5 text-[var(--color-neutral-light)] group-active:text-[var(--color-stroke-brand)]"
+																/>
+															</div>
+															<div className="flex-1">
+																<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																	{
+																		item.title
+																	}
+																</h3>
+																<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																	{
+																		item.description
+																	}
+																</p>
+															</div>
+														</div>
+													),
+												)}
+												<div>
+													<h1 className="pt-3 pb-2 text-sm text-[var(--color-neutral-secondary)] font-semibold">
+														Quick actions
+													</h1>
+													<div className="flex flex-col gap-2">
+													{quickActions.map(
+														(item) =>
+															item.id ===
+															"faqs" ? (
+																<div
+																	key={
+																		item.id
+																	}
+																	onClick={(e) =>
+																		handleCheckFAQs(
+																			e,
+																			customer,
+																		)
+																	}
+																	className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
+																>
+																	<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																		{
+																			item.title
+																		}
+																	</h3>
+																	<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																		{
+																			item.description
+																		}
+																	</p>
+																</div>
+															) : item.id ===
+															  "checkgrubpacs" ? (
+																<div
+																	key={
+																		item.id
+																	}
+																	onClick={(e) =>
+																		handleCheckGrubPacs(
+																			e,
+																			customer,
+																		)
+																	}
+																	className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
+																>
+																	<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																		{
+																			item.title
+																		}
+																	</h3>
+																	<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																		{
+																			item.description
+																		}
+																	</p>
+																</div>
+															) : (
+																<div
+																	key={
+																		item.id
+																	}
+																	onClick={() =>
+																		handleActionClick(
+																			item.id,
+																		)
+																	}
+																	className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
+																>
+																	<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																		{
+																			item.title
+																		}
+																	</h3>
+																	<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																		{
+																			item.description
+																		}
+																	</p>
+																</div>
+															),
+													)}
+													</div>
+												</div>
+											</div>
+										)}
+									</div>
 								</TableCell>
 							</TableRow>
 						))}

@@ -56,7 +56,7 @@ export default function Sidebar({ collapsed, onClose }) {
 				<div className="hidden md:block fixed top-0 left-0 h-full w-1 bg-[var(--color-brand-primary-btn)] z-50" />
 			)}
 			<div
-				className={`hidden md:block border-r border-[var(--color-stroke-neutral)] transition-[width] duration-300 flex-shrink-0 overflow-hidden ${
+				className={`hidden md:block sticky top-0 h-screen border-r border-[var(--color-stroke-neutral)] transition-[width] duration-300 flex-shrink-0 overflow-hidden ${
 					collapsed ? "w-0" : "w-60"
 				}`}
 			>
