@@ -583,15 +583,49 @@ const ClientsList = () => {
 		router.push(`/help/customer-faqs?vertical=${encodeURIComponent(verticalName.toLowerCase())}`);
 	};
 
-	// Handle Check GrubPacs - navigate to client's Grubpac page
-	const handleCheckGrubPacs = (e, customer) => {
+	// Handle Check GrubPacs - impersonate client and go to their GrubPacs module
+	const handleCheckGrubPacs = async (e, customer) => {
 		e.stopPropagation();
 		setMenuOpen(null);
 		if (!customer?.id) {
 			showError("Client ID is missing");
 			return;
 		}
-		router.push(`/clients/${customer.id}/grubpacs`);
+		try {
+			showSuccess("Accessing...", "Initiating client GrubPacs access.");
+			const response = await customerService.impersonateClient(customer.id, {
+				return_url: "/delivery/grubpacs",
+			});
+			if (response?.success && response?.code === 200) {
+				const { token, client, redirect_url } = response.data;
+
+				startImpersonation(client, token);
+
+				if (redirect_url) {
+					window.open(redirect_url, "_blank", "noopener,noreferrer");
+				}
+
+				showSuccess(
+					response.message_toast_title || "Access Granted",
+					response.message_toast_description || "Client GrubPacs access granted. A new tab has been opened with the client's GrubPacs.",
+				);
+			} else {
+				const errorMsg =
+					response?.message ||
+					response?.error ||
+					response?.data?.error ||
+					"Failed to access client GrubPacs";
+				showError(errorMsg);
+			}
+		} catch (error) {
+			console.error("[Check GrubPacs] Error:", error);
+			const errorMsg =
+				error?.response?.data?.message ||
+				error?.message ||
+				error?.data?.error ||
+				"An unexpected error occurred. Please try again.";
+			showError(errorMsg);
+		}
 	};
 
 	const handleExportDetails = () => {
@@ -945,7 +979,15 @@ const onVerticalGroupClose = (verticalName) => {
 					</TableHead>
 					<TableBody>
 						{data.map((customer) => (
-							<TableRow key={customer.id}>
+							<TableRow
+								key={customer.id}
+								className="cursor-pointer"
+								onClick={() =>
+									router.push(
+										`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`,
+									)
+								}
+							>
 								<TableCell className="p-4">
 									<div>
 										<div className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)]">
@@ -971,7 +1013,10 @@ const onVerticalGroupClose = (verticalName) => {
             iconColor={getIconColor(customer.vertical)}
             tooltipSide="bottom"
             tooltipAlign="start"
-            onClick={() => setSelectedBoxClient(customer)}
+            onClick={(e) => {
+                e.stopPropagation();
+                setSelectedBoxClient(customer);
+            }}
             onViewList={() => setSelectedBoxClient(customer)}
             className="!border-none !bg-transparent !px-0 !py-0 hover:!border-none hover:!bg-transparent"
         />
@@ -1022,9 +1067,10 @@ const onVerticalGroupClose = (verticalName) => {
 											variant="messaging"
 											type="button"
 											className="group !p-2 hover:!border-[var(--notif-border)]"
-											onClick={() =>
-												handleOpenGmail(customer.email)
-											}
+											onClick={(e) => {
+												e.stopPropagation();
+												handleOpenGmail(customer.email);
+											}}
 										>
 											<Icon
 												name="messaging"
@@ -1521,7 +1567,15 @@ const onVerticalGroupClose = (verticalName) => {
 						</TableHead>
 						<TableBody>
 							{processedCustomers.map((customer) => (
-								<TableRow key={customer.id}>
+								<TableRow
+									key={customer.id}
+									className="cursor-pointer"
+									onClick={() =>
+										router.push(
+											`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`,
+										)
+									}
+								>
 									<TableCell className="p-4">
 										<div>
 											<div className="font-semibold text-base pb-1 text-[var(--color-neutral-secondary)]">
@@ -1547,7 +1601,10 @@ const onVerticalGroupClose = (verticalName) => {
             iconColor={getIconColor(customer.vertical)}
             tooltipSide="bottom"
             tooltipAlign="start"
-            onClick={() => setSelectedBoxClient(customer)}
+            onClick={(e) => {
+                e.stopPropagation();
+                setSelectedBoxClient(customer);
+            }}
             onViewList={() => setSelectedBoxClient(customer)}
             className="!border-none !bg-transparent !px-0 !py-0 hover:!border-none hover:!bg-transparent"
         />
@@ -1599,11 +1656,12 @@ const onVerticalGroupClose = (verticalName) => {
 												type="button"
 												variant="messaging"
 												className="group !p-2"
-												onClick={() =>
+												onClick={(e) => {
+													e.stopPropagation();
 													handleOpenGmail(
 														customer.email,
-													)
-												}
+													);
+												}}
 											>
 												<Icon
 													name="messaging"
