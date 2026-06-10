@@ -333,7 +333,7 @@ export default function SystemLogs() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [debouncedSearchValue, startDate, endDate, advancedFilters]);
+    }, [debouncedSearchValue, startDate, endDate, advancedFilters, selectedCategories]);
 
     useEffect(() => {
         if (highlightedItemId && !isLoadingLogs && visibleLogs.length > 0) {
@@ -544,7 +544,10 @@ export default function SystemLogs() {
                             selectsRange
                             startDate={startDate}
                             endDate={endDate}
-                            onChange={(update) => setDateRange(update)}
+                            onChange={(update) => {
+                                setDateRange(update);
+                                setCurrentPage(1);
+                            }}
                             placeholderText="Date range"
                             className="pr-10 !w-44 !h-8 cursor-pointer !rounded-lg border border-[var(--color-stroke-neutral)] text-[var(--color-neutral-secondary)] px-3 text-sm outline-none"
                             dateFormat="dd MMM yy"
@@ -552,7 +555,10 @@ export default function SystemLogs() {
                         {startDate ? (
                             <RxCross2
                                 className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF5A3C] cursor-pointer"
-                                onClick={() => setDateRange([null, null])}
+                                onClick={() => {
+                                    setDateRange([null, null]);
+                                    setCurrentPage(1);
+                                }}
                             />
                         ) : (
                             <MdCalendarToday className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF5A3C] cursor-pointer pointer-events-none" />

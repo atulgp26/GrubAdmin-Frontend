@@ -46,7 +46,7 @@ import { usePermissions } from "@/context/PermissionContext";
 import { useAuth } from "@/context/AuthContext";
 import { useImpersonation } from "@/context/ImpersonationContext";
 import AddNewClient from "@/components/pages/clients/AddNewClient";
-import { useDebounce, useDebouncedCallback } from "use-debounce";
+import { useDebounce } from "use-debounce";
 import {
 	DEBOUNCE_TIME,
 	DEFAULT_PAGE_NUMBER,
@@ -217,19 +217,17 @@ const ClientsList = () => {
 		can("delete entries", "clients") || can("delete entries");
 
 	const [debouncedSearchValue] = useDebounce(searchValue, DEBOUNCE_TIME);
-	const onDebouncedSearchValueChange = useDebouncedCallback(() => {
-		setCurrentPage(1);
-	}, DEBOUNCE_TIME);
 
 	// API data states
 	const [verticals, setVerticals] = useState([]);
 	const [customers, setCustomers] = useState([]);
 	const [loading, setLoading] = useState(true);
+	const [searching, setSearching] = useState(false);
 	const [error, setError] = useState(null);
+	const isInitialMount = useRef(true);
 
 	const onKeywordChange = (e) => {
 		setSearchValue(e.target.value);
-		onDebouncedSearchValueChange();
 	};
 
 	const handleOpenGmail = (email) => {
@@ -263,7 +261,11 @@ const ClientsList = () => {
 
 	const fetchCustomers = useCallback(async () => {
 		try {
-			setLoading(true);
+			if (isInitialMount.current) {
+				setLoading(true);
+			} else {
+				setSearching(true);
+			}
 			const params = {};
 			if (selectedRole.length > 0) {
 				params.filter = selectedRole;
@@ -288,6 +290,7 @@ const ClientsList = () => {
 			setError("Failed to load data");
 		} finally {
 			setLoading(false);
+			setSearching(false);
 		}
 	}, [selectedRole, debouncedSearchValue, currentPage]);
 
@@ -300,6 +303,7 @@ const ClientsList = () => {
 	useEffect(() => {
 		if (isAuthenticated) {
 			fetchCustomers();
+			isInitialMount.current = false;
 		}
 	}, [isAuthenticated, fetchCustomers]);
 
@@ -447,11 +451,6 @@ const ClientsList = () => {
 			}),
 		[processedCustomers, searchValue, selectedRole],
 	);
-
-	// Ensure current page stays in bounds when filters/search change
-	useEffect(() => {
-		setCurrentPage(1);
-	}, [searchValue, selectedRole, groupByRole]);
 
 	// const totalItems = filteredClients.length;
 	const totalPages = useMemo(
@@ -965,17 +964,17 @@ const onVerticalGroupClose = (verticalName) => {
 								</TableCell>
 								<TableCell className="p-4">
     <div className="w-max">
-        <Badge
-            color={`${customer.vertical.toLowerCase()}`}
-            className="leading-none flex items-center space-x-2 w-max cursor-pointer"
+        <BoxCountBadge
+            count={customer.boxCount || 0}
+            label={customer.vertical}
+            iconName="inventory"
+            iconColor={getIconColor(customer.vertical)}
+            tooltipSide="bottom"
+            tooltipAlign="start"
             onClick={() => setSelectedBoxClient(customer)}
-        >
-            <Icon
-                name="inventory"
-                className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
-            />
-            {customer.vertical} ({customer.boxCount || 0})
-        </Badge>
+            onViewList={() => setSelectedBoxClient(customer)}
+            className="!border-none !bg-transparent !px-0 !py-0 hover:!border-none hover:!bg-transparent"
+        />
     </div>
 </TableCell>
 								<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
@@ -1539,19 +1538,19 @@ const onVerticalGroupClose = (verticalName) => {
 											{customer.region}
 										</div>
 									</TableCell>
-									<TableCell className="p-4">
+								<TableCell className="p-4">
     <div className="w-max">
-        <Badge
-            color={`${customer.vertical.toLowerCase()}`}
-            className="leading-none flex items-center space-x-2 w-max cursor-pointer"
+        <BoxCountBadge
+            count={customer.boxCount || 0}
+            label={customer.vertical}
+            iconName="inventory"
+            iconColor={getIconColor(customer.vertical)}
+            tooltipSide="bottom"
+            tooltipAlign="start"
             onClick={() => setSelectedBoxClient(customer)}
-        >
-            <Icon
-                name="inventory"
-                className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
-            />
-            {customer.vertical} ({customer.boxCount || 0})
-        </Badge>
+            onViewList={() => setSelectedBoxClient(customer)}
+            className="!border-none !bg-transparent !px-0 !py-0 hover:!border-none hover:!bg-transparent"
+        />
     </div>
 </TableCell>
 									<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
