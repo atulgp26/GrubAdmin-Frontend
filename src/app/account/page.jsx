@@ -156,8 +156,10 @@ export default function AccountPage() {
 							role: (
 								<div className="flex items-center justify-between text-[var(--color-neutral-secondary)] w-[350px] text-base">
 									<span className="text-[var(--color-neutral-secondary)]">
-										{response.data?.role ||
-											user.role ||
+										{user?.role?.name ||
+											(typeof user?.role === 'string' ? user.role : null) ||
+											response.data?.role?.name ||
+											(typeof response.data?.role === 'string' ? response.data.role : null) ||
 											"No role assigned"}
 									</span>
 									<ArrowUpRight className="w-5 h-5" />

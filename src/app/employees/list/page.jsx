@@ -336,6 +336,7 @@ const EmployeesList = () => {
 								? `#${admin.employee_id}`
 								: `#${admin.id?.slice(-8) || `EMP${index}`}`,
 							joinDate: formatJoiningDate(admin.joining_date),
+							addedDate: admin.created_at ? formatJoiningDate(admin.created_at) : (admin.joining_date ? formatJoiningDate(admin.joining_date) : "Unknown"),
 							location: admin.location || "Not specified",
 							phone: phoneFormatted || "Not provided",
 							email: admin.email || "Not provided",
@@ -594,8 +595,8 @@ const EmployeesList = () => {
 	// If we have a preserved employee that's not in employees list, add it for display
 	const employeesWithPreserved =
 		preservedEmployee &&
-		selectedEmployeeId &&
-		!employees.find((emp) => emp.id === selectedEmployeeId)
+			selectedEmployeeId &&
+			!employees.find((emp) => emp.id === selectedEmployeeId)
 			? [preservedEmployee, ...employees]
 			: employees;
 
@@ -727,10 +728,12 @@ const EmployeesList = () => {
 			console.log("Suspend API response:", response);
 
 			if (response.success && response.code === 200) {
-				showSuccess(
-					"Success!",
-					`${count} ${count === 1 ? "employee has" : "employees have"} been suspended.`,
-				);
+				if (count === 1) {
+					const empName = employees.find(e => String(e.id) === String(adminIds[0]))?.name || "Employee";
+					showSuccess("Success!", `${empName}'s account has been suspended.`, false, "#");
+				} else {
+					showSuccess("Success!", `${count} employees have been suspended.`, false, "#");
+				}
 				setSuspendEmployeeModal(false);
 				setSelectedEmployees(new Set());
 				setSelectAll(false);
@@ -769,10 +772,12 @@ const EmployeesList = () => {
 			const res = await employeeService.deleteAdmins({ adminIds });
 			if (res?.success && res.code === 200) {
 				const count = adminIds.length;
-				showSuccess(
-					"Success!",
-					`${count} ${count === 1 ? "employee has" : "employees have"} been deleted.`,
-				);
+				if (count === 1) {
+					const empName = employees.find(e => String(e.id) === String(adminIds[0]))?.name || "Employee";
+					showSuccess("Success!", `${empName}'s account has been deleted.`, false, "#");
+				} else {
+					showSuccess("Success!", `${count} employees have been deleted.`, false, "#");
+				}
 				setDeleteEmployeeModal(false);
 				setSelectedEmployees(new Set());
 				setSelectAll(false);
@@ -790,12 +795,12 @@ const EmployeesList = () => {
 		if (!employee?.originalData?.role?.permissions_json) return 0;
 		const permissionsJson = employee.originalData.role.permissions_json;
 		let totalCount = 0;
-	Object.keys(permissionsJson).forEach((sectionKey) => {
-    const permissionList = permissionsJson[sectionKey];
-    if (Array.isArray(permissionList)) {
-        totalCount += permissionList.length;
-    }
-});
+		Object.keys(permissionsJson).forEach((sectionKey) => {
+			const permissionList = permissionsJson[sectionKey];
+			if (Array.isArray(permissionList)) {
+				totalCount += permissionList.length;
+			}
+		});
 		return totalCount;
 	};
 
@@ -959,10 +964,12 @@ const EmployeesList = () => {
 				setReassignConfirmModal(false);
 				setOpenReassignModal(false);
 
-				showSuccess(
-					"Success",
-					`Roles updated: ${count} ${count === 1 ? "employee has" : "employees have"} been assigned to ${roleName}.`,
-				);
+				if (count === 1) {
+					const empName = employees.find(e => String(e.id) === String(adminIds[0]))?.name || "Employee";
+					showSuccess("Success!", `Roles updated: ${empName} now assigned as ${roleName}.`, false, "#");
+				} else {
+					showSuccess("Success!", `Roles updated: ${count} employees now assigned as ${roleName}.`, false, "#");
+				}
 
 				setSelectedEmployees(new Set());
 				setSelectAll(false);
@@ -1076,7 +1083,7 @@ const EmployeesList = () => {
 			if (
 				updatedEmployeeData.joinDate &&
 				updatedEmployeeData.joinDate !==
-					selectedEmployeeForEdit.joinDate
+				selectedEmployeeForEdit.joinDate
 			) {
 				const dateStr = updatedEmployeeData.joinDate;
 				if (dateStr.includes("T") || dateStr.includes("Z")) {
@@ -1136,7 +1143,9 @@ const EmployeesList = () => {
 					`${originalAdmin.first_name} ${originalAdmin.last_name}`.trim();
 				showSuccess(
 					"Success!",
-					`${fullName || "Employee"} details updated successfully.`,
+					`${fullName || "Employee"}'s details updated successfully.`,
+					false,
+					"#"
 				);
 
 				setEditEmployeeModal(false);
@@ -1227,25 +1236,27 @@ const EmployeesList = () => {
 					emp?.originalData?.role?.id || emp?.originalData?.role_id;
 				return String(rid) === String(roleId);
 			});
+
+			if (roleEmployees.length === 0) return;
 			const permissionsCount =
-    roleEmployees.length > 0 &&
-    roleEmployees[0]?.originalData?.role?.permissions_json
-        ? (() => {
-              const permissionsJson =
-			  
-                  roleEmployees[0].originalData.role.permissions_json;
-				  
-              let totalCount = 0;
-              Object.keys(permissionsJson).forEach((sectionKey) => {
-                  const permissionList = permissionsJson[sectionKey];
-                  if (Array.isArray(permissionList)) {
-                      totalCount += permissionList.length;
-				  }
-              });
-              return totalCount;
-          })()
-		  
-        : 0;
+				roleEmployees.length > 0 &&
+					roleEmployees[0]?.originalData?.role?.permissions_json
+					? (() => {
+						const permissionsJson =
+
+							roleEmployees[0].originalData.role.permissions_json;
+
+						let totalCount = 0;
+						Object.keys(permissionsJson).forEach((sectionKey) => {
+							const permissionList = permissionsJson[sectionKey];
+							if (Array.isArray(permissionList)) {
+								totalCount += permissionList.length;
+							}
+						});
+						return totalCount;
+					})()
+
+					: 0;
 
 			groups.push({
 				name: (
@@ -1397,10 +1408,10 @@ const EmployeesList = () => {
 										tooltipContent={
 											<div className="space-y-2">
 												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-													Last updated by You
+													Last updated on {employee.updated} (You)
 												</div>
 												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-													Added on {employee.joinDate}
+													Added on {employee.addedDate}
 												</div>
 											</div>
 										}
@@ -1413,8 +1424,8 @@ const EmployeesList = () => {
 								<TableCell className="w-12 p-4">
 									<button
 										ref={(el) =>
-											(buttonRefs.current[employee.id] =
-												el)
+										(buttonRefs.current[employee.id] =
+											el)
 										}
 										onClick={() =>
 											setMenuOpen(
@@ -1431,11 +1442,11 @@ const EmployeesList = () => {
 										targetRef={
 											buttonRefs.current[employee.id]
 												? {
-														current:
-															buttonRefs.current[
-																employee.id
-															],
-													}
+													current:
+														buttonRefs.current[
+														employee.id
+														],
+												}
 												: null
 										}
 										open={menuOpen === employee.id}
@@ -1531,10 +1542,7 @@ const EmployeesList = () => {
 
 				<div className="flex items-center gap-4">
 					<span className="text-sm text-[var(--color-stroke-brand)]">
-						Showing {visibleFlatEmployees.length} of{" "}
-						{searchValue && searchValue.trim()
-							? filteredEmployeesWithPreserved.length
-							: totalCount}
+						Showing {visibleFlatEmployees.length} of {totalItems}
 					</span>
 					<div className="w-48">
 						<MultiSelectDropdown
@@ -1596,10 +1604,10 @@ const EmployeesList = () => {
 					<Pagination
 						currentPage={currentPage}
 						pageSize={pageSize}
-						totalItems={totalCount}
+						totalItems={totalItems}
 						onPrev={() => setCurrentPage((p) => Math.max(1, p - 1))}
 						onNext={() => {
-							const totalPages = Math.ceil(totalCount / pageSize);
+							const totalPages = Math.ceil(totalItems / pageSize);
 							if (currentPage < totalPages) {
 								setCurrentPage((p) => p + 1);
 							}
@@ -1721,11 +1729,11 @@ const EmployeesList = () => {
 											tooltipContent={
 												<div className="space-y-2">
 													<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-														Last updated by You
+														Last updated on {employee.updated} (You)
 													</div>
 													<div className="text-[var(--color-stroke-brand)] text-xs text-right">
 														Added on{" "}
-														{employee.joinDate}
+														{employee.addedDate}
 													</div>
 												</div>
 											}
@@ -1738,9 +1746,9 @@ const EmployeesList = () => {
 									<TableCell className="p-4">
 										<button
 											ref={(el) =>
-												(buttonRefs.current[
-													employee.id
-												] = el)
+											(buttonRefs.current[
+												employee.id
+											] = el)
 											}
 											onClick={() =>
 												setMenuOpen(
@@ -1757,12 +1765,12 @@ const EmployeesList = () => {
 											targetRef={
 												buttonRefs.current[employee.id]
 													? {
-															current:
-																buttonRefs
-																	.current[
-																	employee.id
-																],
-														}
+														current:
+															buttonRefs
+																.current[
+															employee.id
+															],
+													}
 													: null
 											}
 											open={menuOpen === employee.id}

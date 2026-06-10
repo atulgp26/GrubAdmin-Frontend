@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 export default function DropdownPortal({
@@ -11,16 +11,19 @@ export default function DropdownPortal({
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const menuRef = useRef(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open && targetRef?.current) {
       const targetRect = targetRef.current.getBoundingClientRect();
       const containerRect = containerRef?.current
         ? containerRef.current.getBoundingClientRect()
         : { top: 0, left: 0 };
 
+      const scrollY = containerRef?.current ? 0 : window.scrollY;
+      const scrollX = containerRef?.current ? 0 : window.scrollX;
+
       setPosition({
-        top: targetRect.bottom - containerRect.top + 4,
-        left: targetRect.right - containerRect.left - 192,
+        top: targetRect.bottom - containerRect.top + scrollY + 4,
+        left: targetRect.right - containerRect.left + scrollX - 192,
         width: targetRect.width,
       });
     }
@@ -28,7 +31,7 @@ export default function DropdownPortal({
 
   useEffect(() => {
     if (!open) return;
-    
+
     const handleClick = (e) => {
       if (
         menuRef.current &&
@@ -44,7 +47,7 @@ export default function DropdownPortal({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open, onClose, targetRef]);
 
-  if (!open) return null;
+  if (!open || !targetRef?.current) return null;
 
   const portalContainer = containerRef?.current || document.body;
 

@@ -58,6 +58,8 @@ const DismissEmployees = () => {
 	const [employees, setEmployees] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [currentPage, setCurrentPage] = useState(1);
+	const [preservedEmployee, setPreservedEmployee] = useState(null);
+	const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
 	const pageSize = 10;
 
 	const formatDate = (dateString) => {
@@ -104,13 +106,12 @@ const DismissEmployees = () => {
 			if (searchValue && searchValue.trim()) {
 				params.query = searchValue.trim();
 			}
-			if (selectedRole.length > 0) {
-				// For dismissed employees, API expects role name (string) instead of role ID
+			if (selectedRole.length === 1) {
 				const selectedRoleOption = roleOptions.find(
-					(ro) => ro.id === selectedRole[0],
+					(ro) => String(ro.id) === String(selectedRole[0]),
 				);
 				if (selectedRoleOption) {
-					params.role = selectedRoleOption.label; // Send role name instead of ID
+					params.role = selectedRoleOption.label;
 				}
 			}
 			const response = await employeeService.getAdmins(params);
@@ -149,6 +150,7 @@ const DismissEmployees = () => {
 							? `#${admin.employee_id}`
 							: `#${admin.id?.slice(-8) || `EMP${index}`}`,
 						joinDate: formatJoiningDate(admin.joining_date),
+						addedDate: admin.created_at ? formatJoiningDate(admin.created_at) : (admin.joining_date ? formatJoiningDate(admin.joining_date) : "Unknown"),
 						location: admin.location || "Not specified",
 						phone: phoneFormatted || "Not provided",
 						email: admin.email || "Not provided",
@@ -205,11 +207,11 @@ const DismissEmployees = () => {
 		const permissionsJson = employee.originalData.role.permissions_json;
 		let totalCount = 0;
 		Object.keys(permissionsJson).forEach((sectionKey) => {
-    const permissionList = permissionsJson[sectionKey];
-    if (Array.isArray(permissionList)) {
-        totalCount += permissionList.length;
-    }
-});
+			const permissionList = permissionsJson[sectionKey];
+			if (Array.isArray(permissionList)) {
+				totalCount += permissionList.length;
+			}
+		});
 		return totalCount;
 	};
 
@@ -267,13 +269,12 @@ const DismissEmployees = () => {
 				if (searchValue && searchValue.trim()) {
 					params.query = searchValue.trim();
 				}
-				if (selectedRole.length > 0) {
-					// For dismissed employees, API expects role name (string) instead of role ID
+				if (selectedRole.length === 1) {
 					const selectedRoleOption = roleOptions.find(
-						(ro) => ro.id === selectedRole[0],
+						(ro) => String(ro.id) === String(selectedRole[0]),
 					);
 					if (selectedRoleOption) {
-						params.role = selectedRoleOption.label; // Send role name instead of ID
+						params.role = selectedRoleOption.label;
 					}
 				}
 			}
@@ -335,20 +336,26 @@ const DismissEmployees = () => {
 		setExportListModal(true);
 	};
 
+	const employeesWithPreserved =
+		preservedEmployee &&
+			selectedEmployeeId &&
+			!employees.find((emp) => emp.id === selectedEmployeeId)
+			? [preservedEmployee, ...employees]
+			: employees;
+
 	// Filter employees based on search value and selected roles
-	const filteredEmployees = employees.filter((employee) => {
+	const filteredEmployees = employeesWithPreserved.filter((employee) => {
+		if (selectedEmployeeId) {
+			return employee.id === selectedEmployeeId;
+		}
+
 		if (selectedRole.length > 0) {
-			// For dismissed employees, compare by role name (string) instead of role ID
-			const selectedRoleOption = roleOptions.find(
-				(ro) => ro.id === selectedRole[0],
-			);
-			if (selectedRoleOption) {
-				const employeeRoleName = employee.role || "No role";
-				// Compare role names (case-insensitive)
-				if (
-					employeeRoleName.toLowerCase() !==
-					selectedRoleOption.label.toLowerCase()
-				) {
+			const selectedLabels = selectedRole
+				.map((id) => roleOptions.find((ro) => String(ro.id) === String(id))?.label?.toLowerCase())
+				.filter(Boolean);
+			if (selectedLabels.length > 0) {
+				const employeeRoleName = (employee.role || "No role").toLowerCase();
+				if (!selectedLabels.includes(employeeRoleName)) {
 					return false;
 				}
 			}
@@ -376,7 +383,26 @@ const DismissEmployees = () => {
 	// Reset pagination when filters change
 	useEffect(() => {
 		setCurrentPage(1);
+		if (!searchValue || searchValue.trim() === "") {
+			setSelectedEmployeeId(null);
+			setPreservedEmployee(null);
+		}
 	}, [searchValue, selectedRole, groupByRole]);
+
+	// Clear preserved employee if it's found in the current employees list
+	useEffect(() => {
+		if (preservedEmployee && selectedEmployeeId && employees.length > 0) {
+			const found = employees.find(
+				(emp) => emp.id === selectedEmployeeId,
+			);
+			if (found) {
+				const timer = setTimeout(() => {
+					setPreservedEmployee(null);
+				}, 1000);
+				return () => clearTimeout(timer);
+			}
+		}
+	}, [employees, selectedEmployeeId, preservedEmployee]);
 
 	const handleSelectAll = (checked, subset = filteredEmployees) => {
 		setSelectAll(checked);
@@ -397,7 +423,7 @@ const DismissEmployees = () => {
 		setSelectedEmployees(newSelected);
 		setSelectAll(
 			newSelected.size === filteredEmployees.length &&
-				filteredEmployees.length > 0,
+			filteredEmployees.length > 0,
 		);
 	};
 
@@ -430,21 +456,21 @@ const DismissEmployees = () => {
 			const roleEmployees = groupedEmployees[roleName] || [];
 			const permissionsCount =
 				roleEmployees.length > 0 &&
-				roleEmployees[0]?.originalData?.role?.permissions_json
+					roleEmployees[0]?.originalData?.role?.permissions_json
 					? (() => {
-							const permissionsJson =
-								roleEmployees[0].originalData.role
-									.permissions_json;
-							let totalCount = 0;
-							Object.keys(permissionsJson).forEach(
-								(sectionKey) => {
-									const permissionList =
-										permissionsJson[sectionKey] || [];
-									totalCount += permissionList.length;
-								},
-							);
-							return totalCount;
-						})()
+						const permissionsJson =
+							roleEmployees[0].originalData.role
+								.permissions_json;
+						let totalCount = 0;
+						Object.keys(permissionsJson).forEach(
+							(sectionKey) => {
+								const permissionList =
+									permissionsJson[sectionKey] || [];
+								totalCount += permissionList.length;
+							},
+						);
+						return totalCount;
+					})()
 					: 0;
 
 			return {
@@ -486,7 +512,7 @@ const DismissEmployees = () => {
 				),
 				items: roleEmployees,
 			};
-		});
+		}).filter((group) => group.items.length > 0);
 	};
 
 	// Render table content for each group
@@ -570,10 +596,10 @@ const DismissEmployees = () => {
 										tooltipContent={
 											<div className="space-y-2">
 												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-													Dismissed by You
+													Dismissed on {employee.dismissed} (You)
 												</div>
 												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-													Added on {employee.joinDate}{" "}
+													Added on {employee.addedDate}{" "}
 													(You)
 												</div>
 											</div>
@@ -587,8 +613,8 @@ const DismissEmployees = () => {
 								<TableCell className="w-12 p-4">
 									<button
 										ref={(el) =>
-											(buttonRefs.current[employee.id] =
-												el)
+										(buttonRefs.current[employee.id] =
+											el)
 										}
 										onClick={() =>
 											setMenuOpen(
@@ -605,11 +631,11 @@ const DismissEmployees = () => {
 										targetRef={
 											buttonRefs.current[employee.id]
 												? {
-														current:
-															buttonRefs.current[
-																employee.id
-															],
-													}
+													current:
+														buttonRefs.current[
+														employee.id
+														],
+												}
 												: null
 										}
 										open={menuOpen === employee.id}
@@ -682,13 +708,23 @@ const DismissEmployees = () => {
 							data={searchData}
 							value={searchValue}
 							onChange={(e) => setSearchValue(e.target.value)}
-							onSelect={(item) => setSearchValue(item.name)}
+							onSelect={(item) => {
+								const fullEmployeeData = employees.find((e) => e.id === item.id);
+								setPreservedEmployee(fullEmployeeData || item);
+								setSelectedEmployeeId(item.id);
+								setSearchValue(item.name || item.email || "");
+								setCurrentPage(1);
+							}}
 							getLabel={(item) => item.name || item.email || ""}
 							getSubLabel={(item) => item.code || "Employee"}
 							placeholder="Search employee"
 							className="[&_input]:!h-8 [&_input]:!py-1"
 							clearable={true}
-							onClear={() => setSearchValue("")}
+							onClear={() => {
+								setSearchValue("");
+								setSelectedEmployeeId(null);
+								setPreservedEmployee(null);
+							}}
 							openOnFocus={false}
 							minChars={1}
 						/>
@@ -831,11 +867,11 @@ const DismissEmployees = () => {
 											tooltipContent={
 												<div className="space-y-2">
 													<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-														Dismissed by You
+														Dismissed on {employee.dismissed} (You)
 													</div>
 													<div className="text-[var(--color-stroke-brand)] text-xs text-right">
 														Added on{" "}
-														{employee.joinDate}{" "}
+														{employee.addedDate}{" "}
 														(You)
 													</div>
 												</div>
@@ -849,9 +885,9 @@ const DismissEmployees = () => {
 									<TableCell className="p-4">
 										<button
 											ref={(el) =>
-												(buttonRefs.current[
-													employee.id
-												] = el)
+											(buttonRefs.current[
+												employee.id
+											] = el)
 											}
 											onClick={() =>
 												setMenuOpen(
@@ -860,11 +896,10 @@ const DismissEmployees = () => {
 														: employee.id,
 												)
 											}
-											className={`p-2 hover:bg-[var(--color-neutral-secondary-bg)] rounded-lg ${
-												menuOpen === employee.id
-													? "bg-[var(--color-neutral-secondary-bg)] shadow-[0_0_0_2px_var(--color-shadow-actionmenu)] rounded-lg"
-													: ""
-											}`}
+											className={`p-2 hover:bg-[var(--color-neutral-secondary-bg)] rounded-lg ${menuOpen === employee.id
+												? "bg-[var(--color-neutral-secondary-bg)] shadow-[0_0_0_2px_var(--color-shadow-actionmenu)] rounded-lg"
+												: ""
+												}`}
 										>
 											<BsThreeDotsVertical className="w-5 h-5 text-[var(--color-stroke-brand)]" />
 										</button>
@@ -872,12 +907,12 @@ const DismissEmployees = () => {
 											targetRef={
 												buttonRefs.current[employee.id]
 													? {
-															current:
-																buttonRefs
-																	.current[
-																	employee.id
-																],
-														}
+														current:
+															buttonRefs
+																.current[
+															employee.id
+															],
+													}
 													: null
 											}
 											open={menuOpen === employee.id}
