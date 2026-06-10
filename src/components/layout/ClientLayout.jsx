@@ -54,13 +54,9 @@ export default function ClientLayout({ children }) {
   return (
     <>
       <ToastProvider />
-      <div className="flex">
+      <div className="flex min-h-screen">
         <Sidebar collapsed={sidebarCollapsed} onClose={closeSidebar} />
-        <div
-          className={`flex-1 flex flex-col transition-all duration-300 ${
-            sidebarCollapsed ? "ml-0" : "ml-60"
-          }`}
-        >
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-auto transition-all duration-300">
           <Header
             onToggleSidebar={toggleSidebar}
             collapsed={sidebarCollapsed}

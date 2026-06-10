@@ -10,6 +10,9 @@ import { customerService } from "@/api/services/customerService";
 import { showError, showSuccess } from "@/components/ui/toast";
 import { CAMPING_VERTICAL_NAME } from "@/constants/config";
 import { Country, State } from "country-state-city";
+import { useClientDraftStore, defaultFormData } from "@/store/clientDraftStore";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AddNewClient = ({
 	open,
@@ -17,16 +20,8 @@ const AddNewClient = ({
 	onConfirm = (data) => {},
 	isCreating = false,
 }) => {
-	const [form, setForm] = useState({
-		fullName: "",
-		clientId: "",
-		phone: "",
-		email: "",
-		country: "",
-		state: "",
-		vertical: "",
-		orgName: "",
-	});
+	const [form, setForm] = useState({ ...defaultFormData });
+	const [emailError, setEmailError] = useState("");
 	const [verticalOptions, setVerticalOptions] = useState([]);
 	const [focusedField, setFocusedField] = useState("");
 	const [isFormValid, setIsFormValid] = useState(false);
@@ -71,12 +66,27 @@ const AddNewClient = ({
 	//     { value: "delivery", label: "Delivery" },
 	//     { value: "medical", label: "Medical" },
 	// ];
+	const isStateless = useMemo(() => {
+		return selectedIso && stateOptions.length === 0;
+	}, [selectedIso, stateOptions]);
+
+	const validateEmail = (email) => {
+		if (!email) return "Email is required";
+		if (!EMAIL_REGEX.test(email)) return "Please provide a valid email";
+		return "";
+	};
+
 	const handleFocus = (field) => setFocusedField(field);
 	const handleBlur = () => setFocusedField("");
 	const handleChange = (field, value) => {
     if (field === "country") {
         setSelectedIso(value);
-        setForm((prev) => ({ ...prev, [field]: value }));
+        const states = State.getStatesOfCountry(value);
+        if (states.length === 0) {
+            setForm((prev) => ({ ...prev, [field]: value, state: null }));
+        } else {
+            setForm((prev) => ({ ...prev, [field]: value, state: "" }));
+        }
     } else if (field === "clientId") {
         // Remove leading # if user types it
         const cleaned = value.startsWith("#") ? value.slice(1) : value;
@@ -84,7 +94,16 @@ const AddNewClient = ({
     } else {
         setForm((prev) => ({ ...prev, [field]: value }));
     }
+    if (field === "email" && emailError) {
+        setEmailError("");
+    }
 };
+
+	const handleEmailBlur = () => {
+		setFocusedField("");
+		const error = validateEmail(form.email);
+		setEmailError(error);
+	};
 
 	const fetchVerticals = async () => {
 		const verticalsResponse = await customerService.getVerticals();
@@ -132,6 +151,8 @@ useEffect(() => {
             break;
         } else if (key === "orgName") {
             continue;
+        } else if (key === "state" && isStateless) {
+            continue;
         } else if (key === "phone") {
             // country_code (3 chars) + 10 digit number = 13 chars minimum
             const phoneNumber = form.phone.slice(3);
@@ -139,37 +160,56 @@ useEffect(() => {
                 isFormValid = false;
                 break;
             }
-        } else if (form[key] === "") {
+        } else if (form[key] === "" || form[key] === null) {
             isFormValid = false;
             break;
         }
     }
 
     setIsFormValid(isFormValid);
-}, [form]);
+}, [form, isStateless]);
 
 	useEffect(() => {
 		if (open) {
+			const draft = useClientDraftStore.getState().draft;
+			if (draft) {
+				setForm({ ...draft });
+				if (draft.country) {
+					setSelectedIso(draft.country);
+				}
+			}
 			fetchVerticals();
 			fetchCountries();
 		} else {
-			setForm({
-				fullName: "",
-				clientId: "",
-				phone: "",
-				email: "",
-				country: "",
-				state: "",
-				vertical: "",
-				orgName: "",
-			});
-			setSelectedIso("");
 			setCountryOptions([]);
+			setEmailError("");
 		}
 	}, [open]);
 
+	useEffect(() => {
+		if (open) {
+			useClientDraftStore.getState().setDraft(form);
+		}
+	}, [form, open]);
+
+	const handleClose = () => {
+		useClientDraftStore.getState().clearDraft();
+		setForm({ ...defaultFormData });
+		setSelectedIso("");
+		setCountryOptions([]);
+		setEmailError("");
+		onClose();
+	};
+
 	const handleSave = async () => {
 		if (!isFormValid) return;
+
+		const emailErr = validateEmail(form.email);
+		if (emailErr) {
+			setEmailError(emailErr);
+			showError(emailErr);
+			return;
+		}
 
 		const country = Country.getCountryByCode(form.country);
 
@@ -177,6 +217,7 @@ useEffect(() => {
 			...form,
 			name: form.fullName,
 			country: country.name,
+			state: form.state || null,
 	client_id: `#${form.clientId}`,
 			country_code: form.phone.slice(0, 3),
 			mobile_number: form.phone.slice(3),
@@ -190,21 +231,24 @@ useEffect(() => {
 
 	const result = await onConfirm(data);
 
-if (result?.error) {
-    showError(result.error);
+const message =
+    result?.error?.response?.data?.message ||
+    result?.error?.data?.message ||
+    result?.error?.message ||
+    result?.error;
+
+if (message) {
+    showError(message);
     return;
 }
 
-
 		showSuccess("Success", result?.message);
 
-	setForm({ fullName: "", clientId: "", phone: "", email: "", country: "", state: "", vertical: "", orgName: "" });
-setSelectedIso("");
-setCountryOptions([]);
-onClose();
+		useClientDraftStore.getState().clearDraft();
+		handleClose();
 	};
 	return (
-		<FullPageModal open={open} onClose={onClose}>
+		<FullPageModal open={open} onClose={handleClose}>
 			<div className="h-screen bg-white flex flex-col">
 				{/* Header */}
 				<div className="flex-shrink-0">
@@ -212,7 +256,7 @@ onClose();
 						<Button
 							variant="grayOutline"
 							className="flex gap-2 mx-3 w-fit items-center btn-size-md-sm"
-							onClick={onClose}
+							onClick={handleClose}
 						>
 							<ArrowLeft className="w-4 h-4" />
 							GO BACK
@@ -294,10 +338,15 @@ onClose();
 										handleChange("email", e.target.value)
 									}
 									onFocus={() => handleFocus("emailaddress")}
-									onBlur={handleBlur}
+									onBlur={handleEmailBlur}
 									isFocused={focusedField === "emailaddress"}
 									className="py-3 px-4"
 								/>
+								{emailError && (
+									<p className="text-red-500 text-xs mt-1 ml-1">
+										{emailError}
+									</p>
+								)}
 							</div>
 						</div>
 						{/* Section 3: Region */}
@@ -318,13 +367,13 @@ onClose();
 							</div>
 							<div>
 								<Select
-									placeholder="Select state/province"
+									placeholder={isStateless ? "Not applicable" : "Select state/province"}
 									options={stateOptions}
 									value={form.state}
 									onChange={(val) =>
 										handleChange("state", val)
 									}
-									disabled={!selectedIso}
+									disabled={!selectedIso || isStateless}
 									fontSize="!text-base"
 									className="disabled:pointer-events-none"
 								/>
@@ -374,7 +423,7 @@ onClose();
 						<div className="flex items-center justify-between gap-4 pb-6">
 							<Button
 								variant="grayOutline"
-								onClick={onClose}
+								onClick={handleClose}
 								className="px-6 sm:px-28 py-3"
 							>
 								CANCEL

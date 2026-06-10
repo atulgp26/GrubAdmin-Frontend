@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 :root {
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 0px;
+  --color-overlay-rgb: 3, 19, 10;
   --color-neutral-primary: #03130a;
   --color-neutral-secondary: #37493f;
   --color-neutral-light: #a4aca7;

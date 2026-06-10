@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MdCalendarToday } from "react-icons/md";
 import { MdOutlineDone } from "react-icons/md";
 import { useSearchParams } from "next/navigation";
@@ -20,7 +20,7 @@ import {
 import { DEBOUNCE_TIME, DEFAULT_PAGE_SIZE } from "@/constants/config";
 import { logsService } from "@/api/services/logsService";
 import { useAuth } from "@/context/AuthContext";
-import { useDebounce, useDebouncedCallback } from "use-debounce";
+import { useDebounce } from "use-debounce";
 import { showError } from "@/components/ui/toast";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -110,6 +110,7 @@ export default function SystemLogs() {
     const [totalItems, setTotalItems] = useState(0);
     const [isLoadingLogs, setIsLoadingLogs] = useState(false);
     const pageSize = DEFAULT_PAGE_SIZE;
+    const fetchIdRef = useRef(0);
 
     const searchParams = useSearchParams();
     const highlightedItemId = searchParams.get("item_id");
@@ -118,17 +119,14 @@ export default function SystemLogs() {
     const [blinkingId, setBlinkingId] = useState(null);
 
     const [debouncedSearchValue] = useDebounce(search, DEBOUNCE_TIME);
-    const onDebouncedSearchValueChange = useDebouncedCallback(() => {
-        setCurrentPage(1);
-    }, DEBOUNCE_TIME);
 
     const onSearchChange = (e) => {
         setSearch(e.target.value);
-        onDebouncedSearchValueChange();
     };
 
     const getLogs = useCallback(async () => {
         if (!isAuthenticated || authLoading) return;
+        const fetchId = ++fetchIdRef.current;
         setIsLoadingLogs(true);
         try {
             const params = {};
@@ -141,15 +139,35 @@ export default function SystemLogs() {
                 params.search = debouncedSearchValue;
             }
 
-            const allActions = [];
-            for (const key of Object.keys(advancedFilters)) {
-                const val = advancedFilters[key];
-                if (Array.isArray(val) && val.length > 0) {
-                    allActions.push(...val);
-                }
+            if (startDate) {
+                const start = new Date(
+                    startDate.getFullYear(),
+                    startDate.getMonth(),
+                    startDate.getDate(),
+                    0, 0, 0, 0,
+                );
+                params.start_date = start.toISOString();
             }
-            if (allActions.length > 0) {
-                params.type = allActions;
+            if (endDate) {
+                const end = new Date(
+                    endDate.getFullYear(),
+                    endDate.getMonth(),
+                    endDate.getDate(),
+                    23, 59, 59, 999,
+                );
+                params.end_date = end.toISOString();
+            }
+
+            const hasAdvancedFilters = Object.values(advancedFilters).some(
+                (v) => Array.isArray(v) && v.length > 0,
+            );
+            if (hasAdvancedFilters) {
+                params.filters = Object.entries(advancedFilters)
+                    .filter(([, v]) => Array.isArray(v) && v.length > 0)
+                    .map(([category, types]) => ({
+                        category,
+                        types,
+                    }));
             }
 
             params.page_number = currentPage;
@@ -157,21 +175,28 @@ export default function SystemLogs() {
 
             const logsResponse = await logsService.getLogs(params);
 
+            if (fetchId !== fetchIdRef.current) return;
+
             if (logsResponse?.data) {
                 setSystemLogs(logsResponse.data.logs || []);
                 setTotalItems(logsResponse.data.count || 0);
             }
         } catch (error) {
+            if (fetchId !== fetchIdRef.current) return;
             console.error("Failed to fetch logs:", error);
             showError("Failed to load system logs.");
         } finally {
-            setIsLoadingLogs(false);
+            if (fetchId === fetchIdRef.current) {
+                setIsLoadingLogs(false);
+            }
         }
     }, [
         isAuthenticated,
         authLoading,
         selectedCategories,
         debouncedSearchValue,
+        startDate,
+        endDate,
         advancedFilters,
         currentPage,
         pageSize,
@@ -261,35 +286,13 @@ export default function SystemLogs() {
     }, [systemLogs, formattedLogs]);
 
     const visibleLogs = useMemo(() => {
-        const query = search.trim().toLowerCase();
         return formattedLogs.filter((log) => {
             const matchesCategory =
                 selectedCategories.length === 0 ||
                 selectedCategories.includes(log.category);
-            const matchesDate =
-                !startDate && !endDate
-                    ? true
-                    : (() => {
-                            const logDate = new Date(log.timestamp);
-                            if (startDate && !endDate)
-                                return logDate >= startDate;
-                            if (startDate && endDate)
-                                return (
-                                    logDate >= startDate && logDate <= endDate
-                                );
-                            return true;
-                        })();
-            if (!query) return matchesCategory && matchesDate;
-            return (
-                matchesCategory &&
-                matchesDate &&
-                (log.action.toLowerCase().includes(query) ||
-                    log.type.toLowerCase().includes(query) ||
-                    log.subtype.toLowerCase().includes(query) ||
-                    log.timestamp.toLowerCase().includes(query))
-            );
+            return matchesCategory;
         });
-    }, [search, selectedCategories, formattedLogs, startDate, endDate]);
+    }, [selectedCategories, formattedLogs]);
 
     // prema
     const suggestions = useMemo(
@@ -327,6 +330,10 @@ export default function SystemLogs() {
             setCurrentPage(totalPages);
         }
     }, [totalPages, currentPage]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearchValue, startDate, endDate, advancedFilters]);
 
     useEffect(() => {
         if (highlightedItemId && !isLoadingLogs && visibleLogs.length > 0) {

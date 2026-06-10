@@ -356,6 +356,7 @@ const ClientsList = () => {
 		() =>
 			customers.map((customer) => {
 				const verticalName = customer?.vertical?.name || "unknown";
+				const verticalId = customer?.vertical?.id ?? null;
 				const boxCount = customer?._count?.boxes ?? 0;
 
 				return {
@@ -363,10 +364,12 @@ const ClientsList = () => {
 					client_id: customer.client_id,
 					name: customer.name,
 					organization: customer.organization_name || "Not specified",
-					region:
-						`${customer.state}, ${customer.country}` ||
-						"Not specified",
+				region:
+					customer.state
+						? `${customer.state}, ${customer.country}`
+						: customer.country || "Not specified",
 					vertical: verticalName,
+					verticalId: verticalId,
 					updated: new Date(customer.updated_at).toLocaleDateString(
 						"en-GB",
 						{
@@ -442,7 +445,7 @@ const ClientsList = () => {
 
 				return matchesSearch && matchesVertical;
 			}),
-		[processedCustomers],
+		[processedCustomers, searchValue, selectedRole],
 	);
 
 	// Ensure current page stays in bounds when filters/search change
@@ -568,40 +571,28 @@ const ClientsList = () => {
 		}
 	};
 
-	// Handle Check GrubPacs - impersonate client and redirect to GrubDelivery GrubPacs
-	const handleCheckGrubPacs = async (customer) => {
+	// Handle Check FAQs - navigate to FAQ page scoped to the client's vertical
+	const handleCheckFAQs = (e, customer) => {
+		e.stopPropagation();
 		setMenuOpen(null);
-		try {
-			showSuccess("Accessing...", "Opening client's GrubPacs.");
-			const response = await customerService.impersonateClient(customer.id, { return_url: "/grubpacs/list" });
-			if (response?.success && response?.code === 200) {
-				const { token, client, redirect_url } = response.data;
-
-				startImpersonation(client, token);
-
-				window.open(redirect_url, "_blank", "noopener,noreferrer");
-
-				showSuccess(
-					"Access Granted",
-					`Opening ${customer.name}'s GrubPacs in a new tab.`,
-				);
-			} else {
-				const errorMsg =
-					response?.message ||
-					response?.error ||
-					response?.data?.error ||
-					"Failed to access client account";
-				showError(errorMsg);
-			}
-		} catch (error) {
-			console.error("[Check GrubPacs] Error:", error);
-			const errorMsg =
-				error?.response?.data?.message ||
-				error?.message ||
-				error?.data?.error ||
-				"An unexpected error occurred. Please try again.";
-			showError(errorMsg);
+		const verticalName = customer?.vertical;
+		if (!verticalName || verticalName === "unknown") {
+			showSuccess("Notice", "No vertical assigned, showing general FAQs.");
+			router.push("/help/customer-faqs");
+			return;
 		}
+		router.push(`/help/customer-faqs?vertical=${encodeURIComponent(verticalName.toLowerCase())}`);
+	};
+
+	// Handle Check GrubPacs - navigate to client's Grubpac page
+	const handleCheckGrubPacs = (e, customer) => {
+		e.stopPropagation();
+		setMenuOpen(null);
+		if (!customer?.id) {
+			showError("Client ID is missing");
+			return;
+		}
+		router.push(`/clients/${customer.id}/grubpacs`);
 	};
 
 	const handleExportDetails = () => {
@@ -921,9 +912,11 @@ const onVerticalGroupClose = (verticalName) => {
 	};
 
 	// Render table content for each group
-	const renderGroupTable = () => (
-		<div className="">
-			{customers.length === 0 ? (
+	const renderGroupTable = (groupData) => {
+		const data = groupData || processedCustomers;
+		return (
+			<div className="">
+			{data.length === 0 ? (
 				<div className="px-6 py-6">
 					<EmptyState
 						title="No customers in this vertical"
@@ -952,7 +945,7 @@ const onVerticalGroupClose = (verticalName) => {
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{processedCustomers.map((customer) => (
+						{data.map((customer) => (
 							<TableRow key={customer.id}>
 								<TableCell className="p-4">
 									<div>
@@ -1058,7 +1051,8 @@ const onVerticalGroupClose = (verticalName) => {
 				</Table>
 			)}
 		</div>
-	);
+		);
+	};
 
 	if (!canViewClients) {
 		return null;
@@ -1233,55 +1227,51 @@ const onVerticalGroupClose = (verticalName) => {
 
 			{/* Table or Grouped View */}
 			{groupByRole ? (
-				// <GroupCollapseTable
-				// 	groups={groupEmployeesByRole()}
-				// 	openIndex={openGroupIndex}
-				// 	setOpenIndex={setOpenGroupIndex}
-				// 	renderTable={renderGroupTable}
-				// 	noResultsMessage="No clients found."
-				// 	tableContainerClass="w-full"
-				// 	titleColor="!text-[var(--color-neutral-secondary)] !text-base"
-				// />
 				<>
-					{verticals.map((vertical, index) => (
-						<CollapseTable
-							key={vertical.id}
-							table={renderGroupTable}
-							vertical={vertical}
-							onClick={() => onVerticalGroupClick(vertical.name)}
-							onOpen={() => onVerticalGroupOpen(vertical.name)}
-							onClose={() => onVerticalGroupClose(vertical.name)}
-							groupName={vertical.name}
-							isOpen={currentOpenVertical === vertical.name}
-							data={processedCustomers}
-							renderTable={renderGroupTable}
-							emptyResult={
-								"No Customers are available for this verticals"
-							}
-							pagination={
-								currentOpenVertical === vertical.name &&
-								totalItems > 0
-									? {
-											rangeText: `Showing ${pageStartDisplay}-${pageEndDisplay}`,
-											onPrev: () =>
-												setCurrentPage((p) =>
-													Math.max(1, p - 1),
-												),
-											onNext: () =>
-												setCurrentPage((p) =>
-													Math.min(totalPages, p + 1),
-												),
-											disablePrev: currentPage <= 1,
-											disableNext:
-												currentPage >=
-												Math.ceil(
-													totalItems / pageSize,
-												),
-										}
-									: undefined
-							}
-						/>
-					))}
+					{verticals.map((vertical, index) => {
+						const verticalClients = filteredClients.filter(
+							(c) => c.verticalId === vertical.id,
+						);
+						return (
+							<CollapseTable
+								key={vertical.id}
+								table={renderGroupTable}
+								vertical={vertical}
+								onClick={() => onVerticalGroupClick(vertical.name)}
+								onOpen={() => onVerticalGroupOpen(vertical.name)}
+								onClose={() => onVerticalGroupClose(vertical.name)}
+								groupName={vertical.name}
+								isOpen={currentOpenVertical === vertical.name}
+								data={verticalClients}
+								renderTable={renderGroupTable}
+								emptyResult={
+									"No Customers are available for this verticals"
+								}
+								pagination={
+									currentOpenVertical === vertical.name &&
+									verticalClients.length > 0
+										? {
+												rangeText: `Showing 1-${verticalClients.length}`,
+												onPrev: () =>
+													setCurrentPage((p) =>
+														Math.max(1, p - 1),
+													),
+												onNext: () =>
+													setCurrentPage((p) =>
+														Math.min(totalPages, p + 1),
+													),
+												disablePrev: currentPage <= 1,
+												disableNext:
+													currentPage >=
+													Math.ceil(
+														totalItems / pageSize,
+													),
+											}
+										: undefined
+								}
+							/>
+						);
+					})}
 				</>
 			) : (
 				<div>
@@ -1553,37 +1543,39 @@ const onVerticalGroupClose = (verticalName) => {
 															(item) =>
 																item.id ===
 																"faqs" ? (
-																	<Link
+																	<div
 																		key={
 																			item.id
 																		}
-																		href="/help/customer-faqs"
-																		className="block"
+																		onClick={(e) =>
+																			handleCheckFAQs(
+																				e,
+																				customer,
+																			)
+																		}
+																		className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
 																	>
-																		<div
-																			className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
-                                       border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
-																		>
-																			<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
-																				{
-																					item.title
-																				}
-																			</h3>
-																			<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
-																				{
-																					item.description
-																				}
-																			</p>
-																		</div>
-																	</Link>
+																		<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																			{
+																				item.title
+																			}
+																		</h3>
+																		<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																			{
+																				item.description
+																			}
+																		</p>
+																	</div>
 																) : item.id ===
 																  "checkgrubpacs" ? (
 																	<div
 																		key={
 																			item.id
 																		}
-																		onClick={() =>
+																		onClick={(e) =>
 																			handleCheckGrubPacs(
+																				e,
 																				customer,
 																			)
 																		}
