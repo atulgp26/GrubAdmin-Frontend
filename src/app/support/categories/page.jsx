@@ -882,7 +882,7 @@ export default function Categories() {
 								</div>
 								{iconIdToKey[cat.iconId] ? (
 									<img
-										src={`${iconBaseUrl}/${encodeURIComponent(iconIdToKey[cat.iconId])}`}
+										src={`${iconBaseUrl}/${iconIdToKey[cat.iconId].split('/').map(encodeURIComponent).join('/')}`}
 										alt="icon"
 										className="w-8 h-8"
 									/>

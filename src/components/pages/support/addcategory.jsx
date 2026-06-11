@@ -123,7 +123,7 @@ const AddCategory = ({ open, onClose, mode = "add", initialValues = null }) => {
           const rawBase = (configRes?.data?.configs?.find(c => c.key === 'icon_base_url')?.value) || iconBaseUrl || '';
           const base = `${rawBase}`.replace(/\/+$/, '');
           const opts = icons.map(ic => {
-            const key = encodeURIComponent(ic.bucket_key);
+            const key = ic.bucket_key.split('/').map(encodeURIComponent).join('/');
             const src = `${base}/${key}`;
             return {
               value: ic.id,
