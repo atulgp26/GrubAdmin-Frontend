@@ -87,7 +87,10 @@ export default function BoxCountBadge({
               align={tooltipAlign}
               className={`cursor-pointer z-50 rounded-lg bg-white px-3 py-2 shadow-lg ${tooltipTextColor} text-sm font-normal animate-fadeIn min-w-[90px] ${tooltipClassName}`}
               sideOffset={0}
-              onClick={onViewList}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onViewList) onViewList(e);
+              }}
             >
               {tooltipText}
               <Tooltip.Arrow className="fill-white drop-shadow-md w-4 h-2" width={24} height={16} />
