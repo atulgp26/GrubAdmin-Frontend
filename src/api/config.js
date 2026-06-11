@@ -109,6 +109,8 @@ export const API_ENDPOINTS = {
 	NOTIFICATION: {
 		GET_NOTIFICATION: "/admin/notifications",
 		MARK_AS_READ: "/admin/notifications",
+		DISMISS: "/admin/notifications/dismiss",
+		DISMISS_ALL: "/admin/notifications/dismiss-all",
 	},
 };
 

@@ -47,7 +47,7 @@ export default function Collapse({ title, titleColor, isSettings, icon, children
             </svg>
           </div> :
           <div className="flex items-center gap-10">
-            {pagination ? (
+            {pagination && open ? (
               <div className="flex items-center gap-3" onClick={(e)=> e.stopPropagation()}>
                 <span className="text-sm text-[var(--color-stroke-brand)]">{pagination?.rangeText ?? ""}</span>
                 <Button

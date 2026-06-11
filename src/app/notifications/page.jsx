@@ -94,6 +94,34 @@ export default function NotificationsPage() {
 		}
 	}, []);
 
+	const handleDismiss = useCallback(async (ids) => {
+		try {
+			const response = await notificationsService.dismiss(ids);
+			if (response?.success) {
+				setNotifications((prev) =>
+					prev.filter((n) => !ids.includes(n.id)),
+				);
+				setSelected((prev) => prev.filter((id) => !ids.includes(id)));
+				showSuccess("Notifications dismissed", "", true);
+			}
+		} catch (error) {
+			showError("Failed to dismiss notifications.");
+		}
+	}, []);
+
+	const handleDismissAll = useCallback(async () => {
+		try {
+			const response = await notificationsService.dismissAll();
+			if (response?.success) {
+				setNotifications([]);
+				setSelected([]);
+				showSuccess("All notifications dismissed", "", true);
+			}
+		} catch (error) {
+			showError("Failed to dismiss all notifications.");
+		}
+	}, []);
+
 	useEffect(() => {
 		if (isAuthenticated && !authLoading) {
 			getNotifications();
@@ -102,21 +130,45 @@ export default function NotificationsPage() {
 
 	const processedNotifications = useMemo(
 		() =>
-			notifications.map((n) => ({
-				id: n.id,
-				type: n.type,
-				goal: n.goal,
-				title: n.title,
-				message: n.description,
-				time: new Date(n.createdAt).toLocaleDateString("en-GB", {
-					day: "2-digit",
-					month: "short",
-					year: "2-digit",
-				}),
-				status: n.status,
-				category: n.item_type || n.type,
-				  itemId: n.item_id,
-			})),
+			notifications.map((n) => {
+				const date = new Date(n.createdAt);
+				const now = new Date();
+				const isToday = date.toDateString() === now.toDateString();
+				const yesterday = new Date(now);
+				yesterday.setDate(yesterday.getDate() - 1);
+				const isYesterday = date.toDateString() === yesterday.toDateString();
+
+				const timeStr = date.toLocaleTimeString("en-US", {
+					hour: "numeric",
+					minute: "2-digit",
+					hour12: true,
+				});
+
+				let dayStr;
+				if (isToday) {
+					dayStr = "Today";
+				} else if (isYesterday) {
+					dayStr = "Yesterday";
+				} else {
+					dayStr = date.toLocaleDateString("en-GB", {
+						day: "2-digit",
+						month: "short",
+						year: "numeric",
+					});
+				}
+
+				return {
+					id: n.id,
+					type: n.type,
+					goal: n.goal,
+					title: n.title,
+					message: n.description,
+					time: `${timeStr} | ${dayStr}`,
+					status: n.status,
+					category: n.item_type || n.type,
+					itemId: n.item_id,
+				};
+			}),
 		[notifications],
 	);
 
@@ -189,9 +241,17 @@ export default function NotificationsPage() {
 
 	return (
 		<>
-			<h1 className="text-2xl !pl-3 font-semibold mb-6 text-[var(--color-neutral-primary)]">
-				Notifications
-			</h1>
+			<div className="flex items-center justify-between mb-6">
+				<h1 className="text-2xl !pl-3 font-semibold text-[var(--color-neutral-primary)]">
+					Notifications
+				</h1>
+				<button
+					onClick={handleDismissAll}
+					className="text-sm font-semibold text-[var(--color-brand-default)] hover:underline cursor-pointer"
+				>
+					DISMISS ALL
+				</button>
+			</div>
 			<NotificationFilterBar
 				search={search}
 				setSearch={onSearchChange}
@@ -225,6 +285,7 @@ export default function NotificationsPage() {
 				getNotificationIcon={getNotificationIcon}
 				allSelected={allSelected}
 				onMarkAsRead={handleMarkAsRead}
+				onDismiss={handleDismiss}
 			/>
 		</>
 	);
