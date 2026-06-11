@@ -234,6 +234,7 @@ export default function GrubpacsPage() {
 					modalState.mode === "create"
 						? {
 								label: "ASSIGN BOX",
+								style: { backgroundColor: "white" },
 								onClick: () =>
 									setAssignModal({
 										open: true,
@@ -253,7 +254,8 @@ export default function GrubpacsPage() {
 				);
 				setModalState({ open: false, mode: "create", data: null });
 				setForceRefresh(true);
-			} else {
+			} 
+			else {
 				showError(res?.error || "Failed to save box.");
 			}
 		} catch (e) {
@@ -532,7 +534,7 @@ export default function GrubpacsPage() {
 						onSelect={(item) => {
 							setSearchValue(item.name);
 						}}
-						placeholder="Search grubpacs..."
+						placeholder="Search box"
 						clearable
 						onClear={() => setSearchValue("")}
 						openOnFocus={false}
@@ -569,7 +571,6 @@ export default function GrubpacsPage() {
 				<>
 					{groups.map((group) => {
 						const groupData = processedGrubpacs.filter(
-							// (g) => g.vertical === group.value,
 							(g) =>
 								g.vertical?.toLowerCase() ===
 								group.name?.toLowerCase(),

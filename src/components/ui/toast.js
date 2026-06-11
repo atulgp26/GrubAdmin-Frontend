@@ -28,14 +28,14 @@ export function showSuccess(title, message, hideDetails = false, href = "", acti
               VIEW DETAILS
             </Link>
           )}
-          {/* ✅ ASSIGN BOX button */}
+          {/*  ASSIGN BOX button */}
           {action && (
             <button
               onClick={() => {
                 action.onClick();
                 toast.dismiss(t.id);
               }}
-              className="text-[var(--notif-success)] font-medium border border-[var(--notif-success)] rounded px-3 py-1 hover:bg-[var(--notif-success)] hover:text-white transition-colors"
+              className="text-[var(--notif-success)] font-medium border border-[var(--notif-success)] rounded px-3 py-1 bg-white hover:bg-white transition-colors"
             >
               {action.label}
             </button>

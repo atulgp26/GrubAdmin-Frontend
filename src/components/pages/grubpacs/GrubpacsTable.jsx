@@ -224,7 +224,6 @@ export default function GrubPacsTable({
 													name="crown"
 													className={`w-4 h-4 ${crownColor} group-hover:text-[var(--info-panel-view-bg)]`}
 												/>
-												
 											</Badge>
 										</BoxCountBadge>
 									</div>

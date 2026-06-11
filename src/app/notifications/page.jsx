@@ -28,6 +28,7 @@ export default function NotificationsPage() {
 	const [selectedBoxes, setSelectedBoxes] = useState([]);
 	const [selectedGroups, setSelectedGroups] = useState([]);
 	const [showFilterModal, setShowFilterModal] = useState(false);
+	const [selectedDropdownTypes, setSelectedDropdownTypes] = useState([]);
 	const [selectedTypes, setSelectedTypes] = useState([
 		"error",
 		"success",
@@ -49,6 +50,17 @@ export default function NotificationsPage() {
 		setSearch(e.target.value);
 		onDebouncedSearchValueChange();
 	};
+
+	const typeOptions = useMemo(() => {
+		const unique = [
+			...new Set(notifications.map((n) => n.item_type).filter(Boolean)),
+		];
+		return unique.map((type, i) => ({
+			id: i + 1,
+			label: type,
+			value: type,
+		}));
+	}, [notifications]);
 
 	const getNotifications = useCallback(async () => {
 		const params = {};
@@ -144,12 +156,22 @@ export default function NotificationsPage() {
 					!n.message.toLowerCase().includes(search.toLowerCase())
 				)
 					return false;
+
+
+				if (
+					selectedDropdownTypes.length > 0 &&
+					!selectedDropdownTypes.some(
+						(id) =>
+							typeOptions.find((o) => o.id === id)?.value ===
+							n.category,
+					)
+				)
+					return false;
 				return true;
 			}),
-		[processedNotifications, filter, search],
+		[processedNotifications, filter, search, selectedDropdownTypes],
 	);
 
-	
 	const handleDismissAll = useCallback(async () => {
 		const ids = filtered.map((n) => n.id);
 		try {
@@ -247,6 +269,9 @@ export default function NotificationsPage() {
 				setShowFilterModal={setShowFilterModal}
 				isFilterModalOpen={showFilterModal}
 				onSearchSelect={setSearch}
+				typeOptions={typeOptions}
+				selectedTypes={selectedDropdownTypes}
+				setSelectedTypes={setSelectedDropdownTypes}
 			/>
 			<NotificationFilterModal
 				open={showFilterModal}
