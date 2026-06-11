@@ -11,31 +11,23 @@ export default function NotificationList({ filtered, selected, setSelected, getN
   const someSelected = selected.length > 0 && selected.length < filtered.length;
   
   return (
-    <div className="bg-white rounded-lg !pl-3 overflow-hidden border border-[var(--color-stroke-neutral)]">
-      <div className="flex items-center px-4 py-4 border-b border-[var(--color-stroke-neutral)]">
-        <TableCheckbox
-          checked={allSelected}
-          indeterminate={someSelected}
-          onChange={() => setSelected(allSelected ? [] : filtered.map((n) => n.id))}
-        />
-        <span className="text-sm text-[var(--color-stroke-brand)] ml-7">Notifications</span>
-      </div>
+    <>
       <div className="divide-y divide-[var(--color-stroke-neutral)] cursor-pointer">
         {filtered.map((notification, idx) => (
           <NotificationItem
-            	key={notification.id}
-            	notification={notification}
-            	selected={selected.includes(notification.id)}
-            	onSelect={(e) =>
-              	setSelected((sel) =>
-                	e.target.checked
-                  	? [...sel, notification.id]
-                  	: sel.filter((x) => x !== notification.id)
-              	)
-            	}
-            	getNotificationIcon={getNotificationIcon}
-            	onDismiss={() => onDismiss?.([notification.id])}
-          	/>
+              key={notification.id}
+              notification={notification}
+              selected={selected.includes(notification.id)}
+              onSelect={(e) =>
+                setSelected((sel) =>
+                  e.target.checked
+                    ? [...sel, notification.id]
+                    : sel.filter((x) => x !== notification.id)
+                )
+              }
+              getNotificationIcon={getNotificationIcon}
+              onDismiss={() => onDismiss?.([notification.id])}
+            />
         ))}
       </div>
       {showMultiSelectBar && (
@@ -72,6 +64,6 @@ export default function NotificationList({ filtered, selected, setSelected, getN
           </Button>
         </div>
       )}
-    </div>
+    </>
   );
 } 

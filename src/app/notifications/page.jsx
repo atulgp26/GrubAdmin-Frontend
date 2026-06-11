@@ -4,18 +4,14 @@ import Icon from "@/components/ui/Icon";
 import NotificationFilterBar from "./NotificationFilterBar";
 import NotificationList from "./NotificationList";
 import NotificationFilterModal from "./NotificationFilterModal";
-import { PiWarningFill } from "react-icons/pi";
-import { FaRegCircleCheck } from "react-icons/fa6";
-import { MdWarningAmber } from "react-icons/md";
+import { FiUserPlus, FiPackage, FiAlertTriangle, FiArchive, FiUsers, FiRefreshCw, FiBell, FiCheckCircle, FiInfo } from "react-icons/fi";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
 import { notificationsService } from "@/api/services/notificationsService";
 import { showSuccess, showError } from "@/components/ui/toast";
 import { useDebounce, useDebouncedCallback } from "use-debounce";
 import { DEBOUNCE_TIME } from "@/constants/config";
 
 export default function NotificationsPage() {
-	const router = useRouter();
 	const { isAuthenticated, isLoading: authLoading } = useAuth();
 	const [search, setSearch] = useState("");
 	const [selected, setSelected] = useState([]);
@@ -95,32 +91,29 @@ export default function NotificationsPage() {
 	}, []);
 
 	const handleDismiss = useCallback(async (ids) => {
+		setNotifications((prev) =>
+			prev.filter((n) => !ids.includes(n.id)),
+		);
+		setSelected((prev) => prev.filter((id) => !ids.includes(id)));
+
 		try {
-			const response = await notificationsService.dismiss(ids);
-			if (response?.success) {
-				setNotifications((prev) =>
-					prev.filter((n) => !ids.includes(n.id)),
-				);
-				setSelected((prev) => prev.filter((id) => !ids.includes(id)));
-				showSuccess("Notifications dismissed", "", true);
-			}
+			await notificationsService.markAsRead(ids);
 		} catch (error) {
-			showError("Failed to dismiss notifications.");
+			console.error("Failed to sync dismiss:", error);
 		}
 	}, []);
 
 	const handleDismissAll = useCallback(async () => {
+		const allIds = notifications.map((n) => n.id);
+		setNotifications([]);
+		setSelected([]);
+
 		try {
-			const response = await notificationsService.dismissAll();
-			if (response?.success) {
-				setNotifications([]);
-				setSelected([]);
-				showSuccess("All notifications dismissed", "", true);
-			}
+			if (allIds.length > 0) await notificationsService.markAsRead(allIds);
 		} catch (error) {
-			showError("Failed to dismiss all notifications.");
+			console.error("Failed to sync dismiss all:", error);
 		}
-	}, []);
+	}, [notifications]);
 
 	useEffect(() => {
 		if (isAuthenticated && !authLoading) {
@@ -204,39 +197,57 @@ export default function NotificationsPage() {
 		[debouncedSearchValue, processedNotifications, search],
 	);
 
-	const getNotificationIcon = (type) => {
+	const getNotificationIcon = (type, category) => {
+		let iconColor;
 		switch (type) {
-			case "warning":
-				return (
-					<PiWarningFill
-						className="h-8 w-8"
-						style={{ color: "var(--notif-warning)" }}
-					/>
-				);
 			case "error":
-				return (
-					<PiWarningFill
-						className="h-8 w-8"
-						style={{ color: "var(--notif-error)" }}
-					/>
-				);
+				iconColor = "var(--notif-error)";
+				break;
+			case "warning":
+				iconColor = "var(--notif-warning)";
+				break;
 			case "success":
-				return (
-					<FaRegCircleCheck
-						className="h-8 w-8"
-						style={{ color: "var(--notif-success)" }}
-					/>
-				);
+				iconColor = "var(--notif-success)";
+				break;
 			case "info":
-				return <Icon name="info" />;
+				iconColor = "var(--color-brand-default)";
+				break;
 			default:
-				return (
-					<MdWarningAmber
-						className="h-8 w-8"
-						style={{ color: "var(--notif-warning)" }}
-					/>
-				);
+				iconColor = "var(--notif-warning)";
 		}
+
+		const cat = (category || "").toLowerCase();
+		let Icon;
+		if (cat.includes("client") || cat.includes("customer")) {
+			Icon = FiUserPlus;
+		} else if (cat.includes("box") || cat.includes("grubpac") || cat.includes("package")) {
+			Icon = FiPackage;
+		} else if (cat.includes("repair") || cat.includes("service") || cat.includes("ticket")) {
+			Icon = FiAlertTriangle;
+		} else if (cat.includes("inventory") || cat.includes("stock")) {
+			Icon = FiArchive;
+		} else if (cat.includes("employee") || cat.includes("admin")) {
+			Icon = FiUsers;
+		} else if (cat.includes("update") || cat.includes("release")) {
+			Icon = FiRefreshCw;
+		} else {
+			switch (type) {
+				case "error":
+				case "warning":
+					Icon = FiAlertTriangle;
+					break;
+				case "success":
+					Icon = FiCheckCircle;
+					break;
+				case "info":
+					Icon = FiInfo;
+					break;
+				default:
+					Icon = FiBell;
+			}
+		}
+
+		return <Icon className="h-8 w-8" style={{ color: iconColor }} />;
 	};
 
 	return (

@@ -50,7 +50,7 @@ export default function NotificationItem({
             <div className="w-full">
                 <div className="flex gap-2 mb-3 items-end">
                     <div>
-                        {getNotificationIcon(notification.type)}
+                        {getNotificationIcon(notification.type, notification.category)}
                     </div>
                     <div className="flex-1 min-w-0">
                         <div

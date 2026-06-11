@@ -54,6 +54,7 @@ import {
 } from "@/constants/config";
 import CollapseTable from "@/components/shared/CollapseTable";
 import ClientBoxesModal from "@/components/pages/clients/ClientBoxesModal";
+import VerticalList from "@/components/pages/clients/VerticalList";
 
 const actionOptions = [
 	{
@@ -200,6 +201,7 @@ const ClientsList = () => {
 	const { permissionsByModule, user, can } = usePermissions();
 	const { startImpersonation } = useImpersonation();
 	const [selectedBoxClient, setSelectedBoxClient] = useState(null);
+	const [selectedVertical, setSelectedVertical] = useState(null);
 	const canViewClients =
 		can("view clients list", "clients") ||
 		can("view entries", "clients") ||
@@ -451,6 +453,36 @@ const ClientsList = () => {
 			}),
 		[processedCustomers, searchValue, selectedRole],
 	);
+
+	// Compute client counts per vertical
+	const clientCounts = useMemo(() => {
+		const counts = {};
+		processedCustomers.forEach((client) => {
+			const verticalName = client.vertical?.toLowerCase() || "unknown";
+			const verticalId = client.verticalId;
+			if (verticalId) {
+				counts[verticalId] = (counts[verticalId] || 0) + 1;
+			}
+			counts[verticalName] = (counts[verticalName] || 0) + 1;
+		});
+		return counts;
+	}, [processedCustomers]);
+
+	// Handle vertical selection from VerticalList
+	const handleVerticalSelect = useCallback((vertical) => {
+		setSelectedVertical((prev) => {
+			const newSelected = prev === vertical.id ? null : vertical.id;
+			if (newSelected === null) {
+				setSelectedRole([]);
+			} else {
+				const verticalObj = verticals.find(v => v.id === newSelected);
+				if (verticalObj) {
+					setSelectedRole([verticalObj.name.toLowerCase()]);
+				}
+			}
+			return newSelected;
+		});
+	}, [verticals]);
 
 	// const totalItems = filteredClients.length;
 	const totalPages = useMemo(
@@ -1400,78 +1432,90 @@ const onVerticalGroupClose = (verticalName) => {
 	// }
 
 	return (
-		<div>
-			<div className="flex items-center justify-between mb-6">
-				<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)]">
-					Clients
-				</h1>
-				<div className="flex items-center gap-3 relative">
-					{canExportClients && (
-						<Button
-							variant="cancel"
-							className="btn-size-md-cancel font-medium text-[var(--color-stroke-brand)] !text-base"
-							onClick={handleExportDetails}
-						>
-							EXPORT LIST
-						</Button>
-					)}
-					<Button
-						variant="primary"
-						onClick={() => setAddNewClient(true)}
-					>
-						ADD NEW
-					</Button>
-				</div>
+		<div className="flex gap-6">
+			{/* Vertical List Sidebar */}
+			<div className="w-64 flex-shrink-0">
+				<VerticalList
+					verticals={verticals}
+					clientCounts={clientCounts}
+					onSelect={handleVerticalSelect}
+					selectedVertical={selectedVertical}
+				/>
 			</div>
 
-			{/* Search and Filters */}
-			<div className="flex items-center justify-between mb-6">
-				<div className="flex items-center gap-4">
-					<div className="w-64">
-						<SearchWithSuggestions
-							data={searchSuggestions}
-							value={searchValue}
-							onChange={onKeywordChange}
-							onSelect={handleSuggestionSelect}
-							getLabel={(item) => item.name}
-							getSubLabel={(item) => item.type}
-							placeholder="Search client"
-							className="[&_input]:!h-8 [&_input]:!py-1"
-							clearable={true}
-							onClear={() => setSearchValue("")}
-							minChars={1}
-						/>
+			{/* Main Content */}
+			<div className="flex-1">
+				<div className="flex items-center justify-between mb-6">
+					<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)]">
+						Clients
+					</h1>
+					<div className="flex items-center gap-3 relative">
+						{canExportClients && (
+							<Button
+								variant="cancel"
+								className="btn-size-md-cancel font-medium text-[var(--color-stroke-brand)] !text-base"
+								onClick={handleExportDetails}
+							>
+								EXPORT LIST
+							</Button>
+						)}
+						<Button
+							variant="primary"
+							onClick={() => setAddNewClient(true)}
+						>
+							ADD NEW
+						</Button>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-4">
-					{!groupByRole && (
-						<>
-							<span className="text-sm text-[var(--color-stroke-brand)]">
-								Showing {filteredClients.length} of{" "}
-								{customers.length} customers
-							</span>
-							<div className="w-48">
-								<MultiSelectDropdown
-									options={roleOptions}
-									selected={selectedRole}
-									setSelected={setSelectedRole}
-									placeholder="All verticals"
-									hideComponent={true}
-									notificationIcon={true}
-								/>
-							</div>
-						</>
-					)}
-					<label className="flex items-center gap-2 text-lg text-[var(--color-neutral-secondary)]">
-						<CheckBox
-							checked={groupByRole}
-							onChange={(e) => setGroupByRole(e.target.checked)}
-						/>
-						Group as per vertical
-					</label>
+				{/* Search and Filters */}
+				<div className="flex items-center justify-between mb-6">
+					<div className="flex items-center gap-4">
+						<div className="w-64">
+							<SearchWithSuggestions
+								data={searchSuggestions}
+								value={searchValue}
+								onChange={onKeywordChange}
+								onSelect={handleSuggestionSelect}
+								getLabel={(item) => item.name}
+								getSubLabel={(item) => item.type}
+								placeholder="Search client"
+								className="[&_input]:!h-8 [&_input]:!py-1"
+								clearable={true}
+								onClear={() => setSearchValue("")}
+								minChars={1}
+							/>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-4">
+						{!groupByRole && (
+							<>
+								<span className="text-sm text-[var(--color-stroke-brand)]">
+									Showing {filteredClients.length} of{" "}
+									{customers.length} customers
+								</span>
+								<div className="w-48">
+									<MultiSelectDropdown
+										options={roleOptions}
+										selected={selectedRole}
+										setSelected={setSelectedRole}
+										placeholder="All verticals"
+										hideComponent={true}
+										notificationIcon={true}
+									/>
+								</div>
+							</>
+						)}
+						<label className="flex items-center gap-2 text-lg text-[var(--color-neutral-secondary)]">
+							<CheckBox
+								checked={groupByRole}
+								onChange={(e) => setGroupByRole(e.target.checked)}
+							/>
+							Group as per vertical
+						</label>
+					</div>
 				</div>
-			</div>
 
 			{/* Table or Grouped View */}
 			{groupByRole ? (
@@ -1965,6 +2009,7 @@ const onVerticalGroupClose = (verticalName) => {
     clientName={selectedBoxClient?.name}
     vertical={selectedBoxClient?.vertical}
 />
+			</div>
 		</div>
 	);
 };

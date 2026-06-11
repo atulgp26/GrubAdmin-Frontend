@@ -8,10 +8,4 @@ export const notificationsService = {
 	markAsRead: (ids) => {
 		return http.patch(API_ENDPOINTS.NOTIFICATION.MARK_AS_READ, { ids });
 	},
-	dismiss: (ids) => {
-		return http.patch(API_ENDPOINTS.NOTIFICATION.DISMISS, { ids });
-	},
-	dismissAll: () => {
-		return http.patch(API_ENDPOINTS.NOTIFICATION.DISMISS_ALL);
-	},
 };
