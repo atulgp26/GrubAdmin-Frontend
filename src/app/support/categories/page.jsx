@@ -54,6 +54,14 @@ export default function Categories() {
 	const [allQuestions, setAllQuestions] = useState([]);
 	const [iconBaseUrl, setIconBaseUrl] = useState("");
 	const [iconIdToKey, setIconIdToKey] = useState({});
+	const fallbackIcons = {
+		"Support/Card/gear.svg": "/plug.svg",
+		"Support/Card/suitcase-medical.svg": "/troubleshooting.svg",
+		"Support/Card/bluetooth-on.svg": "/bluetooth.svg",
+		"Support/Card/exclamation-triangle.svg": "/exclamation-triangle.svg",
+		"Support/Card/user-shield.svg": "/accountandsupport.svg",
+		"Support/Card/question-circle.svg": "/question-mark.svg",
+	};
 	const [verticalIdToName, setVerticalIdToName] = useState({});
 	const [loading, setLoading] = useState(true);
 	useEffect(() => {
@@ -117,7 +125,7 @@ export default function Categories() {
 						iconId: c.icon_id,
 						verticalId:
 							c.vertical_id !== undefined &&
-							c.vertical_id !== null
+								c.vertical_id !== null
 								? String(c.vertical_id)
 								: "",
 						description: c.description || "",
@@ -148,7 +156,7 @@ export default function Categories() {
 							});
 						});
 						setAllQuestions(allQues);
-					} catch (_) {}
+					} catch (_) { }
 				}
 			} catch (e) {
 			} finally {
@@ -203,7 +211,7 @@ export default function Categories() {
 						iconId: c.icon_id,
 						verticalId:
 							c.vertical_id !== undefined &&
-							c.vertical_id !== null
+								c.vertical_id !== null
 								? String(c.vertical_id)
 								: "",
 						description: c.description || "",
@@ -211,7 +219,7 @@ export default function Categories() {
 					}));
 					setCategories(normalized);
 				}
-			} catch (_) {}
+			} catch (_) { }
 		};
 		const t = setTimeout(run, 300);
 		return () => clearTimeout(t);
@@ -331,64 +339,64 @@ export default function Categories() {
 	const actionsData = [
 		...(canAdd
 			? [
-					{
-						title: "Add new category",
-						description: "Create a new category to organize FAQs.",
-						icon: "windows_plus",
-						iconColor: "text-[var(--notif-success)]",
-						onClick: () => {
-							setIsActionModalOpen(false);
-							setAddOpen(true);
-						},
+				{
+					title: "Add new category",
+					description: "Create a new category to organize FAQs.",
+					icon: "windows_plus",
+					iconColor: "text-[var(--notif-success)]",
+					onClick: () => {
+						setIsActionModalOpen(false);
+						setAddOpen(true);
 					},
-				]
+				},
+			]
 			: []),
 		...(canViewSuspendedCats
 			? [
-					{
-						title: "View suspended categories",
-						description:
-							"View the categories & FAQs currently suspended.",
-						icon: "notes_info",
-						iconColor: "text-[var(--notif-error)]",
-						onClick: () => router.push("/support/suspended"),
-					},
-				]
+				{
+					title: "View suspended categories",
+					description:
+						"View the categories & FAQs currently suspended.",
+					icon: "notes_info",
+					iconColor: "text-[var(--notif-error)]",
+					onClick: () => router.push("/support/suspended"),
+				},
+			]
 			: []),
 		...(canReorder
 			? [
-					{
-						title: "Reorder categories",
-						description:
-							"Change the display order of active categories.",
-						icon: "arrows_up_down",
-						iconColor: "text-[var(--color-neutral-light)]",
-						onClick: () => {
-							const visibleCount = filtered.length;
-							if (visibleCount <= 1) {
-								const msg =
-									visibleCount === 0
-										? "No categories to reorder."
-										: "Only one category available. Reordering requires 2 or more.";
-								showError(msg);
-							} else {
-								setReorderCategoriesModal(true);
-							}
-						},
+				{
+					title: "Reorder categories",
+					description:
+						"Change the display order of active categories.",
+					icon: "arrows_up_down",
+					iconColor: "text-[var(--color-neutral-light)]",
+					onClick: () => {
+						const visibleCount = filtered.length;
+						if (visibleCount <= 1) {
+							const msg =
+								visibleCount === 0
+									? "No categories to reorder."
+									: "Only one category available. Reordering requires 2 or more.";
+							showError(msg);
+						} else {
+							setReorderCategoriesModal(true);
+						}
 					},
-				]
+				},
+			]
 			: []),
 		...(canExport
 			? [
-					{
-						title: "Export all",
-						description:
-							"Export all FAQs and categories for reference.",
-						icon: "download",
-						iconColor: "text-[var(--color-neutral-light)]",
-						onClick: () => setExportOpen(true),
-					},
-				]
+				{
+					title: "Export all",
+					description:
+						"Export all FAQs and categories for reference.",
+					icon: "download",
+					iconColor: "text-[var(--color-neutral-light)]",
+					onClick: () => setExportOpen(true),
+				},
+			]
 			: []),
 	];
 	const hasAnyActions = actionsData.length > 0;
@@ -412,7 +420,7 @@ export default function Categories() {
 						iconId: c.icon_id,
 						verticalId:
 							c.vertical_id !== undefined &&
-							c.vertical_id !== null
+								c.vertical_id !== null
 								? String(c.vertical_id)
 								: "",
 						description: c.description || "",
@@ -582,7 +590,7 @@ export default function Categories() {
 										iconId: c.icon_id,
 										verticalId:
 											c.vertical_id !== undefined &&
-											c.vertical_id !== null
+												c.vertical_id !== null
 												? String(c.vertical_id)
 												: "",
 										description: c.description || "",
@@ -591,7 +599,7 @@ export default function Categories() {
 									setCategories(normalized);
 									setAllCategories(normalized);
 								}
-							} catch (_) {}
+							} catch (_) { }
 						}}
 						mode="add"
 					/>
@@ -658,10 +666,10 @@ export default function Categories() {
 								setSelectedRole(val);
 								const ids = Array.isArray(val)
 									? val.map((v) =>
-											v?.id !== undefined
-												? String(v.id)
-												: String(v),
-										)
+										v?.id !== undefined
+											? String(v.id)
+											: String(v),
+									)
 									: [];
 								if (
 									!ids.length ||
@@ -713,11 +721,10 @@ export default function Categories() {
 													: cat.id,
 											);
 										}}
-										className={`p-2 rounded-lg hover:bg-[var(--color-neutral-secondary-bg)] opacity-0 group-hover:opacity-100 transition-opacity ${
-											menuOpen === cat.id
+										className={`p-2 rounded-lg hover:bg-[var(--color-neutral-secondary-bg)] opacity-0 group-hover:opacity-100 transition-opacity ${menuOpen === cat.id
 												? "bg-[var(--color-neutral-secondary-bg)] shadow-[0_0_0_2px_var(--color-shadow-actionmenu)]"
 												: ""
-										}`}
+											}`}
 									>
 										<BsThreeDotsVertical
 											strokeWidth={1}
@@ -728,11 +735,11 @@ export default function Categories() {
 										targetRef={
 											buttonRefs.current[cat.id]
 												? {
-														current:
-															buttonRefs.current[
-																cat.id
-															],
-													}
+													current:
+														buttonRefs.current[
+														cat.id
+														],
+												}
 												: null
 										}
 										open={menuOpen === cat.id}
@@ -746,145 +753,151 @@ export default function Categories() {
 										>
 											{(can("edit category", "support") ||
 												can("edit category")) && (
-												<Button
-													variant="profile"
-													className="w-full !rounded-b-none text-left btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
-													onClick={() => {
-														setMenuOpen(null);
-														setEditInitial({
-															id: cat.id,
-															name: cat.title,
-															icon: cat.iconId,
-															description:
-																cat.description,
-															roles: cat.verticalId
-																? [
+													<Button
+														variant="profile"
+														className="w-full !rounded-b-none text-left btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+														onClick={() => {
+															setMenuOpen(null);
+															setEditInitial({
+																id: cat.id,
+																name: cat.title,
+																icon: cat.iconId,
+																description:
+																	cat.description,
+																roles: cat.verticalId
+																	? [
 																		cat.verticalId,
 																	]
-																: [],
-														});
-														setEditOpen(true);
-													}}
-												>
-													<PencilLine className="w-5 h-5 text-[var(--color-neutral-light)]" />{" "}
-													Edit category
-												</Button>
-											)}
+																	: [],
+															});
+															setEditOpen(true);
+														}}
+													>
+														<PencilLine className="w-5 h-5 text-[var(--color-neutral-light)]" />{" "}
+														Edit category
+													</Button>
+												)}
 											{(can(
 												"suspend categories",
 												"support",
 											) ||
 												can("suspend categories")) && (
-												<Button
-													variant="profile"
-													className="w-full !rounded-none text-left btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
-													onClick={async () => {
-														setMenuOpen(null);
-														let count =
-															typeof cat.faqCount ===
-															"number"
-																? cat.faqCount
-																: null;
-														if (count === null) {
-															try {
-																const res =
-																	await faqService.getFaqsByCategory(
-																		cat.id,
-																	);
-																const faqs =
-																	res?.data
-																		?.faqs ||
-																	res?.data
-																		?.data
-																		?.faqs ||
-																	[];
-																count =
-																	Array.isArray(
-																		faqs,
-																	)
-																		? faqs.length
-																		: 0;
-															} catch (_) {
-																count = 0;
+													<Button
+														variant="profile"
+														className="w-full !rounded-none text-left btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+														onClick={async () => {
+															setMenuOpen(null);
+															let count =
+																typeof cat.faqCount ===
+																	"number"
+																	? cat.faqCount
+																	: null;
+															if (count === null) {
+																try {
+																	const res =
+																		await faqService.getFaqsByCategory(
+																			cat.id,
+																		);
+																	const faqs =
+																		res?.data
+																			?.faqs ||
+																		res?.data
+																			?.data
+																			?.faqs ||
+																		[];
+																	count =
+																		Array.isArray(
+																			faqs,
+																		)
+																			? faqs.length
+																			: 0;
+																} catch (_) {
+																	count = 0;
+																}
 															}
-														}
-														setSuspendMeta({
-															title: cat.title,
-															faqCount: count,
-														});
-														setSuspendCategoryId(
-															cat.id,
-														);
-														setSuspendOpen(true);
-													}}
-												>
-													<Icon
-														name="user_wrong"
-														className="w-5 h-5 text-[var(--color-neutral-light)]"
-													/>{" "}
-													Suspend category
-												</Button>
-											)}
+															setSuspendMeta({
+																title: cat.title,
+																faqCount: count,
+															});
+															setSuspendCategoryId(
+																cat.id,
+															);
+															setSuspendOpen(true);
+														}}
+													>
+														<Icon
+															name="user_wrong"
+															className="w-5 h-5 text-[var(--color-neutral-light)]"
+														/>{" "}
+														Suspend category
+													</Button>
+												)}
 											{(can(
 												"delete categories",
 												"support",
 											) ||
 												can("delete categories")) && (
-												<Button
-													variant="profile"
-													className="w-full text-left !rounded-t-none btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
-													onClick={async () => {
-														setMenuOpen(null);
-														let count =
-															typeof cat.faqCount ===
-															"number"
-																? cat.faqCount
-																: null;
-														if (count === null) {
-															try {
-																const res =
-																	await faqService.getFaqsByCategory(
-																		cat.id,
-																	);
-																const faqs =
-																	res?.data
-																		?.faqs ||
-																	res?.data
-																		?.data
-																		?.faqs ||
-																	[];
-																count =
-																	Array.isArray(
-																		faqs,
-																	)
-																		? faqs.length
-																		: null;
-															} catch (_) {
-																count = null;
+													<Button
+														variant="profile"
+														className="w-full text-left !rounded-t-none btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+														onClick={async () => {
+															setMenuOpen(null);
+															let count =
+																typeof cat.faqCount ===
+																	"number"
+																	? cat.faqCount
+																	: null;
+															if (count === null) {
+																try {
+																	const res =
+																		await faqService.getFaqsByCategory(
+																			cat.id,
+																		);
+																	const faqs =
+																		res?.data
+																			?.faqs ||
+																		res?.data
+																			?.data
+																			?.faqs ||
+																		[];
+																	count =
+																		Array.isArray(
+																			faqs,
+																		)
+																			? faqs.length
+																			: null;
+																} catch (_) {
+																	count = null;
+																}
 															}
-														}
-														setDeleteMeta({
-															title: cat.title,
-															faqCount: count,
-														});
-														setDeleteCategoryId(
-															cat.id,
-														);
-														setDeleteOpen(true);
-													}}
-												>
-													<Trash2 className="w-5 h-5 text-[var(--notif-error)]" />{" "}
-													Delete category
-												</Button>
-											)}
+															setDeleteMeta({
+																title: cat.title,
+																faqCount: count,
+															});
+															setDeleteCategoryId(
+																cat.id,
+															);
+															setDeleteOpen(true);
+														}}
+													>
+														<Trash2 className="w-5 h-5 text-[var(--notif-error)]" />{" "}
+														Delete category
+													</Button>
+												)}
 										</div>
 									</DropdownPortal>
 								</div>
 								{iconIdToKey[cat.iconId] ? (
 									<img
-										src={`${iconBaseUrl}/${encodeURIComponent(iconIdToKey[cat.iconId])}`}
+										src={
+											fallbackIcons[iconIdToKey[cat.iconId]] ||
+											`${iconBaseUrl}/${iconIdToKey[cat.iconId]}`
+										}
 										alt="icon"
 										className="w-8 h-8"
+										onError={(e) => {
+											e.currentTarget.src = "/question-mark.svg";
+										}}
 									/>
 								) : (
 									<Icon
@@ -935,7 +948,7 @@ export default function Categories() {
 									iconId: c.icon_id,
 									verticalId:
 										c.vertical_id !== undefined &&
-										c.vertical_id !== null
+											c.vertical_id !== null
 											? String(c.vertical_id)
 											: "",
 									description: c.description || "",
@@ -944,7 +957,7 @@ export default function Categories() {
 								setCategories(normalized);
 								setAllCategories(normalized);
 							}
-						} catch (_) {}
+						} catch (_) { }
 					}}
 					mode="edit"
 					initialValues={{
@@ -974,7 +987,7 @@ export default function Categories() {
 									iconId: c.icon_id,
 									verticalId:
 										c.vertical_id !== undefined &&
-										c.vertical_id !== null
+											c.vertical_id !== null
 											? String(c.vertical_id)
 											: "",
 									description: c.description || "",
@@ -983,7 +996,7 @@ export default function Categories() {
 								setCategories(normalized);
 								setAllCategories(normalized);
 							}
-						} catch (_) {}
+						} catch (_) { }
 					}}
 					mode="add"
 				/>
