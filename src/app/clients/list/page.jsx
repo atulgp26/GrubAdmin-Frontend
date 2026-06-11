@@ -990,9 +990,13 @@ const onVerticalGroupClose = (verticalName) => {
 							>
 								<TableCell className="p-4">
 									<div>
-										<div className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)]">
+										<Link
+											href={`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`}
+											className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)] hover:underline"
+											onClick={(e) => e.stopPropagation()}
+										>
 											{customer.name}
-										</div>
+										</Link>
 										<div className="text-sm text-[var(--color-stroke-brand)]">
 											{customer.client_id} |{" "}
 											{customer.organization}
@@ -1578,9 +1582,13 @@ const onVerticalGroupClose = (verticalName) => {
 								>
 									<TableCell className="p-4">
 										<div>
-											<div className="font-semibold text-base pb-1 text-[var(--color-neutral-secondary)]">
+											<Link
+												href={`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`}
+												className="font-semibold text-base pb-1 text-[var(--color-neutral-secondary)] hover:underline"
+												onClick={(e) => e.stopPropagation()}
+											>
 												{customer.name}
-											</div>
+											</Link>
 											<div className="text-sm text-[var(--color-stroke-brand)]">
 												{customer.client_id} |{" "}
 												{customer.organization}
