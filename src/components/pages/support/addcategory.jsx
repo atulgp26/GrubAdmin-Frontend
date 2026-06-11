@@ -1,5 +1,6 @@
 "use client";
 import Button from "@/components/ui/Button";
+import Icon from "@/components/ui/Icon";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown";
@@ -151,7 +152,16 @@ const AddCategory = ({ open, onClose, mode = "add", initialValues = null }) => {
               )
             };
           });
-          setIconOptions(opts);
+          const localIcons = [
+            { value: "local-compass", label: <Icon name="compass" className="w-6 h-6" /> },
+            { value: "local-ruler-pencil", label: <Icon name="ruler_pencil" className="w-6 h-6" /> },
+            { value: "local-pencil", label: <Icon name="pencil" className="w-6 h-6" /> },
+            { value: "local-drafting-compass", label: <Icon name="drafting_compass" className="w-6 h-6" /> },
+            { value: "local-settings", label: <Icon name="settings" className="w-6 h-6" /> },
+          ];
+          const existingValues = new Set(opts.map(o => o.value));
+          const uniqueLocalIcons = localIcons.filter(ic => !existingValues.has(ic.value));
+          setIconOptions([...opts, ...uniqueLocalIcons]);
           const initial = initialValues?.icon ?? (opts.length > 0 ? opts[0].value : "");
           setSelectedIcon(initial);
         }
