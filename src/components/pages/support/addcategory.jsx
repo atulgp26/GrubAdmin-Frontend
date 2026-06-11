@@ -122,6 +122,19 @@ const AddCategory = ({ open, onClose, mode = "add", initialValues = null }) => {
           const icons = iconsRes.data?.icons || [];
           const rawBase = (configRes?.data?.configs?.find(c => c.key === 'icon_base_url')?.value) || iconBaseUrl || '';
           const base = `${rawBase}`.replace(/\/+$/, '');
+          const fallbackMap = {
+            "icons/default-faq-icon.png": "/notes-info.svg",
+            "icons/medical-faq-icon.png": "/troubleshooting.svg",
+            "icons/camping-faq-icon.png": "/window.svg",
+            "icons/hospitality-faq-icon.png": "/shop.svg",
+            "icons/delivery-faq-icon.png": "/car.svg",
+            "Support/Card/gear.svg": "/plug.svg",
+            "Support/Card/suitcase-medical.svg": "/troubleshooting.svg",
+            "Support/Card/bluetooth-on.svg": "/bluetooth.svg",
+            "Support/Card/exclamation-triangle.svg": "/exclamation-triangle.svg",
+            "Support/Card/user-shield.svg": "/accountandsupport.svg",
+            "Support/Card/question-circle.svg": "/question-mark.svg",
+          };
           const opts = icons.map(ic => {
             const src = `${base}/${ic.bucket_key}`;
             return {
@@ -131,6 +144,9 @@ const AddCategory = ({ open, onClose, mode = "add", initialValues = null }) => {
                   src={src}
                   alt={ic.name}
                   className="w-6 h-6"
+                  onError={(e) => {
+                    e.currentTarget.src = fallbackMap[ic.bucket_key] || "/question-mark.svg";
+                  }}
                 />
               )
             };

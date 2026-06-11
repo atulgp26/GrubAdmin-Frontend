@@ -61,6 +61,11 @@ export default function Categories() {
 		"Support/Card/exclamation-triangle.svg": "/exclamation-triangle.svg",
 		"Support/Card/user-shield.svg": "/accountandsupport.svg",
 		"Support/Card/question-circle.svg": "/question-mark.svg",
+		"icons/default-faq-icon.png": "/notes-info.svg",
+		"icons/medical-faq-icon.png": "/troubleshooting.svg",
+		"icons/camping-faq-icon.png": "/window.svg",
+		"icons/hospitality-faq-icon.png": "/shop.svg",
+		"icons/delivery-faq-icon.png": "/car.svg",
 	};
 	const [verticalIdToName, setVerticalIdToName] = useState({});
 	const [loading, setLoading] = useState(true);
