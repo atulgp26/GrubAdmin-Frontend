@@ -169,6 +169,7 @@ const SuspendedEmployees = () => {
 							? `#${admin.employee_id}`
 							: `#${admin.id?.slice(-8) || `EMP${index}`}`,
 						joinDate: formatJoiningDate(admin.joining_date),
+						addedDate: admin.created_at ? formatJoiningDate(admin.created_at) : (admin.joining_date ? formatJoiningDate(admin.joining_date) : "Unknown"),
 						location: admin.location || "Not specified",
 						phone: phoneFormatted || "Not provided",
 						email: admin.email || "Not provided",
@@ -393,8 +394,8 @@ const SuspendedEmployees = () => {
 	// If we have a preserved employee that's not in employees list, add it for display
 	const employeesWithPreserved =
 		preservedEmployee &&
-		selectedEmployeeId &&
-		!employees.find((emp) => emp.id === selectedEmployeeId)
+			selectedEmployeeId &&
+			!employees.find((emp) => emp.id === selectedEmployeeId)
 			? [preservedEmployee, ...employees]
 			: employees;
 
@@ -555,10 +556,14 @@ const SuspendedEmployees = () => {
 			const res = await employeeService.reactivateAdmin(adminIds);
 			if (res?.success && res.code === 200) {
 				const count = adminIds.length;
-				showSuccess(
-					"Success!",
-					`${count} ${count === 1 ? "employee has" : "employees have"} been reactivated.`,
-				);
+				if (count === 1) {
+					const empName = employees.find(e => String(e.id) === String(adminIds[0]))?.name || "Employee";
+					showSuccess("Success!", `${empName}'s account has been activated.`, true);
+				} else if (count === filteredEmployees.length && count > 0) {
+					showSuccess("Success!", `All employees have been activated.`, false, "/employees");
+				} else {
+					showSuccess("Success!", `${count} employees have been activated.`, false, "/employees");
+				}
 				setSelectedEmployees(new Set());
 				setSelectAll(false);
 				setSingleEmployeeId(null);
@@ -585,18 +590,18 @@ const SuspendedEmployees = () => {
 	const handleActivateFinal = () => {
 		if (singleEmployeeId) {
 			// Handle single employee activation
-			showSuccess(
-				"Success!",
-				`${filteredEmployees.find((emp) => emp.id === singleEmployeeId)?.name} has been activated.`,
-			);
+			const empName = filteredEmployees.find((emp) => String(emp.id) === String(singleEmployeeId))?.name || "Employee";
+			showSuccess("Success!", `${empName}'s account has been activated.`, true);
 			setSelectedEmployees(new Set()); // Clear selection
 			setSelectAll(false);
 		} else {
 			// Handle batch activation
-			showSuccess(
-				"Success!",
-				`${selectedEmployees.size} employees have been activated.`,
-			);
+			const count = selectedEmployees.size;
+			if (count === filteredEmployees.length && count > 0) {
+				showSuccess("Success!", `All employees have been activated.`, false, "/employees");
+			} else {
+				showSuccess("Success!", `${count} employees have been activated.`, false, "/employees");
+			}
 			setSelectedEmployees(new Set()); // Clear selection
 			setSelectAll(false);
 		}
@@ -686,10 +691,12 @@ const SuspendedEmployees = () => {
 
 			const res = await employeeService.deleteAdmins({ adminIds });
 			if (res?.success && res.code === 200) {
-				showSuccess(
-					"Success",
-					`${count} ${count === 1 ? "employee has" : "employees have"} been deleted.`,
-				);
+				if (count === 1) {
+					const empName = employees.find(e => String(e.id) === String(adminIds[0]))?.name || "Employee";
+					showSuccess("Success!", `${empName}'s account has been deleted.`, false, "#");
+				} else {
+					showSuccess("Success!", `${count} employees have been deleted.`, false, "#");
+				}
 				setSelectedEmployees(new Set());
 				setSelectAll(false);
 				setDeleteEmployeeModal(false);
@@ -728,12 +735,12 @@ const SuspendedEmployees = () => {
 		if (!employee?.originalData?.role?.permissions_json) return 0;
 		const permissionsJson = employee.originalData.role.permissions_json;
 		let totalCount = 0;
-	Object.keys(permissionsJson).forEach((sectionKey) => {
-    const permissionList = permissionsJson[sectionKey];
-    if (Array.isArray(permissionList)) {
-        totalCount += permissionList.length;
-    }
-});
+		Object.keys(permissionsJson).forEach((sectionKey) => {
+			const permissionList = permissionsJson[sectionKey];
+			if (Array.isArray(permissionList)) {
+				totalCount += permissionList.length;
+			}
+		});
 		return totalCount;
 	};
 
@@ -845,7 +852,7 @@ const SuspendedEmployees = () => {
 			if (
 				updatedEmployeeData.joinDate &&
 				updatedEmployeeData.joinDate !==
-					selectedEmployeeForEdit.joinDate
+				selectedEmployeeForEdit.joinDate
 			) {
 				const dateStr = updatedEmployeeData.joinDate;
 				if (dateStr.includes("T") || dateStr.includes("Z")) {
@@ -901,7 +908,9 @@ const SuspendedEmployees = () => {
 					`${originalAdmin.first_name} ${originalAdmin.last_name}`.trim();
 				showSuccess(
 					"Success!",
-					`${fullName || "Employee"} details updated successfully.`,
+					`${fullName || "Employee"}'s details updated successfully.`,
+					false,
+					"#"
 				);
 
 				setEditEmployeeModal(false);
@@ -956,70 +965,72 @@ const SuspendedEmployees = () => {
 	);
 
 	// Group employees by role - same as list page
-const groupEmployeesByRole = () => {
-  const groups = [];
+	const groupEmployeesByRole = () => {
+		const groups = [];
 
-  roleOptions.forEach(({ id, label }) => {
-    // Match by role ID — same as EmployeesList
-    const roleEmployees = filteredEmployees.filter((emp) => {
-      const rid =
-        emp?.originalData?.role?.id || emp?.originalData?.role_id;
-      return String(rid) === String(id);
-    });
+		roleOptions.forEach(({ id, label }) => {
+			// Match by role ID — same as EmployeesList
+			const roleEmployees = filteredEmployees.filter((emp) => {
+				const rid =
+					emp?.originalData?.role?.id || emp?.originalData?.role_id;
+				return String(rid) === String(id);
+			});
 
-    const permissionsCount =
-      roleEmployees.length > 0 &&
-      roleEmployees[0]?.originalData?.role?.permissions_json
-        ? (() => {
-            const permissionsJson =
-              roleEmployees[0].originalData.role.permissions_json;
-            let totalCount = 0;
-        Object.keys(permissionsJson).forEach((sectionKey) => {
-    const permissionList = permissionsJson[sectionKey];
-    if (Array.isArray(permissionList)) {
-        totalCount += permissionList.length;
-    }
-    // Skip non-array sections (inconsistent backend data)
-});
-            return totalCount;
-          })()
-        : 0;
+			if (roleEmployees.length === 0) return;
 
-    groups.push({
-      name: (
-        <CustomTooltip
-          title={
-            <div className="space-y-2">
-              <div className="text-[var(--color-stroke-brand)] text-sm">
-                {permissionsCount} permissions
-              </div>
-              <div
-                className="text-[var(--info-panel-view-bg)] text-sm font-semibold cursor-pointer hover:underline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (roleEmployees[0]?.originalData?.role) {
-                    handleViewDetails({ originalData: { role: roleEmployees[0].originalData.role } });
-                  }
-                }}
-              >
-                View details &gt;&gt;
-              </div>
-            </div>
-          }
-          placement="bottom"
-          arrowPosition="left"
-        >
-          <span className="cursor-default hover:underline text-[var(--color-stroke-brand)] font-medium text-sm">
-            {label.toUpperCase()}
-          </span>
-        </CustomTooltip>
-      ),
-      items: roleEmployees,
-    });
-  });
+			const permissionsCount =
+				roleEmployees.length > 0 &&
+					roleEmployees[0]?.originalData?.role?.permissions_json
+					? (() => {
+						const permissionsJson =
+							roleEmployees[0].originalData.role.permissions_json;
+						let totalCount = 0;
+						Object.keys(permissionsJson).forEach((sectionKey) => {
+							const permissionList = permissionsJson[sectionKey];
+							if (Array.isArray(permissionList)) {
+								totalCount += permissionList.length;
+							}
+							// Skip non-array sections (inconsistent backend data)
+						});
+						return totalCount;
+					})()
+					: 0;
 
-  return groups;
-};
+			groups.push({
+				name: (
+					<CustomTooltip
+						title={
+							<div className="space-y-2">
+								<div className="text-[var(--color-stroke-brand)] text-sm">
+									{permissionsCount} permissions
+								</div>
+								<div
+									className="text-[var(--info-panel-view-bg)] text-sm font-semibold cursor-pointer hover:underline"
+									onClick={(e) => {
+										e.stopPropagation();
+										if (roleEmployees[0]?.originalData?.role) {
+											handleViewDetails({ originalData: { role: roleEmployees[0].originalData.role } });
+										}
+									}}
+								>
+									View details &gt;&gt;
+								</div>
+							</div>
+						}
+						placement="bottom"
+						arrowPosition="left"
+					>
+						<span className="cursor-default hover:underline text-[var(--color-stroke-brand)] font-medium text-sm">
+							{label.toUpperCase()}
+						</span>
+					</CustomTooltip>
+				),
+				items: roleEmployees,
+			});
+		});
+
+		return groups;
+	};
 	// Render table content for each group
 	const renderGroupTable = (group) => (
 		<div className="">
@@ -1118,10 +1129,10 @@ const groupEmployeesByRole = () => {
 									tooltipContent={
 										<div className="space-y-2">
 											<div className="text-[var(--color-stroke-brand)] text-right text-sm font-normal">
-												Suspended by You
+												Suspended on {employee.suspended} (You)
 											</div>
 											<div className="text-[var(--color-stroke-brand)] text-right text-sm font-normal">
-												Added on {employee.joinDate}{" "}
+												Added on {employee.addedDate}{" "}
 												(You)
 											</div>
 										</div>
@@ -1133,9 +1144,86 @@ const groupEmployeesByRole = () => {
 								</BoxCountBadge>
 							</TableCell>
 							<TableCell className="w-12 p-4">
-								<button className="p-1 hover:bg-[var(--color-neutral-secondary-bg)] rounded">
+								<button
+									ref={(el) => (buttonRefs.current[employee.id] = el)}
+									onClick={() =>
+										setMenuOpen(menuOpen === employee.id ? null : employee.id)
+									}
+									className={`p-2 hover:bg-[var(--color-neutral-secondary-bg)] rounded-lg ${menuOpen === employee.id ? "bg-[var(--color-neutral-secondary-bg)] shadow-[0_0_0_2px_var(--color-shadow-actionmenu)] rounded-lg" : ""}`}
+								>
 									<BsThreeDotsVertical className="w-5 h-5 text-[var(--color-stroke-brand)]" />
 								</button>
+								<DropdownPortal
+									targetRef={
+										buttonRefs.current[employee.id]
+											? { current: buttonRefs.current[employee.id] }
+											: null
+									}
+									open={menuOpen === employee.id}
+									onClose={() => setMenuOpen(null)}
+								>
+									<div className="w-56 bg-white border border-[var(--color-stroke-neutral)] divide-y divide-[var(--color-stroke-neutral)] rounded-lg shadow-[4px_4px_8px_0_var(--color-notif-shadow-soft),0px_0px_4px_0_var(--color-notif-shadow-strong)] z-50">
+										{can("active employees", "employees") && (
+											<Button
+												variant="profile"
+												onClick={() => {
+													onOpenActivate(employee.id);
+													setMenuOpen(null);
+												}}
+												className="w-full !rounded-b-none text-left btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+											>
+												<Icon
+													name="user_check"
+													className="w-5 h-5 !text-[var(--notif-success)]"
+												/>{" "}
+												Activate employee
+											</Button>
+										)}
+										{can("edit employees", "employees") && (
+											<Button
+												variant="profile"
+												onClick={() => {
+													setSelectedEmployeeForEdit(employee);
+													setEditEmployeeModal(true);
+													setMenuOpen(null);
+												}}
+												className="w-full !rounded-none text-left btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+											>
+												<PencilLine className="w-5 h-5 text-[var(--color-neutral-light)]" />{" "}
+												Edit employee details
+											</Button>
+										)}
+										<Link
+											href={`/employees/suspendedlogs?id=${employee.id}`}
+											className="block"
+										>
+											<Button
+												variant="profile"
+												className="w-full text-left !rounded-none btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+												onClick={() => setMenuOpen(null)}
+											>
+												<Icon
+													name="note"
+													className="w-5 h-5 text-[var(--color-neutral-light)]"
+												/>{" "}
+												View logs
+											</Button>
+										</Link>
+										{can("delete employees", "employees") && (
+											<Button
+												variant="profile"
+												onClick={() => {
+													onOpenDeleteModal(employee.id);
+													setMenuOpen(null);
+												}}
+												className="w-full text-left !rounded-t-none btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+											>
+												<Trash2 className="w-5 h-5 text-[var(--notif-error)]" />{" "}
+												Delete employee
+											</Button>
+										)}
+									</div>
+								</DropdownPortal>
 							</TableCell>
 						</TableRow>
 					))}
@@ -1330,7 +1418,7 @@ const groupEmployeesByRole = () => {
 									className="p-8 text-center text-[var(--color-stroke-brand)]"
 								>
 									{(searchValue && searchValue.trim()) ||
-									selectedRole.length > 0
+										selectedRole.length > 0
 										? "No results found"
 										: "No suspended employees"}
 								</TableCell>
@@ -1358,35 +1446,35 @@ const groupEmployeesByRole = () => {
 						onActivate={
 							canActivateEmployees
 								? () => {
-										if (selectedEmployees.size === 0) {
-											setSelectedEmployees(
-												new Set(
-													filteredEmployees.map(
-														(e) => e.id,
-													),
+									if (selectedEmployees.size === 0) {
+										setSelectedEmployees(
+											new Set(
+												filteredEmployees.map(
+													(e) => e.id,
 												),
-											);
-										}
-										setSingleEmployeeId(null);
-										setActivateEmployeeModal(true);
+											),
+										);
 									}
+									setSingleEmployeeId(null);
+									setActivateEmployeeModal(true);
+								}
 								: undefined
 						}
 						onDelete={
 							canDeleteEmployees
 								? () => {
-										if (selectedEmployees.size === 0) {
-											setSelectedEmployees(
-												new Set(
-													filteredEmployees.map(
-														(e) => e.id,
-													),
+									if (selectedEmployees.size === 0) {
+										setSelectedEmployees(
+											new Set(
+												filteredEmployees.map(
+													(e) => e.id,
 												),
-											);
-										}
-										setSingleEmployeeId(null);
-										setDeleteEmployeeModal(true);
+											),
+										);
 									}
+									setSingleEmployeeId(null);
+									setDeleteEmployeeModal(true);
+								}
 								: undefined
 						}
 						allowActivate={canActivateEmployees}
@@ -1524,11 +1612,11 @@ const groupEmployeesByRole = () => {
 											tooltipContent={
 												<div className="space-y-2">
 													<div className="text-[var(--color-stroke-brand)] text-right text-sm font-normal">
-														Suspended by You
+														Suspended on {employee.suspended} (You)
 													</div>
 													<div className="text-[var(--color-stroke-brand)] text-right text-sm">
 														Added on{" "}
-														{employee.joinDate}{" "}
+														{employee.addedDate}{" "}
 														(You)
 													</div>
 												</div>
@@ -1542,9 +1630,9 @@ const groupEmployeesByRole = () => {
 									<TableCell className="p-4">
 										<button
 											ref={(el) =>
-												(buttonRefs.current[
-													employee.id
-												] = el)
+											(buttonRefs.current[
+												employee.id
+											] = el)
 											}
 											onClick={() =>
 												setMenuOpen(
@@ -1561,12 +1649,12 @@ const groupEmployeesByRole = () => {
 											targetRef={
 												buttonRefs.current[employee.id]
 													? {
-															current:
-																buttonRefs
-																	.current[
-																	employee.id
-																],
-														}
+														current:
+															buttonRefs
+																.current[
+															employee.id
+															],
+													}
 													: null
 											}
 											open={menuOpen === employee.id}
@@ -1577,44 +1665,44 @@ const groupEmployeesByRole = () => {
 													"active employees",
 													"employees",
 												) && (
-													<Button
-														variant="profile"
-														onClick={() => {
-															onOpenActivate(
-																employee.id,
-															);
-															setMenuOpen(null);
-														}}
-														className="w-full !rounded-b-none text-left btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
-													>
-														<Icon
-															name="user_check"
-															className="w-5 h-5 !text-[var(--notif-success)]"
-														/>{" "}
-														Activate employee
-													</Button>
-												)}
+														<Button
+															variant="profile"
+															onClick={() => {
+																onOpenActivate(
+																	employee.id,
+																);
+																setMenuOpen(null);
+															}}
+															className="w-full !rounded-b-none text-left btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+														>
+															<Icon
+																name="user_check"
+																className="w-5 h-5 !text-[var(--notif-success)]"
+															/>{" "}
+															Activate employee
+														</Button>
+													)}
 												{can(
 													"edit employees",
 													"employees",
 												) && (
-													<Button
-														variant="profile"
-														onClick={() => {
-															setSelectedEmployeeForEdit(
-																employee,
-															);
-															setEditEmployeeModal(
-																true,
-															);
-															setMenuOpen(null);
-														}}
-														className="w-full !rounded-none text-left btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
-													>
-														<PencilLine className="w-5 h-5 text-[var(--color-neutral-light)]" />{" "}
-														Edit employee details
-													</Button>
-												)}
+														<Button
+															variant="profile"
+															onClick={() => {
+																setSelectedEmployeeForEdit(
+																	employee,
+																);
+																setEditEmployeeModal(
+																	true,
+																);
+																setMenuOpen(null);
+															}}
+															className="w-full !rounded-none text-left btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+														>
+															<PencilLine className="w-5 h-5 text-[var(--color-neutral-light)]" />{" "}
+															Edit employee details
+														</Button>
+													)}
 												<Link
 													href={`/employees/suspendedlogs?id=${employee.id}`}
 													className="block"
@@ -1637,23 +1725,23 @@ const groupEmployeesByRole = () => {
 													"delete employees",
 													"employees",
 												) && (
-													<Button
-														variant="profile"
-														onClick={() => {
-															onOpenDeleteModal(
-																employee.id,
-															);
-															setMenuOpen(null);
-														}}
-														className="w-full text-left !rounded-t-none btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
-													>
-														<Trash2
-															name="note"
-															className="w-5 h-5 text-[var(--notif-error)]"
-														/>{" "}
-														Delete employee
-													</Button>
-												)}
+														<Button
+															variant="profile"
+															onClick={() => {
+																onOpenDeleteModal(
+																	employee.id,
+																);
+																setMenuOpen(null);
+															}}
+															className="w-full text-left !rounded-t-none btn-size-md-sm px-4 py-2 flex items-center gap-2 text-[var(--color-neutral-secondary)] text-sm"
+														>
+															<Trash2
+																name="note"
+																className="w-5 h-5 text-[var(--notif-error)]"
+															/>{" "}
+															Delete employee
+														</Button>
+													)}
 											</div>
 										</DropdownPortal>
 									</TableCell>
@@ -1710,13 +1798,13 @@ const groupEmployeesByRole = () => {
 				firstSelectedName={
 					singleEmployeeId
 						? filteredEmployees.find(
-								(emp) => emp.id === singleEmployeeId,
-							)?.name || ""
+							(emp) => emp.id === singleEmployeeId,
+						)?.name || ""
 						: filteredEmployees.find((emp) =>
-								selectedEmployees.has(emp.id),
-							)?.name ||
-							filteredEmployees[0]?.name ||
-							""
+							selectedEmployees.has(emp.id),
+						)?.name ||
+						filteredEmployees[0]?.name ||
+						""
 				}
 			/>
 			<ReassignRoleModal
@@ -1752,13 +1840,13 @@ const groupEmployeesByRole = () => {
 				firstSelectedName={
 					singleEmployeeId
 						? filteredEmployees.find(
-								(emp) => emp.id === singleEmployeeId,
-							)?.name || ""
+							(emp) => emp.id === singleEmployeeId,
+						)?.name || ""
 						: filteredEmployees.find((emp) =>
-								selectedEmployees.has(emp.id),
-							)?.name ||
-							filteredEmployees[0]?.name ||
-							""
+							selectedEmployees.has(emp.id),
+						)?.name ||
+						filteredEmployees[0]?.name ||
+						""
 				}
 			/>
 			<RolePermissionsModal

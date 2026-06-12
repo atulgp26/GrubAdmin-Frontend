@@ -47,7 +47,7 @@ export default function Modal({
 	}, [open, onClose, closeOnOutsideClick]);
 
 	if (!isClient) return null;
-	if (!open) return null; // Add !important utility classes if needed
+	if (!open) return null;
 
 	let positionClassWithImportant = positionClass
 		.replace("justify-end", "!justify-end")
@@ -60,34 +60,27 @@ export default function Modal({
 	return createPortal(
 		<div
 			className={`fixed inset-0 ${top} ${right} ${bottom} ${left} z-50 flex ${positionClassWithImportant} shadow-lg ${noBlur ? "" : "backdrop-blur-sm"} ${customClass}`}
+			style={{ scrollbarGutter: "stable" }}
 		>
-			      
 			<div
 				ref={modalRef}
-				className={`relative bg-white rounded-lg border border-[var(--color-stroke-neutral)] shadow-[4px_4px_8px_0px_var(--color-notif-shadow-soft),0px_0px_4px_0px_var(--color-notif-shadow-strong)] ${width} ${height} mx-4 p-0 flex flex-col justify-center`}
+				className={`relative bg-white rounded-lg border border-[var(--color-stroke-neutral)] shadow-[4px_4px_8px_0px_var(--color-notif-shadow-soft),0px_0px_4px_0px_var(--color-notif-shadow-strong)] ${width} ${height} mx-4 p-0 flex flex-col justify-start`}
 			>
-				        
 				<button
 					className={`${hideClose ? "hidden" : ""} absolute top-6 right-6 text-[var(--color-neutral-light)] focus:outline-none rounded-lg border-2 border-transparent transition-colors p-2
-            hover:bg-[var(--color-alert-warm-bg)]
-            active:bg-[var(--color-alert-warm-bg)] active:border-[var(--color-alert-warm-dark)] active:text-[var(--color-alert-warm-dark)]`}
+            hover:bg-[var(--color-alert-warm-bg)]
+            active:bg-[var(--color-alert-warm-bg)] active:border-[var(--color-alert-warm-dark)] active:text-[var(--color-alert-warm-dark)]`}
 					onClick={onClose}
 					aria-label="Close"
 				>
-					          
 					<MdClose className="w-6 h-6 text-[var(--color-stroke-brand)]" />
-					        
 				</button>
-				        
 				<div
-					className={`flex flex-col flex-1 justify-center h-full ${noXPadding ? "px-0 py-0" : "px-6 py-0 mt-10 mb-6"}`}
+					className={`flex flex-col flex-1 justify-start h-full ${noXPadding ? "px-0 py-0" : "px-6 py-0 mt-10 mb-6"}`}
 				>
-					          {children}
-					        
+					{children}
 				</div>
-				      
 			</div>
-			    
 		</div>,
 		document.body,
 	);

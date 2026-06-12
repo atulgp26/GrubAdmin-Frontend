@@ -44,14 +44,14 @@ const ExportListModal = ({
     // Initialize from permissions options
     if (options.length > 0) {
       options.forEach((group) => {
-      group.items.forEach((opt) => {
-        if (opt.checked !== undefined) {
+        group.items.forEach((opt) => {
+          if (opt.checked !== undefined) {
             initialChecked[opt.id] = opt.checked;
-        } else if (opt.disabled) {
+          } else if (opt.disabled) {
             initialChecked[opt.id] = true;
-        }
-    });
-});
+          }
+        });
+      });
     }
     // Initialize from verticals (midLevelData)
     if (midLevelData.length > 0) {
@@ -64,7 +64,7 @@ const ExportListModal = ({
     setChecked(initialChecked);
   }, [open, options, midLevelData]);
   return (
-    <Modal open={open} onClose={onClose} width="w-[814px]">
+    <Modal open={open} onClose={onClose} width="w-[814px]" height="max-h-[90vh] overflow-y-auto" positionClass="items-start justify-center pt-[5vh]">
       <div className={`${description ? "hidden" : ""} mb-6`}>
         <Button
           variant="skip"
@@ -168,20 +168,20 @@ const ExportListModal = ({
           <div className="text-lg text-[var(--color-neutral-secondary)]">
             {footer ? footer : "Export will be provided in CSV format."}
           </div>
-      <Button
-    onClick={() => {
-        if (onConfirm) {
-            onConfirm({ scope, checked });
-        } else {
-            onClose();
-        }
-    }}
-    variant="outline"
-    size="mdLg"
-    className="w-1/2"
->
-    {title && title !== "Customise your export" ? "CLOSE" : "EXPORT NOW"}
-</Button>
+          <Button
+            onClick={() => {
+              if (onConfirm) {
+                onConfirm({ scope, checked });
+              } else {
+                onClose();
+              }
+            }}
+            variant="outline"
+            size="mdLg"
+            className="w-1/2"
+          >
+            {title && title !== "Customise your export" ? "CLOSE" : "EXPORT NOW"}
+          </Button>
         </div>
       </div>
     </Modal>
