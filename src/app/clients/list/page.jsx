@@ -883,20 +883,7 @@ const ClientsList = () => {
 		}
 	};
 
-	const getVerticalIcon = (vertical) => {
-		switch (vertical.toLowerCase()) {
-			case "medical":
-				return "medical_suitcase";
-			case "delivery":
-				return "box";
-			case "hospitality":
-				return "restaurant";
-			case "camping":
-				return "compass";
-			default:
-				return "box";
-		}
-	};
+	const getVerticalIcon = () => "inventory";
 
 	const onVerticalGroupClick = (verticalName) => {
     setCurrentOpenVertical((prev) =>
