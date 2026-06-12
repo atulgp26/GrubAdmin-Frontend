@@ -12,6 +12,7 @@ import MobileNumberInput from "@/components/ui/MobileNumberInput";
 import { accountService } from "@/api/services/accountService";
 import { showSuccess, showError } from "@/components/ui/toast";
 import { clearAuthCookie } from "@/utils/cookies";
+import { useAuth } from "@/context/AuthContext";
 
 export default function EditProfileModal({
 	open,
@@ -21,6 +22,7 @@ export default function EditProfileModal({
 	onFieldChange,
 }) {
 	const router = useRouter();
+	const { updateUser, loadSession } = useAuth();
 	const [editedFields, setEditedFields] = useState(new Set());
 	const [currentFields, setCurrentFields] = useState(fields);
 	const [editingField, setEditingField] = useState(null);
@@ -37,7 +39,7 @@ export default function EditProfileModal({
 	const otpRefs = [useRef(), useRef(), useRef(), useRef()];
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
-const dateRef = useRef(null);
+	const dateRef = useRef(null);
 	// Password change states
 	const [showPasswordModal, setShowPasswordModal] = useState(false);
 
@@ -74,7 +76,6 @@ const dateRef = useRef(null);
 			let formattedJoiningDate = "";
 			if (fields.joiningDate) {
 				try {
-					// If it's already a formatted date string, use it as is
 					// If it's an ISO date string, format it for input (YYYY-MM-DD)
 					const dateObj = new Date(fields.joiningDate);
 					if (!isNaN(dateObj.getTime())) {
@@ -230,7 +231,6 @@ const dateRef = useRef(null);
 			} else {
 				profileData.last_name = null; // API might expect null for empty last_name
 			}
-	
 		}
 
 		if (fields.email && fields.email.trim()) {
@@ -276,16 +276,18 @@ const dateRef = useRef(null);
 		}
 		// Check both facility (from fields) and location (from formData)
 		if (fields.facility && fields.facility.trim()) {
-		profileData.assigned_location = fields.facility.trim();
+			profileData.assigned_location = fields.facility.trim();
 		} else if (formData && formData.location && formData.location.trim()) {
-		profileData.assigned_location = formData.location.trim();
+			profileData.assigned_location = formData.location.trim();
 		}
 		// Include joining date from formData if available
 		if (formData && formData.joiningDate) {
 			try {
 				const dateObj = new Date(formData.joiningDate);
 				if (!isNaN(dateObj.getTime())) {
-				profileData.joining_date = dateObj.toISOString().split("T")[0];
+					profileData.joining_date = dateObj
+						.toISOString()
+						.split("T")[0];
 				}
 			} catch (error) {
 				console.error("Error parsing joining date:", error);
@@ -295,99 +297,119 @@ const dateRef = useRef(null);
 		return profileData;
 	};
 
-const handleSaveChanges = async () => {
-    if (editingField && tempValue !== currentFields[editingField]) {
-        const newFields = { ...currentFields, [editingField]: tempValue };
-        const newEditedFields = new Set([...editedFields, editingField]);
-        setCurrentFields(newFields);
-        setEditedFields(newEditedFields);
-        setEditingField(null);
-        setTempValue("");
+	const handleSaveChanges = async () => {
+		// Finalize any active inline edit
+		if (editingField && tempValue !== currentFields[editingField]) {
+			setCurrentFields((prev) => ({
+				...prev,
+				[editingField]: tempValue,
+			}));
+			setEditedFields((prev) => new Set([...prev, editingField]));
+			setEditingField(null);
+			setTempValue("");
+		}
 
-        if (editingField === "password" || newEditedFields.has("password")) {
-            setShowPasswordModal(true);
-            return;
-        }
+		// Build normal fields payload (name, location, joiningDate)
+		const normalPayload = {};
+		const nameParts = `${formData.firstName} ${formData.lastName}`
+			.trim()
+			.split(" ")
+			.filter(Boolean);
+		if (nameParts[0]) normalPayload.first_name = nameParts[0];
+		if (nameParts.slice(1).join(" "))
+			normalPayload.last_name = nameParts.slice(1).join(" ");
+		if (formData.location)
+			normalPayload.assigned_location = formData.location.trim();
+		if (formData.joiningDate) {
+			const d = new Date(formData.joiningDate);
+			if (!isNaN(d))
+				normalPayload.joining_date = d.toISOString().split("T")[0];
+		}
 
-        const updatedFields = { ...newFields };
-        if (formData.firstName && formData.lastName) {
-            updatedFields.name = `${formData.firstName} ${formData.lastName}`;
-        }
+		//Detect which sensitive field changed (only ONE at a time)
+		const hasPassword = editedFields.has("password");
+		const hasEmail = editedFields.has("email");
+		const hasContact = editedFields.has("contact");
+		const hasSensitive = hasPassword || hasEmail || hasContact;
 
-        const isEmail = editingField === "email" || newEditedFields.has("email");
-        const isContact = editingField === "contact" || newEditedFields.has("contact");
+		// Step 1: Save normal fields first
+		if (Object.keys(normalPayload).length > 0) {
+			try {
+				const res = await accountService.updateProfile(normalPayload);
+				if (!res.success) {
+					showError(res.message || "Failed to save basic details.");
+					return;
+				}
+			} catch (err) {
+				showError(
+					err.response?.data?.message ||
+						"Failed to save basic details.",
+				);
+				return;
+			}
+		}
+		if (!hasSensitive) {
+			await loadSession(); 
+			showSuccess("Profile updated successfully!")
+			onClose();
 
-        if (isEmail || isContact) {
-            const profileData = prepareProfileData(updatedFields);
-            setOtpEmail(isEmail ? newFields.email : newFields.contact);
-            setTitle("Hold on!");
-            setDescription(isEmail
-                ? `To confirm changing your email address, enter the OTP sent to your updated ID ${newFields.email}`
-                : `To confirm changing your contact number, enter the OTP sent to your updated number ${newFields.contact}`
-            );
-            try {
-                const response = await accountService.updateProfile(profileData);
-                if (response.success && response.code === 200) {
-                    setPendingProfileData(profileData);
-                    setShowOtpModal(true);
-                    startOtpTimer();
-                } else {
-                    showError(response.message || response.error || "Failed to send OTP. Please try again.");
-                }
-            } catch (error) {
-                showError(error.response?.data?.message || "Failed to send OTP. Please try again.");
-            }
-            return;
-        }
-    }
+			if (onSave) onSave(normalPayload);
+			return;
+		}
 
-    const finalFields = {
-        name: `${formData.firstName} ${formData.lastName}`.trim() || currentFields.name,
-        email: currentFields.email,
-        contact: currentFields.contact,
-        facility: formData.location || currentFields.facility,
-    };
+		// Password → open password modal
+		if (hasPassword) {
+			setShowPasswordModal(true);
+			return;
+		}
 
-    if (editedFields.has("password")) {
-        setShowPasswordModal(true);
-        return;
-    }
+		// Email or Contact → OTP flow (send ONLY the sensitive field)
+		if (hasEmail || hasContact) {
+			const sensitivePayload = {};
 
-    const profileData = prepareProfileData(finalFields);
+			if (hasEmail) {
+				sensitivePayload.email = currentFields.email;
+			}
 
-    if (Object.keys(profileData).length === 0) {
-        onClose();
-        return;
-    }
+			if (hasContact) {
+				const contactStr = currentFields.contact.trim();
+				const digits = contactStr.replace(/\D/g, "");
+				sensitivePayload.country_code = contactStr.startsWith("+")
+					? `+${digits.slice(0, digits.length - 10)}`
+					: "+91";
+				sensitivePayload.mobile_number = digits.slice(-10);
+			}
 
-    const requiresOtp = editedFields.has("email") || editedFields.has("contact");
+			setTitle("Hold on!");
+			setDescription(
+				hasEmail
+					? `To confirm changing your email address, enter the OTP sent to your updated ID ${currentFields.email}`
+					: `To confirm changing your contact number, enter the OTP sent to your updated number ${currentFields.contact}`,
+			);
+			setOtpEmail(hasEmail ? currentFields.email : currentFields.contact);
 
-    try {
-        const response = await accountService.updateProfile(profileData);
-        if (response.success && response.code === 200) {
-            if (requiresOtp) {
-                setTitle("Hold on!");
-                setDescription(editedFields.has("email")
-                    ? `To confirm changing your email address, enter the OTP sent to your updated ID ${currentFields.email}`
-                    : `To confirm changing your contact number, enter the OTP sent to your updated number ${currentFields.contact}`
-                );
-                setOtpEmail(currentFields.email || "your email");
-                setPendingProfileData(profileData);
-                setShowOtpModal(true);
-                startOtpTimer();
-            } else {
-                // name/location/joiningDate only — no OTP needed
-                showSuccess("Profile updated successfully!");
-                onClose();
-                if (onSave) onSave(profileData);
-            }
-        } else {
-            showError(response.message || response.error || "Failed to update profile. Please try again.");
-        }
-    } catch (error) {
-        showError(error.response?.data?.message || "Failed to update profile. Please try again.");
-    }
-};
+			try {
+				const response =
+					await accountService.updateProfile(sensitivePayload);
+				if (response.success && response.code === 200) {
+					setPendingProfileData(sensitivePayload);
+					setShowOtpModal(true);
+					startOtpTimer();
+				} else {
+					showError(
+						response.message ||
+							response.error ||
+							"Failed to send OTP. Please try again.",
+					);
+				}
+			} catch (error) {
+				showError(
+					error.response?.data?.message ||
+						"Failed to send OTP. Please try again.",
+				);
+			}
+		}
+	};
 
 	const startOtpTimer = () => {
 		// Clear any existing timer
@@ -611,10 +633,10 @@ const handleSaveChanges = async () => {
 		// Attempt to change password via PATCH /admin/account
 		(async () => {
 			try {
-			const payload = {
-    old_password: passwords.current,
-    new_password: passwords.new,
-};
+				const payload = {
+					old_password: passwords.current,
+					new_password: passwords.new,
+				};
 				const res = await accountService.patchProfile(payload);
 				if (res?.success && res.code === 200) {
 					showSuccess("Password updated successfully!");
@@ -646,16 +668,17 @@ const handleSaveChanges = async () => {
 		setShowPasswordModal(false);
 	};
 
-const originalFirstName = (fields.name || "").trim().split(" ")[0] || "";
-const originalLastName = (fields.name || "").trim().split(" ").slice(1).join(" ") || "";
+	const originalFirstName = (fields.name || "").trim().split(" ")[0] || "";
+	const originalLastName =
+		(fields.name || "").trim().split(" ").slice(1).join(" ") || "";
 
-const hasChanges =
-    editedFields.size > 0 ||
-    (editingField && tempValue !== currentFields[editingField]) ||
-    formData.firstName !== originalFirstName ||
-    formData.lastName !== originalLastName ||
-    formData.location !== (fields.facility || "") ||
-    formData.joiningDate !== "";
+	const hasChanges =
+		editedFields.size > 0 ||
+		(editingField && tempValue !== currentFields[editingField]) ||
+		formData.firstName !== originalFirstName ||
+		formData.lastName !== originalLastName ||
+		formData.location !== (fields.facility || "") ||
+		formData.joiningDate !== "";
 
 	return (
 		<>
@@ -737,24 +760,39 @@ const hasChanges =
 										(optional)
 									</span>
 								</h3>
-							<div className="relative">
-    <Input
-    ref={dateRef}
-    type="date"
-    placeholder="Select date"
-    value={formData.joiningDate}
-    onChange={(e) => handleInputChange("joiningDate", e.target.value)}
-    onFocus={() => handleFocus("joiningDate")}
-    onBlur={handleBlur}
-    isFocused={focusedField === "joiningDate"}
-    className="pr-10 custom-date-input"
-    max={new Date().toISOString().split("T")[0]}
-/>
-    <MdCalendarToday
-        onClick={() => dateRef.current?.showPicker()}
-        className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--info-panel-view-bg)] cursor-pointer"
-    />
-</div>
+								<div className="relative">
+									<Input
+										ref={dateRef}
+										type="date"
+										placeholder="Select date"
+										value={formData.joiningDate}
+										onChange={(e) =>
+											handleInputChange(
+												"joiningDate",
+												e.target.value,
+											)
+										}
+										onFocus={() =>
+											handleFocus("joiningDate")
+										}
+										onBlur={handleBlur}
+										isFocused={
+											focusedField === "joiningDate"
+										}
+										className="pr-10 custom-date-input"
+										max={
+											new Date()
+												.toISOString()
+												.split("T")[0]
+										}
+									/>
+									<MdCalendarToday
+										onClick={() =>
+											dateRef.current?.showPicker()
+										}
+										className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--info-panel-view-bg)] cursor-pointer"
+									/>
+								</div>
 							</div>
 						</div>
 						<div className="space-y-4">

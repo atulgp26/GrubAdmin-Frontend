@@ -43,7 +43,9 @@ export default function GrubPacsTable({
 		onRowAction(actionKey, item, assignmentState ?? groupName);
 		setOpenMenuId(null);
 	};
+
 	const getIconColor = (vertical) => {
+		if (!vertical) return "text-[var(--info-panel-view-bg)]";
 		switch (vertical.toLowerCase()) {
 			case "medical":
 				return "text-[var(--color-icon-medical)]";
@@ -54,9 +56,10 @@ export default function GrubPacsTable({
 			case "camping":
 				return "text-[var(--color-icon-camping)]";
 			default:
-				return "text-[var(--info-panel-view-bg)]"; // fallback
+				return "text-[var(--info-panel-view-bg)]";
 		}
 	};
+
 	return (
 		<div className="">
 			<Table>
@@ -70,21 +73,21 @@ export default function GrubPacsTable({
 								onChange={(e) => onSelectAll(e.target.checked)}
 							/>
 						</TableCell>
-						<TableCell className="text-[var(--color-stroke-brand)]  w-[220px]">
+						<TableCell className="text-[var(--color-stroke-brand)] w-[220px]">
 							Name
 						</TableCell>
-						<TableCell className="text-[var(--color-stroke-brand)]  w-[220px] text-right">
+						<TableCell className="text-[var(--color-stroke-brand)] w-[220px] text-right">
 							Client
 						</TableCell>
 						{!hideVerticalColumn && (
-							<TableCell className="text-[var(--color-stroke-brand)]  w-[180px]">
+							<TableCell className="text-[var(--color-stroke-brand)] w-[180px]">
 								Vertical
 							</TableCell>
 						)}
-						<TableCell className="text-[var(--color-stroke-brand)]  w-[140px] ">
+						<TableCell className="text-[var(--color-stroke-brand)] w-[140px]">
 							Status
 						</TableCell>
-						<TableCell className="text-[var(--color-stroke-brand)]  w-[160px] ">
+						<TableCell className="text-[var(--color-stroke-brand)] w-[160px]">
 							Updated On
 						</TableCell>
 						<TableCell className="w-12 !pr-4 text-right text-[var(--color-stroke-brand)]"></TableCell>
@@ -99,7 +102,7 @@ export default function GrubPacsTable({
 							assignmentState === "assigned"
 								? "delivery"
 								: assignmentState === "unassigned"
-									? "gray"
+									? "delivery"
 									: assignmentState || "gray";
 						const crownColor =
 							assignmentState === "assigned"
@@ -137,92 +140,115 @@ export default function GrubPacsTable({
 										<div className="text-[var(--color-neutral-secondary)] font-semibold">
 											{item.name}
 										</div>
-									<div className="text-[var(--color-stroke-brand)] text-sm">
-    {item.code?.startsWith("#") ? item.code : `#${item.code}`}
-</div>
+										<div className="text-[var(--color-stroke-brand)] text-sm">
+											{item.code?.startsWith("#")
+												? item.code
+												: `#${item.code}`}
+										</div>
 									</div>
 								</TableCell>
 								<TableCell className="!text-right text-[var(--color-stroke-brand)]">
 									<div
-    className="flex justify-end"
-    onClick={
-        assignmentState === "unassigned"
-            ? () => onRowAction("assign", item, groupName)
-            : undefined
-    }
->
-    <BoxCountBadge
-        asText={groupName === "Assigned"}
-        tooltipSide="bottom"
-        tooltipAlign="end"
-        tooltipTextColor="text-[var(--color-neutral-secondary)]"
-        tooltipText={
-            groupName === "Unassigned" ? "Click To Assign" : undefined
-        }
-        tooltipContent={
-            groupName === "Assigned" ? (
-                <div className="space-y-2">
-                    <div className="flex flex-col text-[var(--color-stroke-brand)] text-xs">
-                        <div className="text-right text-[var(--color-stroke-brand)]">
-                            Assigned to{" "}
-                            <span className="text-[var(--info-panel-view-bg)] text-sm font-semibold cursor-pointer hover:underline">
-                                {item.client?.name}
-                                {item.client?.organization_name &&
-                                    `(${item.client?.organization_name})`}
-                            </span>
-                        </div>
-                        <div className="text-right text-sm text-[var(--color-stroke-brand)] font-medium">
-                            ({item.client?.country_code}{" "}
-                            {item.client?.mobile_number} |{" "}
-                            {item.client?.email})
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="text-right text-sm text-[var(--color-stroke-brand)]">
-                    Click to assign box to a client
-                </div>
-            )
-        }
-    >
-        <Badge
-            color={badgeColor}
-            className="leading-none group hover:bg-[var(--color-admin-profile-border)] hover:border-[var(--info-panel-view-bg)] flex items-center cursor-pointer"
-        >
-            <Icon
-                name="crown"
-                className={`w-4 h-4 ${crownColor} group-hover:text-[var(--info-panel-view-bg)]`}
-            />
-            <span className="text-xs font-medium text-[var(--color-neutral-secondary)]">
-                {item.clientName?.trim() ? item.clientName : ""}
-            </span>
-        </Badge>
-    </BoxCountBadge>
-</div>
+										className="flex justify-end"
+										onClick={
+											assignmentState === "unassigned"
+												? () =>
+														onRowAction(
+															"assign",
+															item,
+															groupName,
+														)
+												: undefined
+										}
+									>
+										<BoxCountBadge
+											// asText={groupName === "Assigned"}
+											asText={true}
+											tooltipSide="bottom"
+											tooltipAlign="end"
+											tooltipTextColor="text-[var(--color-neutral-secondary)]"
+											tooltipText={
+												groupName === "Unassigned"
+													? "Click To Assign"
+													: undefined
+											}
+											tooltipContent={
+												groupName === "Assigned" ? (
+													<div className="space-y-2">
+														<div className="flex flex-col text-[var(--color-stroke-brand)] text-xs">
+															<div className="text-right text-[var(--color-stroke-brand)]">
+																Assigned to{" "}
+																<span className="text-[var(--info-panel-view-bg)] text-sm font-semibold cursor-pointer hover:underline">
+																	{
+																		item
+																			.client
+																			?.name
+																	}
+																	{item.client
+																		?.organization_name &&
+																		`(${item.client?.organization_name})`}
+																</span>
+															</div>
+															<div className="text-right text-sm text-[var(--color-stroke-brand)] font-medium">
+																(
+																{
+																	item.client
+																		?.country_code
+																}{" "}
+																{
+																	item.client
+																		?.mobile_number
+																}{" "}
+																|{" "}
+																{
+																	item.client
+																		?.email
+																}
+																)
+															</div>
+														</div>
+													</div>
+												) : (
+													<div className="text-right text-sm text-[var(--color-stroke-brand)]">
+														Click to assign box to a
+														client
+													</div>
+												)
+											}
+										>
+											<Badge
+												color={badgeColor}
+												className="leading-none group hover:bg-[var(--color-admin-profile-border)] hover:border-[var(--info-panel-view-bg)] flex items-center cursor-pointer"
+											>
+												<Icon
+													name="crown"
+													className={`w-4 h-4 ${crownColor} group-hover:text-[var(--info-panel-view-bg)]`}
+												/>
+											</Badge>
+										</BoxCountBadge>
+									</div>
 								</TableCell>
 
 								{!hideVerticalColumn && (
-									<TableCell className=" text-[var(--color-neutral-secondary)]">
+									<TableCell className="text-[var(--color-neutral-secondary)]">
 										<div className="w-max">
 											<Badge
-												color={`${item.vertical.name.toLowerCase()}`}
+												color={`${item.vertical?.toLowerCase()}`}
 												className="leading-none flex items-center space-x-2 w-max cursor-pointer"
 											>
 												<Icon
 													name="inventory"
-													className={`w-4 h-4 ${getIconColor(item.vertical.name)}`}
+													className={`w-4 h-4 ${getIconColor(item.vertical)}`}
 												/>
-												{item.vertical.name}
+												{item.vertical}
 											</Badge>
 										</div>
 									</TableCell>
 								)}
-								<TableCell
-									className={` text-[var(--color-neutral-secondary)] font-medium`}
-								>
+								<TableCell className="text-[var(--color-neutral-secondary)] font-medium">
 									{item.statusDisplay ?? item.status}
 								</TableCell>
-								<TableCell className=" text-[var(--color-neutral-secondary)]">
+								<TableCell className="text-[var(--color-neutral-secondary)]">
 									{item.updatedOn}
 								</TableCell>
 								<TableCell className="w-12 !pr-4 text-right">

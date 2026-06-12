@@ -68,7 +68,8 @@ export default function GrubpacsPage() {
 	});
 	const [initialLoading, setInitialLoading] = useState(true);
 	const [fetching, setFetching] = useState(false);
-	const [selectedAssignmentState, setSelectedAssignmentState] = useState(null);
+	const [selectedAssignmentState, setSelectedAssignmentState] =
+		useState(null);
 
 	const { permissionsByModule, user } = usePermissions();
 
@@ -96,7 +97,7 @@ export default function GrubpacsPage() {
 					year: "2-digit",
 				}),
 				assignment: g.client === null ? "unassigned" : "assigned",
-				vertical: g.vertical,
+				vertical: g.vertical?.name ?? null, 
 			})),
 		[grubpacs],
 	);
@@ -113,6 +114,7 @@ export default function GrubpacsPage() {
 	const verticalOptions = useMemo(
 		() =>
 			verticals.map((v) => ({
+				id: v.id, 
 				label: `${v.name.charAt(0).toUpperCase() + v.name.slice(1)}`,
 				value: v.id,
 			})),
@@ -149,7 +151,7 @@ export default function GrubpacsPage() {
 			e.target.checked
 				? verticals.map((v) => ({
 						name: v.name,
-						value: v.id,
+						value: v.name.toLowerCase(),
 					}))
 				: GRUBPAC_GROUP_BY_ASSIGNED_GROUPS,
 		);
@@ -224,11 +226,36 @@ export default function GrubpacsPage() {
 			if (res?.success) {
 				showSuccess(
 					modalState.mode === "create" ? "Created" : "Updated",
-					`Box ${modalState.mode === "create" ? "created" : "updated"} successfully.`,
+					modalState.mode === "create"
+						? `${formData.name} [${formData.box_id}] added successfully. It is ready to be assigned to a client.`
+						: `${formData.name} [${formData.box_id}] updated successfully.`,
+					false,
+					"", // href
+					modalState.mode === "create"
+						? {
+								label: "ASSIGN BOX",
+								style: { backgroundColor: "white" },
+								onClick: () =>
+									setAssignModal({
+										open: true,
+										item: res.data?.box || {
+											name: formData.name,
+											id: res.data?.id,
+										},
+										items: [
+											res.data?.box || {
+												name: formData.name,
+												id: res.data?.id,
+											},
+										],
+									}),
+							}
+						: null,
 				);
 				setModalState({ open: false, mode: "create", data: null });
 				setForceRefresh(true);
-			} else {
+			} 
+			else {
 				showError(res?.error || "Failed to save box.");
 			}
 		} catch (e) {
@@ -438,11 +465,13 @@ export default function GrubpacsPage() {
 				page_size: pageSize,
 			};
 			if (debouncedSearchValue) params.query = debouncedSearchValue;
-			if (selectedRole.length > 0) params.verticals = selectedRole;
+			if (selectedRole.length > 0) {
+				params.verticals = selectedRole;
+			}
 			const res = await boxService.getBoxes(params);
 			if (res?.success && res?.data) {
 				setGrubpacs(res.data.boxes || []);
-				setTotalItems(res.data.count || 0);
+				setTotalItems(res.data.pagination?.total_count || 0); 
 			}
 		} catch (e) {
 			console.error("Failed to fetch grubpacs:", e);
@@ -505,7 +534,7 @@ export default function GrubpacsPage() {
 						onSelect={(item) => {
 							setSearchValue(item.name);
 						}}
-						placeholder="Search grubpacs..."
+						placeholder="Search box"
 						clearable
 						onClear={() => setSearchValue("")}
 						openOnFocus={false}
@@ -542,7 +571,9 @@ export default function GrubpacsPage() {
 				<>
 					{groups.map((group) => {
 						const groupData = processedGrubpacs.filter(
-							(g) => g.vertical === group.value
+							(g) =>
+								g.vertical?.toLowerCase() ===
+								group.name?.toLowerCase(),
 						);
 						return (
 							<CollapseTable
@@ -554,26 +585,40 @@ export default function GrubpacsPage() {
 										selectedItems={selectedItems}
 										groupName={group.name}
 										onSelectAll={(checked) =>
-											handleSelectAllInSection(groupData, checked)
+											handleSelectAllInSection(
+												groupData,
+												checked,
+											)
 										}
 										onSelectItem={handleSelectItem}
-										onRowAction={(action, item, assignment) => {
-											handleRowAction(action, item, assignment ?? group.name);
+										onRowAction={(
+											action,
+											item,
+											assignment,
+										) => {
+											handleRowAction(
+												action,
+												item,
+												assignment ?? group.name,
+											);
 										}}
 									/>
 								)}
 								data={groupData}
 								onClose={() => onVerticalGroupClose()}
-								onClick={() => onVerticalGroupClick(group.value)}
+								onClick={() =>
+									onVerticalGroupClick(group.value)
+								}
 								onOpen={() => onVerticalGroupOpen(group.value)}
 								isOpen={currentOpenVertical === group.value}
 								pagination={
-									currentOpenVertical === group.value && groupData.length > 0
+									currentOpenVertical === group.value &&
+									groupData.length > 0
 										? {
-											rangeText: `Showing 1-${groupData.length}`,
-											disablePrev: true,
-											disableNext: true,
-										}
+												rangeText: `Showing 1-${groupData.length}`,
+												disablePrev: true,
+												disableNext: true,
+											}
 										: undefined
 								}
 								emptyResult={`There are no boxes from ${group.name} vertical`}
@@ -591,7 +636,10 @@ export default function GrubpacsPage() {
 								selectedItems={selectedItems}
 								groupName="Assigned"
 								onSelectAll={(checked) =>
-									handleSelectAllInSection(assignedGrubpacs, checked)
+									handleSelectAllInSection(
+										assignedGrubpacs,
+										checked,
+									)
 								}
 								onSelectItem={handleSelectItem}
 								onRowAction={(action, item) => {
@@ -605,12 +653,13 @@ export default function GrubpacsPage() {
 						onClick={() => handleSectionToggle("assigned")}
 						isOpen={activeSection === "assigned"}
 						pagination={
-							activeSection === "assigned" && assignedGrubpacs.length > 0
+							activeSection === "assigned" &&
+							assignedGrubpacs.length > 0
 								? {
-									rangeText: `Showing 1-${assignedGrubpacs.length}`,
-									disablePrev: true,
-									disableNext: true,
-								}
+										rangeText: `Showing 1-${assignedGrubpacs.length}`,
+										disablePrev: true,
+										disableNext: true,
+									}
 								: undefined
 						}
 						emptyResult="There are no assigned boxes"
@@ -623,7 +672,10 @@ export default function GrubpacsPage() {
 								selectedItems={selectedItems}
 								groupName="Unassigned"
 								onSelectAll={(checked) =>
-									handleSelectAllInSection(unassignedGrubpacs, checked)
+									handleSelectAllInSection(
+										unassignedGrubpacs,
+										checked,
+									)
 								}
 								onSelectItem={handleSelectItem}
 								onRowAction={(action, item) => {
@@ -637,12 +689,13 @@ export default function GrubpacsPage() {
 						onClick={() => handleSectionToggle("unassigned")}
 						isOpen={activeSection === "unassigned"}
 						pagination={
-							activeSection === "unassigned" && unassignedGrubpacs.length > 0
+							activeSection === "unassigned" &&
+							unassignedGrubpacs.length > 0
 								? {
-									rangeText: `Showing 1-${unassignedGrubpacs.length}`,
-									disablePrev: true,
-									disableNext: true,
-								}
+										rangeText: `Showing 1-${unassignedGrubpacs.length}`,
+										disablePrev: true,
+										disableNext: true,
+									}
 								: undefined
 						}
 						emptyResult="There are no unassigned boxes"
