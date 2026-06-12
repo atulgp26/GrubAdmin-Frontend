@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import HelpCard from "@/components/pages/help/HelpCard";
 import HelpSearchInput from "../HelpSearchInput";
 import HelpWriteToUs from "@/components/pages/help/HelpWriteToUs";
@@ -85,9 +85,17 @@ const faqs = [
 ];
 
 export default function HelpPage() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [openCollapse, setOpenCollapse] = useState("medical");
-  const router = useRouter();
+	const [modalOpen, setModalOpen] = useState(false);
+	const [openCollapse, setOpenCollapse] = useState("medical");
+	const router = useRouter();
+
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		const vertical = params.get("vertical");
+		if (vertical) {
+			setOpenCollapse(vertical.toLowerCase());
+		}
+	}, []);
 
   function handleSearchSelect(item) {
     if (item.href) {

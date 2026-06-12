@@ -6,39 +6,32 @@ import { MdCheckBox, MdCheckBoxOutlineBlank, MdIndeterminateCheckBox } from "rea
 import Icon from "@/components/ui/Icon";
 import TableCheckbox from "@/components/ui/TableCheckbox";
 
-export default function NotificationList({ filtered, selected, setSelected, getNotificationIcon, allSelected, onMarkAsRead }) {
+export default function NotificationList({ filtered, selected, setSelected, getNotificationIcon, allSelected, onMarkAsRead, onDismiss }) {
   const showMultiSelectBar = selected.length > 0;
   const someSelected = selected.length > 0 && selected.length < filtered.length;
   
   return (
-    <div className="bg-white rounded-lg !pl-3 overflow-hidden">
-      <div className="flex items-center px-4 py-4 border-b border-[var(--color-stroke-neutral)]">
-        <TableCheckbox
-          checked={allSelected}
-          indeterminate={someSelected}
-          onChange={() => setSelected(allSelected ? [] : filtered.map((n) => n.id))}
-        />
-        <span className="text-sm text-[var(--color-stroke-brand)] ml-7">Notifications</span>
-      </div>
+    <>
       <div className="divide-y divide-[var(--color-stroke-neutral)] cursor-pointer">
         {filtered.map((notification, idx) => (
           <NotificationItem
-            	key={notification.id}
-            	notification={notification}
-            	selected={selected.includes(notification.id)}
-            	onSelect={(e) =>
-              	setSelected((sel) =>
-                	e.target.checked
-                  	? [...sel, notification.id]
-                  	: sel.filter((x) => x !== notification.id)
-              	)
-            	}
-            	getNotificationIcon={getNotificationIcon}
-          	/>
+              key={notification.id}
+              notification={notification}
+              selected={selected.includes(notification.id)}
+              onSelect={(e) =>
+                setSelected((sel) =>
+                  e.target.checked
+                    ? [...sel, notification.id]
+                    : sel.filter((x) => x !== notification.id)
+                )
+              }
+              getNotificationIcon={getNotificationIcon}
+              onDismiss={() => onDismiss?.([notification.id])}
+            />
         ))}
       </div>
       {showMultiSelectBar && (
-        <div className="fixed bottom-2 left-68 right-4 bg-[var(--color-neutral-secondary-bg)] border border-[var(--color-box-border)] rounded-lg flex items-center justify-between px-6 py-3 z-50 shadow-success-toast">
+        <div className="fixed bottom-2 left-68 right-4 bg-white border border-[var(--color-box-border)] rounded-lg flex items-center justify-between px-6 py-3 z-50 shadow-success-toast">
           <div className="flex items-center space-x-2">
             {/* <Button variant='outline' className="gap-2 border bg-white border-[var(--color-stroke-brand)] !text-[var(--color-stroke-brand)] px-4 py-2 rounded-lg text-sm font-normal flex items-center">
               <span className="text-[var(--color-stroke-brand)] text-lg">×</span>
@@ -71,6 +64,6 @@ export default function NotificationList({ filtered, selected, setSelected, getN
           </Button>
         </div>
       )}
-    </div>
+    </>
   );
 } 

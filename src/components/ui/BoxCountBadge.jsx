@@ -19,6 +19,7 @@ export default function BoxCountBadge({
   onViewList,
   iconColor,
   iconName="",
+  label="",
 }) {
   const handleClick = (e) => {
     e.stopPropagation(); // Prevent row click
@@ -76,6 +77,7 @@ export default function BoxCountBadge({
               <Icon name={iconName} className={`w-5 h-5 ${iconColor?iconColor:""} ${count>0 ? "text-[var(--info-panel-view-bg)]":"text-[var(--color-neutral-light)] group-hover:text-[var(--color-brand-default)]"} transition-colors`} />:
               <Icon name="inventory" className={`w-5 h-5 ${iconColor?iconColor:""} ${count>0 ? "text-[var(--info-panel-view-bg)]":"text-[var(--color-neutral-light)] group-hover:text-[var(--color-brand-default)]"} transition-colors`} />
             }
+              {label && <span className="text-[var(--color-neutral-secondary)] text-sm font-normal">{label}</span>}
               <span className="text-[var(--color-neutral-secondary)] text-sm font-normal">{count}</span>
             </button>
           </Tooltip.Trigger>
@@ -85,7 +87,10 @@ export default function BoxCountBadge({
               align={tooltipAlign}
               className={`cursor-pointer z-50 rounded-lg bg-white px-3 py-2 shadow-lg ${tooltipTextColor} text-sm font-normal animate-fadeIn min-w-[90px] ${tooltipClassName}`}
               sideOffset={0}
-              onClick={onViewList}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onViewList) onViewList(e);
+              }}
             >
               {tooltipText}
               <Tooltip.Arrow className="fill-white drop-shadow-md w-4 h-2" width={24} height={16} />

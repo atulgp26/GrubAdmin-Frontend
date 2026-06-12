@@ -8,6 +8,7 @@ export default function NotificationItem({
 	selected,
 	onSelect,
 	getNotificationIcon,
+	onDismiss,
 }) {
 	const router = useRouter();
 	const handleCheckboxChange = (e) => {
@@ -26,7 +27,6 @@ export default function NotificationItem({
                         className="text-[var(--color-stroke-brand)] font-semibold hover:underline cursor-pointer"
                         onClick={(e) => {
                             e.stopPropagation();
-                            // ✅ dynamic route with itemId
                             router.push(`/systemlogs?itemId=${notification.itemId}`);
                         }}
                     >
@@ -40,7 +40,7 @@ export default function NotificationItem({
     };
 
     return (
-        <div className="flex w-full items-start gap-7 px-4 py-3 hover:bg-[var(--color-neutral-secondary-bg)]">
+        <div className={`flex w-full items-start gap-7 px-4 py-3 ${selected ? "bg-[var(--color-notif-selected-bg)]" : "hover:bg-[var(--color-neutral-secondary-bg)]"}`}>
             <div>
                 <TableCheckbox
                     checked={selected}
@@ -50,7 +50,7 @@ export default function NotificationItem({
             <div className="w-full">
                 <div className="flex gap-2 mb-3 items-end">
                     <div>
-                        {getNotificationIcon(notification.type)}
+                        {getNotificationIcon(notification.type, notification.category)}
                     </div>
                     <div className="flex-1 min-w-0">
                         <div
@@ -65,10 +65,16 @@ export default function NotificationItem({
                         {renderMessage(notification.message)}
                     </div>
                     <div className="flex items-center justify-between text-sm text-[var(--color-stroke-brand)]">
-                        <span>{notification.category}</span>
-                        <span className="flex gap-2 items-center text-sm text-[var(--color-stroke-brand)]">
-                            {notification.time}
-                        </span>
+                        <span>{notification.time}</span>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDismiss?.();
+                            }}
+                            className="text-sm font-semibold text-[var(--color-brand-default)] hover:underline cursor-pointer"
+                        >
+                            DISMISS
+                        </button>
                     </div>
                 </div>
             </div>

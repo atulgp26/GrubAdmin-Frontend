@@ -1,5 +1,6 @@
 "use client";
 import Button from "@/components/ui/Button";
+import Icon from "@/components/ui/Icon";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown";
@@ -122,6 +123,19 @@ const AddCategory = ({ open, onClose, mode = "add", initialValues = null }) => {
           const icons = iconsRes.data?.icons || [];
           const rawBase = (configRes?.data?.configs?.find(c => c.key === 'icon_base_url')?.value) || iconBaseUrl || '';
           const base = `${rawBase}`.replace(/\/+$/, '');
+          const fallbackMap = {
+            "icons/default-faq-icon.png": "/notes-info.svg",
+            "icons/medical-faq-icon.png": "/troubleshooting.svg",
+            "icons/camping-faq-icon.png": "/window.svg",
+            "icons/hospitality-faq-icon.png": "/shop.svg",
+            "icons/delivery-faq-icon.png": "/car.svg",
+            "Support/Card/gear.svg": "/plug.svg",
+            "Support/Card/suitcase-medical.svg": "/troubleshooting.svg",
+            "Support/Card/bluetooth-on.svg": "/bluetooth.svg",
+            "Support/Card/exclamation-triangle.svg": "/exclamation-triangle.svg",
+            "Support/Card/user-shield.svg": "/accountandsupport.svg",
+            "Support/Card/question-circle.svg": "/question-mark.svg",
+          };
           const opts = icons.map(ic => {
             const key = ic.bucket_key.split('/').map(encodeURIComponent).join('/');
             const src = `${base}/${key}`;
@@ -132,11 +146,23 @@ const AddCategory = ({ open, onClose, mode = "add", initialValues = null }) => {
                   src={src}
                   alt={ic.name}
                   className="w-6 h-6"
+                  onError={(e) => {
+                    e.currentTarget.src = fallbackMap[ic.bucket_key] || "/question-mark.svg";
+                  }}
                 />
               )
             };
           });
-          setIconOptions(opts);
+          const localIcons = [
+            { value: "local-compass", label: <Icon name="compass" className="w-6 h-6" /> },
+            { value: "local-ruler-pencil", label: <Icon name="ruler_pencil" className="w-6 h-6" /> },
+            { value: "local-pencil", label: <Icon name="pencil" className="w-6 h-6" /> },
+            { value: "local-drafting-compass", label: <Icon name="drafting_compass" className="w-6 h-6" /> },
+            { value: "local-settings", label: <Icon name="settings" className="w-6 h-6" /> },
+          ];
+          const existingValues = new Set(opts.map(o => o.value));
+          const uniqueLocalIcons = localIcons.filter(ic => !existingValues.has(ic.value));
+          setIconOptions([...opts, ...uniqueLocalIcons]);
           const initial = initialValues?.icon ?? (opts.length > 0 ? opts[0].value : "");
           setSelectedIcon(initial);
         }
