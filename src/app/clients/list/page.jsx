@@ -452,20 +452,6 @@ const ClientsList = () => {
 		[processedCustomers, searchValue, selectedRole],
 	);
 
-	// Compute client counts per vertical
-	const clientCounts = useMemo(() => {
-		const counts = {};
-		processedCustomers.forEach((client) => {
-			const verticalName = client.vertical?.toLowerCase() || "unknown";
-			const verticalId = client.verticalId;
-			if (verticalId) {
-				counts[verticalId] = (counts[verticalId] || 0) + 1;
-			}
-			counts[verticalName] = (counts[verticalName] || 0) + 1;
-		});
-		return counts;
-	}, [processedCustomers]);
-
 	// const totalItems = filteredClients.length;
 	const totalPages = useMemo(
 		() => Math.max(1, Math.ceil(totalItems / pageSize)),
@@ -1040,10 +1026,11 @@ const onVerticalGroupClose = (verticalName) => {
 								<TableCell className="p-4">
     <div className="w-max">
         <BoxCountBadge
-            count={clientCounts[customer.verticalId] || 0}
+            count={customer.boxCount || 0}
             label={customer.vertical}
             iconName={getVerticalIcon(customer.vertical)}
             iconColor={getIconColor(customer.vertical)}
+            borderColor={getIconColor(customer.vertical)}
             tooltipSide="bottom"
             tooltipAlign="start"
             onClick={(e) => {
@@ -1051,7 +1038,6 @@ const onVerticalGroupClose = (verticalName) => {
                 setSelectedBoxClient(customer);
             }}
             onViewList={() => setSelectedBoxClient(customer)}
-            className="!border-none !bg-transparent !px-0 !py-0 hover:!border-none hover:!bg-transparent"
         />
     </div>
 </TableCell>
@@ -1632,10 +1618,11 @@ const onVerticalGroupClose = (verticalName) => {
 								<TableCell className="p-4">
     <div className="w-max">
         <BoxCountBadge
-            count={clientCounts[customer.verticalId] || 0}
+            count={customer.boxCount || 0}
             label={customer.vertical}
             iconName={getVerticalIcon(customer.vertical)}
             iconColor={getIconColor(customer.vertical)}
+            borderColor={getIconColor(customer.vertical)}
             tooltipSide="bottom"
             tooltipAlign="start"
             onClick={(e) => {
@@ -1643,7 +1630,6 @@ const onVerticalGroupClose = (verticalName) => {
                 setSelectedBoxClient(customer);
             }}
             onViewList={() => setSelectedBoxClient(customer)}
-            className="!border-none !bg-transparent !px-0 !py-0 hover:!border-none hover:!bg-transparent"
         />
     </div>
 </TableCell>

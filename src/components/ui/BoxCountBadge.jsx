@@ -20,11 +20,14 @@ export default function BoxCountBadge({
   iconColor,
   iconName="",
   label="",
+  borderColor,
 }) {
   const handleClick = (e) => {
     e.stopPropagation(); // Prevent row click
     if (onClick) onClick(e);
   };
+
+  const derivedBorderColor = borderColor || (iconColor ? iconColor.replace('text-', 'border-') : '');
 
   // If used as text wrapper (for Manager tooltip)
   if (asText) {
@@ -61,7 +64,6 @@ export default function BoxCountBadge({
     );
   }
 
-  // Original button behavior for count badges
   return (
     <>
       <Tooltip.Provider delayDuration={100}>
@@ -70,15 +72,15 @@ export default function BoxCountBadge({
             <button
               type="button"
               onClick={handleClick}
-              className={`group transition-all duration-200 outline-none border ${count>0? "border-[var(--color-admin-profile-border)]":"border-[var(--color-box-border)]"} hover:border-[var(--info-panel-view-bg)] bg-white hover:bg-[var(--color-admin-profile-border)] rounded-full px-4 py-2 flex items-center gap-2 text-base font-normal select-none focus:ring-2 focus:ring-[var(--color-brand-default)] ${className}`}
+              className={`group transition-all duration-200 outline-none border ${derivedBorderColor || "border-[var(--color-admin-profile-border)]"} hover:opacity-80 bg-white rounded-full px-4 py-2 flex items-center gap-2 text-base font-normal select-none focus:ring-2 focus:ring-[var(--color-brand-default)] ${className}`}
               style={{ minWidth: 64 }}
             >
               {iconName ?
-              <Icon name={iconName} className={`w-5 h-5 ${iconColor?iconColor:""} ${count>0 ? "text-[var(--info-panel-view-bg)]":"text-[var(--color-neutral-light)] group-hover:text-[var(--color-brand-default)]"} transition-colors`} />:
-              <Icon name="inventory" className={`w-5 h-5 ${iconColor?iconColor:""} ${count>0 ? "text-[var(--info-panel-view-bg)]":"text-[var(--color-neutral-light)] group-hover:text-[var(--color-brand-default)]"} transition-colors`} />
+              <Icon name={iconName} className={`w-5 h-5 ${iconColor?iconColor:""} transition-colors`} />:
+              <Icon name="inventory" className={`w-5 h-5 ${iconColor?iconColor:""} transition-colors`} />
             }
               {label && <span className="text-[var(--color-neutral-secondary)] text-sm font-normal">{label}</span>}
-              <span className="text-[var(--color-neutral-secondary)] text-sm font-normal">{count}</span>
+              {count !== undefined && <span className="text-[var(--color-neutral-secondary)] text-sm font-normal">({count})</span>}
             </button>
           </Tooltip.Trigger>
           <Tooltip.Portal>
