@@ -63,7 +63,8 @@ export default function GrubpacRowMenu({
           <Button
             key={option.key}
             variant="profile"
-            className={`flex btn-size-md-sm items-center w-full px-4 py-3 text-sm text-[var(--color-neutral-secondary)] active:text-[var(--color-neutral-primary)] whitespace-nowrap ${roundedClass}`}
+            // className={`flex btn-size-md-sm items-center w-full px-4 py-3 text-sm text-[var(--color-neutral-secondary)] active:text-[var(--color-neutral-primary)] whitespace-nowrap ${roundedClass}`}
+            className={`flex items-center w-full px-4 py-3 text-sm text-[var(--color-neutral-secondary)] active:text-[var(--color-neutral-primary)] whitespace-nowrap ${roundedClass}`}
             onClick={() => {
               onAction?.(option.key);
               onClose?.();

@@ -31,18 +31,7 @@ export default function EmployeeRowMenu({
 	const canViewLogs =
 		can("view employee logs", "employees") || can("view employee logs");
 
-	useEffect(() => {
-		if (!open) return;
-		function handleClickOutside(event) {
-			if (menuRef.current && !menuRef.current.contains(event.target)) {
-				onClose();
-			}
-		}
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-		};
-	}, [open, onClose]);
+
 
 	if (!open) return null;
 

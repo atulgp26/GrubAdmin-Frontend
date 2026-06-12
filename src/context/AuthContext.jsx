@@ -20,11 +20,15 @@ export function AuthProvider({ children }) {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isInitialized, setIsInitialized] = useState(false);
 
+	const updateUser = useCallback((updatedFields) => {
+		setUser((prev) => ({ ...prev, ...updatedFields }));
+	}, []);
+
 	const loadSession = useCallback(async () => {
 		setIsLoading(true);
 		try {
 			const response = await accountService.getProfile();
-			
+
 			if (response?.success && response?.code === 200) {
 				const userData = response?.data?.user || response?.data;
 				if (userData) {
@@ -33,7 +37,7 @@ export function AuthProvider({ children }) {
 					return true;
 				}
 			}
-			
+
 			setUser(null);
 			setIsAuthenticated(false);
 			return false;
@@ -48,47 +52,57 @@ export function AuthProvider({ children }) {
 		}
 	}, []);
 
-	const login = useCallback(async (credentials) => {
-		setIsLoading(true);
-		try {
-			const response = await authService.login(credentials);
-			
-			if (response?.success) {
-				// Store JWT for Authorization header (fallback when HttpOnly cookie
-				// isn't sent due to cross-origin SameSite restrictions)
-				if (response?.data?.token) {
-					setToken(response.data.token);
-				}
+	const login = useCallback(
+		async (credentials) => {
+			setIsLoading(true);
+			try {
+				const response = await authService.login(credentials);
 
-				// Single session validation — no retry loop.
-				// If the backend is up, one call is enough. If it's down, retrying
-				// just amplifies load and creates more 502s.
-				const sessionValid = await loadSession();
-
-				if (sessionValid) {
-					// Persist token for page-reload recovery
+				if (response?.success) {
+					// Store JWT for Authorization header (fallback when HttpOnly cookie
+					// isn't sent due to cross-origin SameSite restrictions)
 					if (response?.data?.token) {
-						setAuthCookie(credentials.email, response.data.token, 1);
+						setToken(response.data.token);
 					}
-					return { success: true };
+
+					// Single session validation — no retry loop.
+					// If the backend is up, one call is enough. If it's down, retrying
+					// just amplifies load and creates more 502s.
+					const sessionValid = await loadSession();
+
+					if (sessionValid) {
+						// Persist token for page-reload recovery
+						if (response?.data?.token) {
+							setAuthCookie(
+								credentials.email,
+								response.data.token,
+								1,
+							);
+						}
+						return { success: true };
+					}
+					return {
+						success: false,
+						error: "Session validation failed. Please try again.",
+					};
 				}
-				return { success: false, error: "Session validation failed. Please try again." };
+
+				return {
+					success: false,
+					error: getApiError(response),
+				};
+			} catch (error) {
+				console.error("[AuthContext] Login error:", error);
+				return {
+					success: false,
+					error: getApiError(error),
+				};
+			} finally {
+				setIsLoading(false);
 			}
-			
-			return { 
-				success: false, 
-				error: getApiError(response)
-			};
-		} catch (error) {
-			console.error("[AuthContext] Login error:", error);
-			return { 
-				success: false, 
-				error: getApiError(error)
-			};
-		} finally {
-			setIsLoading(false);
-		}
-	}, [loadSession]);
+		},
+		[loadSession],
+	);
 
 	const logout = useCallback(async () => {
 		try {
@@ -119,12 +133,12 @@ export function AuthProvider({ children }) {
 		login,
 		logout,
 		refreshSession,
+		updateUser,
+		loadSession,
 	};
 
 	return (
-		<AuthContext.Provider value={value}>
-			{children}
-		</AuthContext.Provider>
+		<AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 	);
 }
 

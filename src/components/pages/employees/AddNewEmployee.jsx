@@ -38,6 +38,7 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 		role: "",
 		location: "",
 		joiningDate: "",
+		employeeId: "",
 	});
 	const router = useRouter();
 
@@ -60,16 +61,16 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 						// Calculate permissions count
 						const permissionsCount = role.permissions_json
 							? Object.values(role.permissions_json).reduce(
-									(total, permissions) => {
-										return (
-											total +
-											(Array.isArray(permissions)
-												? permissions.length
-												: 0)
-										);
-									},
-									0,
-								)
+								(total, permissions) => {
+									return (
+										total +
+										(Array.isArray(permissions)
+											? permissions.length
+											: 0)
+									);
+								},
+								0,
+							)
 							: 0;
 
 						return {
@@ -141,6 +142,13 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 		return "";
 	};
 
+	const validateEmployeeId = (value) => {
+		if (!value || value.trim().length === 0) {
+			return "Employee ID is required";
+		}
+		return "";
+	};
+
 	const validateLocation = (value) => {
 		// Location is optional, but if provided, validate it
 		if (value && value.trim().length > 0) {
@@ -188,6 +196,9 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 			case "role":
 				error = validateRole(value);
 				break;
+			case "employeeId":
+				error = validateEmployeeId(value);
+				break;
 			case "location":
 				error = validateLocation(value);
 				break;
@@ -234,6 +245,7 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 		const firstNameError = validateFirstName(formData.firstName);
 		const emailError = validateEmail(formData.email);
 		const roleError = validateRole(formData.role);
+		const employeeIdError = validateEmployeeId(formData.employeeId);
 		const locationError = validateLocation(formData.location);
 		const joiningDateError = validateJoiningDate(formData.joiningDate);
 
@@ -243,6 +255,7 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 			!firstNameError &&
 			!emailError &&
 			!roleError &&
+			!employeeIdError &&
 			!locationError &&
 			!joiningDateError;
 
@@ -321,6 +334,7 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 			const firstNameError = validateFirstName(formData.firstName);
 			const emailError = validateEmail(formData.email);
 			const roleError = validateRole(formData.role);
+			const employeeIdError = validateEmployeeId(formData.employeeId);
 			// Strict phone validation when provided
 			let phoneError = "";
 			if (formData.phoneNumber && formData.phoneNumber.trim()) {
@@ -331,19 +345,20 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 
 			// Phone is optional - no validation required
 
-			if (firstNameError || emailError || roleError || phoneError) {
+			if (firstNameError || emailError || roleError || employeeIdError || phoneError) {
 				// Set all validation errors
 				setValidationErrors({
 					firstName: firstNameError,
 					email: emailError,
 					role: roleError,
+					employeeId: employeeIdError,
 					lastName: validateLastName(formData.lastName),
 					location: validateLocation(formData.location),
 					joiningDate: validateJoiningDate(formData.joiningDate),
 				});
 				showError(
 					phoneError ||
-						"Please fix the validation errors before submitting",
+					"Please fix the validation errors before submitting",
 				);
 				setLoading(false);
 				return;
@@ -481,6 +496,7 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 			lastName: "",
 			email: "",
 			role: "",
+			employeeId: "",
 			location: "",
 			joiningDate: "",
 		});
@@ -586,7 +602,7 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 										...prev,
 										phoneNumber:
 											digits.length > 0 &&
-											digits.length < 10
+												digits.length < 10
 												? "Mobile number must be 10 digits"
 												: "",
 									}));
@@ -666,10 +682,7 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 					</div>
 					<div className="space-y-2">
 						<h3 className="text-[var(--color-neutral-secondary)] text-base font-medium">
-							Employee ID{" "}
-							<span className="text-sm text-[var(--color-neutral-secondary)]">
-								(optional)
-							</span>
+							Employee ID
 						</h3>
 						<div className="relative">
 							<Input
@@ -692,6 +705,11 @@ const AddNewEmployee = ({ isOpen, onClose, onConfirm }) => {
 							>
 								#
 							</span>
+							{validationErrors.employeeId && (
+								<p className="absolute top-full left-0 mt-1 text-xs text-red-500">
+									{validationErrors.employeeId}
+								</p>
+							)}
 						</div>
 					</div>
 				</div>

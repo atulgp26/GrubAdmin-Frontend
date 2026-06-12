@@ -24,6 +24,7 @@ export default function NotificationsPage() {
 	const [selectedBoxes, setSelectedBoxes] = useState([]);
 	const [selectedGroups, setSelectedGroups] = useState([]);
 	const [showFilterModal, setShowFilterModal] = useState(false);
+	const [selectedDropdownTypes, setSelectedDropdownTypes] = useState([]);
 	const [selectedTypes, setSelectedTypes] = useState([
 		"error",
 		"success",
@@ -37,7 +38,7 @@ export default function NotificationsPage() {
 
 	const [debouncedSearchValue] = useDebounce(search, DEBOUNCE_TIME);
 	const onDebouncedSearchValueChange = useDebouncedCallback(
-		() => { },
+		() => {},
 		DEBOUNCE_TIME,
 	);
 
@@ -45,6 +46,17 @@ export default function NotificationsPage() {
 		setSearch(e.target.value);
 		onDebouncedSearchValueChange();
 	};
+
+	const typeOptions = useMemo(() => {
+		const unique = [
+			...new Set(notifications.map((n) => n.item_type).filter(Boolean)),
+		];
+		return unique.map((type, i) => ({
+			id: i + 1,
+			label: type,
+			value: type,
+		}));
+	}, [notifications]);
 
 	const getNotifications = useCallback(async () => {
 		const params = {};
@@ -103,18 +115,6 @@ export default function NotificationsPage() {
 		}
 	}, []);
 
-	const handleDismissAll = useCallback(async () => {
-		const allIds = notifications.map((n) => n.id);
-		setNotifications([]);
-		setSelected([]);
-
-		try {
-			if (allIds.length > 0) await notificationsService.markAsRead(allIds);
-		} catch (error) {
-			console.error("Failed to sync dismiss all:", error);
-		}
-	}, [notifications]);
-
 	useEffect(() => {
 		if (isAuthenticated && !authLoading) {
 			getNotifications();
@@ -129,7 +129,8 @@ export default function NotificationsPage() {
 				const isToday = date.toDateString() === now.toDateString();
 				const yesterday = new Date(now);
 				yesterday.setDate(yesterday.getDate() - 1);
-				const isYesterday = date.toDateString() === yesterday.toDateString();
+				const isYesterday =
+					date.toDateString() === yesterday.toDateString();
 
 				const timeStr = date.toLocaleTimeString("en-US", {
 					hour: "numeric",
@@ -177,10 +178,34 @@ export default function NotificationsPage() {
 					!n.message.toLowerCase().includes(search.toLowerCase())
 				)
 					return false;
+
+				if (
+					selectedDropdownTypes.length > 0 &&
+					!selectedDropdownTypes.some(
+						(id) =>
+							typeOptions.find((o) => o.id === id)?.value ===
+							n.category,
+					)
+				)
+					return false;
 				return true;
 			}),
-		[processedNotifications, filter, search],
+		[processedNotifications, filter, search, selectedDropdownTypes, typeOptions],
 	);
+
+	const handleDismissAll = useCallback(async () => {
+		const ids = filtered.map((n) => n.id);
+		if (ids.length === 0) return;
+
+		setNotifications((prev) => prev.filter((n) => !ids.includes(n.id)));
+		setSelected([]);
+
+		try {
+			await notificationsService.markAsRead(ids);
+		} catch (error) {
+			console.error("Failed to sync dismiss all:", error);
+		}
+	}, [filtered]);
 
 	const allSelected = useMemo(
 		() => selected.length === filtered.length && filtered.length > 0,
@@ -191,8 +216,8 @@ export default function NotificationsPage() {
 		() =>
 			debouncedSearchValue
 				? processedNotifications.filter((n) =>
-					n.title.toLowerCase().includes(search.toLowerCase()),
-				)
+						n.title.toLowerCase().includes(search.toLowerCase()),
+					)
 				: [],
 		[debouncedSearchValue, processedNotifications, search],
 	);
@@ -220,9 +245,17 @@ export default function NotificationsPage() {
 		let Icon;
 		if (cat.includes("client") || cat.includes("customer")) {
 			Icon = FiUserPlus;
-		} else if (cat.includes("box") || cat.includes("grubpac") || cat.includes("package")) {
+		} else if (
+			cat.includes("box") ||
+			cat.includes("grubpac") ||
+			cat.includes("package")
+		) {
 			Icon = FiPackage;
-		} else if (cat.includes("repair") || cat.includes("service") || cat.includes("ticket")) {
+		} else if (
+			cat.includes("repair") ||
+			cat.includes("service") ||
+			cat.includes("ticket")
+		) {
 			Icon = FiAlertTriangle;
 		} else if (cat.includes("inventory") || cat.includes("stock")) {
 			Icon = FiArchive;
@@ -252,16 +285,18 @@ export default function NotificationsPage() {
 
 	return (
 		<>
-			<div className="flex items-center justify-between mb-6">
-				<h1 className="text-2xl !pl-3 font-semibold text-[var(--color-neutral-primary)]">
+			<div className="flex items-center justify-between mb-6 !pl-3">
+				<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)]">
 					Notifications
 				</h1>
-				<button
-					onClick={handleDismissAll}
-					className="text-sm font-semibold text-[var(--color-brand-default)] hover:underline cursor-pointer"
-				>
-					DISMISS ALL
-				</button>
+				{filtered.length > 0 && (
+					<button
+						onClick={handleDismissAll}
+						className="text-sm font-semibold text-[var(--color-brand-default)] hover:underline cursor-pointer"
+					>
+						DISMISS ALL
+					</button>
+				)}
 			</div>
 			<NotificationFilterBar
 				search={search}
@@ -279,6 +314,9 @@ export default function NotificationsPage() {
 				setShowFilterModal={setShowFilterModal}
 				isFilterModalOpen={showFilterModal}
 				onSearchSelect={setSearch}
+				typeOptions={typeOptions}
+				selectedTypes={selectedDropdownTypes}
+				setSelectedTypes={setSelectedDropdownTypes}
 			/>
 			<NotificationFilterModal
 				open={showFilterModal}

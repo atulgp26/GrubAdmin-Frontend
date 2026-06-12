@@ -1,14 +1,16 @@
 export const DEBOUNCE_TIME = 200;
 
-export const DEFAULT_PAGE_SIZE = 15;
+export const DEFAULT_PAGE_SIZE = 100;
 export const DEFAULT_PAGE_NUMBER = 1;
+
+
 
 export const CAMPING_VERTICAL_NAME = "camping";
 
 export const GRUBPAC_GROUP_BY_ASSIGNED_GROUPS = [
 	{
 		name: "Assigned",
-		value: "assigned",
+		// value: "assigned",
 	},
 	{
 		name: "Unassigned",

@@ -137,7 +137,8 @@ const AddCategory = ({ open, onClose, mode = "add", initialValues = null }) => {
             "Support/Card/question-circle.svg": "/question-mark.svg",
           };
           const opts = icons.map(ic => {
-            const src = `${base}/${ic.bucket_key}`;
+            const key = ic.bucket_key.split('/').map(encodeURIComponent).join('/');
+            const src = `${base}/${key}`;
             return {
               value: ic.id,
               label: (

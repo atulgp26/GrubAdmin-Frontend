@@ -896,7 +896,7 @@ export default function Categories() {
 									<img
 										src={
 											fallbackIcons[iconIdToKey[cat.iconId]] ||
-											`${iconBaseUrl}/${iconIdToKey[cat.iconId]}`
+											`${iconBaseUrl}/${iconIdToKey[cat.iconId].split('/').map(encodeURIComponent).join('/')}`
 										}
 										alt="icon"
 										className="w-8 h-8"

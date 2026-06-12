@@ -21,8 +21,13 @@ export default function NotificationFilterBar({
 	setSelectedGroups = () => {},
 	setShowFilterModal,
 	isFilterModalOpen,
+	typeOptions = [],
+	selectedTypes = [],
+	setSelectedTypes = () => {},
 }) {
-	const [selectedTypes, setSelectedTypes] = useState([]);
+	// const [selectedTypes, setSelectedTypes] = useState([]);
+
+	
 
 	return (
 		<div className="flex items-center !pl-3 justify-between gap-4 mb-6">
@@ -48,14 +53,7 @@ export default function NotificationFilterBar({
 				{/* Select Type Dropdown */}
 				<div className="w-[200px]">
 					<MultiSelectDropdown
-						options={[
-							{ id: 1, label: "Customers" },
-							{ id: 2, label: "Employees" },
-							{ id: 3, label: "External partners" },
-							{ id: 4, label: "Inventory" },
-							{ id: 5, label: "Tickets" },
-							{ id: 6, label: "Updates" },
-						]}
+						options={typeOptions}
 						selected={selectedTypes}
 						setSelected={setSelectedTypes}
 						placeholder="Select type"
