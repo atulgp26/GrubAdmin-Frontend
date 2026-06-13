@@ -961,7 +961,7 @@ const onVerticalGroupClose = (verticalName) => {
 				</div>
 			) : (
 				<Table className="min-w-full">
-					<TableHead>
+				<TableHead className="sticky top-0 z-10 bg-[var(--color-bg-primary,white)]">
 						<TableRow>
 							<TableCell className="p-4 !text-sm font-medium text-[var(--color-stroke-brand)]">
 								Name
@@ -1402,8 +1402,8 @@ const onVerticalGroupClose = (verticalName) => {
 	// }
 
 	return (
-		<div>
-			<div className="flex items-center justify-between mb-6">
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
+			<div className="flex items-center justify-between mb-6 flex-shrink-0">
 				<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)]">
 					Clients
 				</h1>
@@ -1427,9 +1427,9 @@ const onVerticalGroupClose = (verticalName) => {
 			</div>
 
 			{/* Search and Filters */}
-			<div className="flex items-center justify-between mb-6">
-				<div className="flex items-center gap-4">
-					<div className="w-64">
+			<div className="flex items-center justify-between mb-6 flex-shrink-0">
+			<div className="flex items-center gap-4">
+				<div className="w-64">
 						<SearchWithSuggestions
 							data={searchSuggestions}
 							value={searchValue}
@@ -1477,7 +1477,7 @@ const onVerticalGroupClose = (verticalName) => {
 
 			{/* Table or Grouped View */}
 			{groupByRole ? (
-				<>
+					<div className="flex-1 overflow-y-auto min-h-0">
 					{verticals.map((vertical, index) => {
 						const verticalClients = filteredClients.filter(
 							(c) => c.verticalId === vertical.id,
@@ -1522,10 +1522,10 @@ const onVerticalGroupClose = (verticalName) => {
 							/>
 						);
 					})}
-				</>
+				</div>
 			) : (
-				<div>
-					<div className="mb-6 bg-[var(--color-neutral-secondary-bg)] flex justify-between items-center py-2 px-4">
+			<div className="flex-1 overflow-y-auto min-h-0">
+				<div className="sticky top-0 z-10 mb-6 bg-[var(--color-neutral-secondary-bg)] flex justify-between items-center py-2 px-4">
 						<span className="text-sm text-[var(--color-stroke-brand)]">{`Showing ${pageStartDisplay}-${pageEndDisplay}`}</span>
 						<div className="flex gap-3">
 							<Button
@@ -1553,7 +1553,7 @@ const onVerticalGroupClose = (verticalName) => {
 						</div>
 					</div>
 					<Table className="min-w-full">
-						<TableHead>
+						<TableHead className="sticky top-0 z-10 bg-[var(--color-bg-primary,white)]">
 							<TableRow>
 								<TableCell className="p-4 !text-sm font-medium text-[var(--color-stroke-brand)]">
 									Name
