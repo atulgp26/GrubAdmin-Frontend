@@ -11,6 +11,8 @@ export default function CollapseTable({
 	onClick = () => {},
 	groupName = "",
 	emptyResult = "",
+	scrollable = false,
+	scrollableMaxHeight = "calc(100vh - 250px)",
 }) {
 	useEffect(() => {
 		if (!isOpen) {
@@ -20,6 +22,34 @@ export default function CollapseTable({
 		}
 	}, [isOpen]);
 
+	const renderContent = () => {
+		const content =
+			data.length > 0 ? (
+				renderTable(data)
+			) : (
+				<div className="bg-white border-b">
+					<div className="my-2 px-2 py-2 flex items-center">
+						<div className="font-normal text-base text-[var(--color-stroke-brand)] pl-8">
+							{emptyResult}
+						</div>
+					</div>
+				</div>
+			);
+
+		if (scrollable && data.length > 0) {
+			return (
+				<div
+					className="overflow-y-auto"
+					style={{ maxHeight: scrollableMaxHeight }}
+				>
+					{content}
+				</div>
+			);
+		}
+
+		return content;
+	};
+
 	return (
 		<Collapse
 			title={groupName}
@@ -27,21 +57,7 @@ export default function CollapseTable({
 			pagination={pagination}
 			onClick={onClick}
 		>
-			{isOpen && (
-				<>
-					{data.length > 0 ? (
-						renderTable(data)
-					) : (
-						<div className="bg-white border-b">
-							<div className="my-2 px-2 py-2 flex items-center">
-								<div className="font-normal text-base text-[var(--color-stroke-brand)] pl-8">
-									{emptyResult}
-								</div>
-							</div>
-						</div>
-					)}
-				</>
-			)}
+			{isOpen && <>{renderContent()}</>}
 		</Collapse>
 	);
 }

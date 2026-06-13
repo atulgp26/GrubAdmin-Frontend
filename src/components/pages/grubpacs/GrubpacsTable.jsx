@@ -64,7 +64,7 @@ export default function GrubPacsTable({
 		<div className="">
 			<Table>
 				{/* Header */}
-				<TableHead>
+			<TableHead className="sticky top-0 z-10 bg-[var(--color-bg-primary,white)]">
 					<TableRow className="">
 						<TableCell className="w-12 !pl-4">
 							<TableCheckbox
