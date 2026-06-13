@@ -59,7 +59,7 @@ export default function ClientLogsSidebar({
                       {b.name}
                     </div>
                     <div className="flex text-sm text-[var(--color-stroke-brand)] font-normal pt-1">
-                      {b.client_id || ""} | {b.organization_name || ""}
+                      {(b.client_id || "").replace(/[0-9A-Za-z]{24,}/g, "")} | {b.organization_name || ""}
                     </div>
                   </div>
                   <div>

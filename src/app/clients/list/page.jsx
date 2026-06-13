@@ -977,12 +977,6 @@ const onVerticalGroupClose = (verticalName) => {
 						{data.map((customer) => (
 							<TableRow
 								key={customer.id}
-								className="cursor-pointer"
-								onClick={() =>
-									router.push(
-										`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`,
-									)
-								}
 							>
 								<TableCell className="p-4">
 									<div>
@@ -1012,7 +1006,7 @@ const onVerticalGroupClose = (verticalName) => {
             iconName={getVerticalIcon(customer.vertical)}
             iconColor={getIconColor(customer.vertical)}
             borderColor={getIconColor(customer.vertical)}
-            tooltipSide="bottom"
+            tooltipSide="left"
             tooltipAlign="start"
             onClick={(e) => {
                 e.stopPropagation();
@@ -1569,12 +1563,6 @@ const onVerticalGroupClose = (verticalName) => {
 							{processedCustomers.map((customer) => (
 								<TableRow
 									key={customer.id}
-									className="cursor-pointer"
-									onClick={() =>
-										router.push(
-											`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`,
-										)
-									}
 								>
 									<TableCell className="p-4">
 										<div>
@@ -1604,7 +1592,7 @@ const onVerticalGroupClose = (verticalName) => {
             iconName={getVerticalIcon(customer.vertical)}
             iconColor={getIconColor(customer.vertical)}
             borderColor={getIconColor(customer.vertical)}
-            tooltipSide="bottom"
+            tooltipSide="left"
             tooltipAlign="start"
             onClick={(e) => {
                 e.stopPropagation();
