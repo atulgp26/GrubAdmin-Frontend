@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MdCalendarToday } from "react-icons/md";
 import { MdOutlineDone } from "react-icons/md";
 import { useSearchParams } from "next/navigation";
-import SearchWithSuggestions from "@/components/ui/SearchWithSuggestions";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Pagination from "@/components/ui/Pagination";
@@ -21,7 +20,8 @@ import { DEBOUNCE_TIME, DEFAULT_PAGE_SIZE } from "@/constants/config";
 import { logsService } from "@/api/services/logsService";
 import { useAuth } from "@/context/AuthContext";
 import { useDebounce } from "use-debounce";
-import { showError } from "@/components/ui/toast";
+import { showError, showSuccess } from "@/components/ui/toast";
+import ExportListModal from "../employees/ExportListModal";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { RxCross2 } from "react-icons/rx";
@@ -109,6 +109,7 @@ export default function SystemLogs() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+    const [exportModalOpen, setExportModalOpen] = useState(false);
     const pageSize = DEFAULT_PAGE_SIZE;
     const fetchIdRef = useRef(0);
 
@@ -118,7 +119,19 @@ export default function SystemLogs() {
     const highlightedGoal = searchParams.get("goal");
     const [blinkingId, setBlinkingId] = useState(null);
 
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [debouncedSearchValue] = useDebounce(search, DEBOUNCE_TIME);
+
+    const exportOptions = [
+        {
+            group: "scope",
+            title: "Scope",
+            items: [
+                { id: "allLogs", label: "All logs", type: "radio" },
+                { id: "filteredList", label: "As per the filtered list", type: "radio" },
+            ],
+        },
+    ];
 
     const onSearchChange = (e) => {
         setSearch(e.target.value);
@@ -218,8 +231,10 @@ export default function SystemLogs() {
                 const subtype = normalizeLabel(
                     String(systemLog.type || action || "unknown"),
                 );
+                const cleanDescription = (desc) =>
+                    desc.replace(/\[([^,]+),\s*[^\]]+\]/g, "$1");
                 const message = normalizeLabel(
-                    String(systemLog.description || "") ||
+                    cleanDescription(String(systemLog.description || "")) ||
                         `${moduleName} ${subtype}`,
                 );
                 const logTimestamp = systemLog.createdAt || systemLog.updatedAt;
@@ -250,40 +265,49 @@ export default function SystemLogs() {
         [systemLogs],
     );
 
-    const handleExport = useCallback(() => {
-        if (systemLogs.length === 0) {
-            showError("No logs to export.");
-            return;
-        }
+    const handleExportConfirm = useCallback(
+        ({ scope }) => {
+            const logsToExport =
+                scope === "filteredList"
+                    ? formattedLogs
+                    : formattedLogs;
 
-        const headers = ["Timestamp", "Category", "Type", "Action"];
-        const csvContent = [
-            headers.join(","),
-            ...formattedLogs.map((log) =>
-                [
-                    `"${log.timestamp}"`,
-                    `"${log.type}"`,
-                    `"${log.subtype}"`,
-                    `"${log.action.replace(/"/g, '""')}"`,
-                ].join(","),
-            ),
-        ].join("\n");
+            if (logsToExport.length === 0) {
+                showError("No logs to export.");
+                return;
+            }
 
-        const blob = new Blob([csvContent], {
-            type: "text/csv;charset=utf-8;",
-        });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute(
-            "download",
-            `system_logs_${new Date().toISOString().split("T")[0]}.csv`,
-        );
-        link.style.visibility = "hidden";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }, [systemLogs, formattedLogs]);
+            const headers = ["Timestamp", "Category", "Type", "Action"];
+            const csvContent = [
+                headers.join(","),
+                ...logsToExport.map((log) =>
+                    [
+                        `"${log.timestamp}"`,
+                        `"${log.type}"`,
+                        `"${log.subtype}"`,
+                        `"${log.action.replace(/"/g, '""')}"`,
+                    ].join(","),
+                ),
+            ].join("\n");
+
+            const blob = new Blob([csvContent], {
+                type: "text/csv;charset=utf-8;",
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute(
+                "download",
+                `system_logs_${new Date().toISOString().split("T")[0]}.csv`,
+            );
+            link.style.visibility = "hidden";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showSuccess("Success!", "CSV file downloaded successfully.");
+        },
+        [formattedLogs],
+    );
 
     const visibleLogs = useMemo(() => {
         return formattedLogs.filter((log) => {
@@ -294,23 +318,7 @@ export default function SystemLogs() {
         });
     }, [selectedCategories, formattedLogs]);
 
-    // prema
-    const suggestions = useMemo(
-        () =>
-            formattedLogs.map((log) => ({
-                id: log.id,
-                name: `${log.type} ${log.subtype}`,
-                code: log.action,
-                timestamp: log.timestamp,
-            })),
-        [formattedLogs],
-    );
 
-    const handleSuggestionSelect = (suggestion) => {
-        setSearch(suggestion.name);
-    };
-
-    const handleSearchClear = () => setSearch("");
 
     const totalEntriesText = useMemo(
         () => `${totalItems} entries`,
@@ -494,7 +502,7 @@ export default function SystemLogs() {
     //  </div>
     // );
     return (
-        <div className="flex flex-col gap-6  w-full">
+       <div className="flex flex-col gap-4 w-full" style={{ height: 'calc(100vh - 120px)' }}>
             <style>{`
             @keyframes blink {
                 0%, 100% { background-color: transparent; }
@@ -505,35 +513,33 @@ export default function SystemLogs() {
             }
         `}</style>
 
-            <div className="flex flex-wrap justify-between items-center gap-4">
-                <h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)] leading-none">
+<div className="flex flex-wrap justify-between items-center gap-4 flex-shrink-0">                <h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)] leading-none">
                     System logs
                 </h1>
                 <Button
                     variant="text"
                     size="md"
                     className="!px-0 uppercase tracking-[0.08em]"
-                    onClick={handleExport}
+                    onClick={() => setExportModalOpen(true)}
                 >
                     EXPORT
                 </Button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <SearchWithSuggestions
-                    data={suggestions}
-                    value={search}
-                    onChange={onSearchChange}
-                    onSelect={handleSuggestionSelect}
-                    onClear={handleSearchClear}
-                    placeholder="Search log"
-                    clearable
-                    className="!w-64 [&_input]:!h-8 [&_input]:!py-1"
-                    getLabel={(item) => item.name}
-                    getSubLabel={(item) => item.code}
-                    openOnFocus={false}
-                    minChars={1}
-                />
+<div className="flex flex-wrap items-center justify-between gap-4 flex-shrink-0">                <div className={`!w-64 rounded-lg transition-shadow ${
+                    isSearchFocused
+                        ? "shadow-[0_0_0_2px_var(--color-shadow-select)] border ring-0 outline-none border-[var(--color-brand-default)]"
+                        : ""
+                }`}>
+                    <Input
+                        value={search}
+                        onChange={onSearchChange}
+                        placeholder="Search log"
+                        className="!h-8 !py-1"
+                        onFocus={() => setIsSearchFocused(true)}
+                        onBlur={() => setIsSearchFocused(false)}
+                    />
+                </div>
                 <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-neutral-secondary)]">
                     <span className="whitespace-nowrap text-[var(--color-stroke-brand)] text-sm">
                         {totalEntriesText}
@@ -570,7 +576,7 @@ export default function SystemLogs() {
                         setSelected={setSelectedCategories}
                         placeholder="All categories.."
                         className="min-w-[160px]"
-                        padding="!py-3 !px-3"
+                        padding="!py-1.5 !px-3"
                         fontsize="text-sm"
                     />
 
@@ -584,7 +590,7 @@ export default function SystemLogs() {
                     </Button>
                 </div>
             </div>
-
+<div className="flex-shrink-0">
             <Pagination
                 className="rounded-[6px]"
                 currentPage={currentPage}
@@ -595,9 +601,8 @@ export default function SystemLogs() {
                     setCurrentPage((prev) => Math.min(totalPages, prev + 1))
                 }
             />
-
-            <div className="flex-grow">
-                <div>
+</div>
+<div className="flex-1 overflow-y-auto min-h-0">                <div>
                     <Table className="w-full">
                         <TableHead>
                             <TableRow>
@@ -649,10 +654,20 @@ export default function SystemLogs() {
                 onClose={() => setShowAdvancedFilter(false)}
                 selectedFilters={advancedFilters}
                 onChange={setAdvancedFilters}
+                selectedCategories={selectedCategories}
                 onApply={() => {
                     setCurrentPage(1);
                     setShowAdvancedFilter(false);
                 }}
+            />
+            <ExportListModal
+                open={exportModalOpen}
+                onClose={() => setExportModalOpen(false)}
+                options={exportOptions}
+                title="Customise your export"
+                description="Select the scope you'd like to include in the export file."
+                footer="Export will be provided in CSV format."
+                onConfirm={handleExportConfirm}
             />
         </div>
     );
