@@ -164,7 +164,7 @@ export default function GrubPacsTable({
 										<BoxCountBadge
 											// asText={groupName === "Assigned"}
 											asText={true}
-											tooltipSide="bottom"
+											tooltipSide="left"
 											tooltipAlign="end"
 											tooltipTextColor="text-[var(--color-neutral-secondary)]"
 											tooltipText={
