@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import LoadingDetails from "@/components/ui/LoadingDetails";
 import EmptyState from "@/components/ui/EmptyState";
 import { IoChevronBack } from "react-icons/io5";
+import { formatDate } from "@/utils/formatDate";
 
 export default function ClientGrubpacsPage({ params }) {
 	const { clientId } = params;
@@ -63,14 +64,7 @@ export default function ClientGrubpacsPage({ params }) {
 					status: g.status,
 					statusDisplay:
 						g.status === "suspended" ? "Inactive" : g.status,
-					updatedOn: new Date(g.updated_at).toLocaleDateString(
-						"en-GB",
-						{
-							day: "2-digit",
-							month: "short",
-							year: "2-digit",
-						},
-					),
+					updatedOn: formatDate(g.updated_at),
 					assignment: "assigned",
 					vertical: g.vertical,
 				})),

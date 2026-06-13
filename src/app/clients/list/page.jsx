@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/Table";
 import TableCheckbox from "@/components/ui/TableCheckbox";
 import Badge from "@/components/ui/Badge";
+import { formatDate } from "@/utils/formatDate";
 import GroupCollapseTable from "@/components/shared/GroupCollapseTable";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import BoxCountBadge from "@/components/ui/BoxCountBadge";
@@ -374,14 +375,7 @@ const ClientsList = () => {
 						: customer.country || "Not specified",
 					vertical: verticalName,
 					verticalId: verticalId,
-					updated: new Date(customer.updated_at).toLocaleDateString(
-						"en-GB",
-						{
-							day: "2-digit",
-							month: "short",
-							year: "2-digit",
-						},
-					),
+					updated: formatDate(customer.updated_at),
 					email: customer.email,
 					contact: customer.mobile_number,
 					boxCount: boxCount,
