@@ -46,7 +46,7 @@ export default function DashboardPage() {
         </div>
         <InfoPanel
           description="Head to the Clients page to start assisting with onboarding and support."
-          image={null}
+          image="/box.png"
           name="Ready to make an impact?"
           buttons={[
             {
