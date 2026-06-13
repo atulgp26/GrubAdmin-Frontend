@@ -1016,7 +1016,7 @@ const SuspendedEmployees = () => {
 								</div>
 							</div>
 						}
-						placement="bottom"
+						placement="left"
 						arrowPosition="left"
 					>
 						<span className="cursor-default hover:underline text-[var(--color-stroke-brand)] font-medium text-sm">
@@ -1100,9 +1100,12 @@ const SuspendedEmployees = () => {
 							</TableCell>
 							<TableCell className="p-4">
 								<div>
-									<div className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)]">
+									<Link
+										href={`/employees/suspendedlogs?id=${encodeURIComponent(employee.id)}&name=${encodeURIComponent(employee.name)}`}
+										className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)] hover:underline"
+									>
 										{employee.name}
-									</div>
+									</Link>
 									<div className="text-sm text-[var(--color-stroke-brand)]">
 										{employee.empId} | Joined{" "}
 										{employee.joinDate} |{" "}
@@ -1123,8 +1126,9 @@ const SuspendedEmployees = () => {
 							<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
 								<BoxCountBadge
 									asText
-									tooltipSide="bottom"
+									tooltipSide="left"
 									tooltipAlign="end"
+									tooltipAlignOffset={2}
 									tooltipContent={
 										<div className="space-y-2">
 										<div className="text-[var(--color-stroke-brand)] text-right text-sm font-normal">
@@ -1541,9 +1545,12 @@ const SuspendedEmployees = () => {
 									</TableCell>
 									<TableCell className="p-4">
 										<div>
-											<div className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)]">
-												{employee.name}
-											</div>
+											<Link
+										href={`/employees/suspendedlogs?id=${encodeURIComponent(employee.id)}&name=${encodeURIComponent(employee.name)}`}
+										className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)] hover:underline"
+									>
+										{employee.name}
+									</Link>
 											<div className="text-sm text-[var(--color-stroke-brand)]">
 												{employee.empId} | Joined{" "}
 												{employee.joinDate} |{" "}
@@ -1593,7 +1600,7 @@ const SuspendedEmployees = () => {
 													</div>
 												)
 											}
-											placement="bottom"
+											placement="left"
 											arrowPosition="left"
 										>
 											<Badge
@@ -1607,8 +1614,9 @@ const SuspendedEmployees = () => {
 									<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
 										<BoxCountBadge
 											asText
-											tooltipSide="bottom"
+											tooltipSide="left"
 											tooltipAlign="end"
+											tooltipAlignOffset={2}
 											tooltipContent={
 												<div className="space-y-2">
 												<div className="text-[var(--color-stroke-brand)] text-right text-sm font-normal">

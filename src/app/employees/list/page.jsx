@@ -1168,7 +1168,7 @@ const EmployeesList = () => {
 								</div>
 							</div>
 						}
-						placement="bottom"
+						placement="left"
 						arrowPosition="left"
 					>
 						<span className="cursor-default hover:underline text-[var(--color-stroke-brand)] font-medium text-sm">
@@ -1261,9 +1261,12 @@ const EmployeesList = () => {
 								</TableCell>
 								<TableCell className="p-4">
 									<div>
-										<div className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)]">
+										<Link
+											href={`/employees/activelogs?id=${encodeURIComponent(employee.id)}&name=${encodeURIComponent(employee.name)}`}
+											className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)] hover:underline"
+										>
 											{employee.name}
-										</div>
+										</Link>
 										<div className="text-sm text-[var(--color-stroke-brand)]">
 											{employee.empId} | Joined{" "}
 											{employee.joinDate} |{" "}
@@ -1284,8 +1287,9 @@ const EmployeesList = () => {
 								<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
 									<BoxCountBadge
 										asText
-										tooltipSide="bottom"
+										tooltipSide="left"
 										tooltipAlign="end"
+										tooltipAlignOffset={2}
 										tooltipContent={
 											<div className="space-y-2">
 			<div className="text-[var(--color-stroke-brand)] text-xs text-right">
@@ -1546,9 +1550,12 @@ const EmployeesList = () => {
 									</TableCell>
 									<TableCell className="p-4">
 										<div>
-											<div className="font-semibold text-base pb-1 text-[var(--color-neutral-secondary)]">
-												{employee.name}
-											</div>
+											<Link
+											href={`/employees/activelogs?id=${encodeURIComponent(employee.id)}&name=${encodeURIComponent(employee.name)}`}
+											className="font-semibold text-base pb-1 text-[var(--color-neutral-secondary)] hover:underline"
+										>
+											{employee.name}
+										</Link>
 											<div className="text-sm text-[var(--color-stroke-brand)]">
 												{employee.empId} | Joined{" "}
 												{employee.joinDate} |{" "}
@@ -1592,7 +1599,7 @@ const EmployeesList = () => {
 													</div>
 												</div>
 											}
-											placement="bottom"
+											placement="left"
 											arrowPosition="left"
 										>
 											<Badge
@@ -1606,18 +1613,19 @@ const EmployeesList = () => {
 									<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
 										<BoxCountBadge
 											asText
-											tooltipSide="bottom"
-											tooltipAlign="end"
-											tooltipContent={
-												<div className="space-y-2">
+										tooltipSide="left"
+										tooltipAlign="end"
+										tooltipAlignOffset={2}
+										tooltipContent={
+											<div className="space-y-2">
 												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
   Last updated by You
 </div>
 <div className="text-[var(--color-stroke-brand)] text-xs text-right">
   Added on {employee.joinDate}
 </div>
-												</div>
-											}
+											</div>
+										}
 										>
 											<span className="cursor-default hover:underline">
 												{employee.updated}
