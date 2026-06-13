@@ -10,6 +10,7 @@ import { notificationsService } from "@/api/services/notificationsService";
 import { showSuccess, showError } from "@/components/ui/toast";
 import { useDebounce, useDebouncedCallback } from "use-debounce";
 import { DEBOUNCE_TIME } from "@/constants/config";
+import { formatDate } from "@/utils/formatDate";
 
 export default function NotificationsPage() {
 	const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -144,11 +145,7 @@ export default function NotificationsPage() {
 				} else if (isYesterday) {
 					dayStr = "Yesterday";
 				} else {
-					dayStr = date.toLocaleDateString("en-GB", {
-						day: "2-digit",
-						month: "short",
-						year: "numeric",
-					});
+					dayStr = formatDate(date);
 				}
 
 				return {

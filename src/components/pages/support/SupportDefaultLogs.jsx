@@ -32,6 +32,7 @@ import SuspendCategoryModal from "./SuspendCategoryModal";
 import AddCategory from "./addcategory";
 import { faqService } from "@/api/services/faqService";
 import { usePermissions } from "@/context/PermissionContext";
+import { formatDate } from "@/utils/formatDate";
 
 import { showSuccess, showError } from "@/components/ui/toast";
 import InfoPanel from "@/components/common/InfoPanel";
@@ -156,7 +157,7 @@ export default function SupportDefaultLogs() {
         question: f.question,
         answer: f.answer,
         status: (f.publishing_status || "").charAt(0).toUpperCase() + (f.publishing_status || "").slice(1),
-        updated: (f.updated_at || "").slice(0, 10),
+            updated: formatDate(f.updated_at),
         icon: "",
         categoryId: categoryId,
         raw: f,
@@ -224,7 +225,7 @@ export default function SupportDefaultLogs() {
             question: f.question,
             answer: f.answer,
             status: (f.publishing_status || "").charAt(0).toUpperCase() + (f.publishing_status || "").slice(1),
-            updated: (f.updated_at || "").slice(0, 10),
+        updated: formatDate(f.updated_at),
             icon: "",
             categoryId: targetId,
             raw: f,
@@ -396,8 +397,8 @@ export default function SupportDefaultLogs() {
         </div>
       ),
     },
-    { label: "Created on", value: currentCategory?.created_at ? String(currentCategory.created_at).slice(0, 10) : "—" },
-    { label: "Last updated", value: currentCategory?.updated_at ? String(currentCategory.updated_at).slice(0, 10) : "—" },
+    { label: "Created on", value: currentCategory?.created_at ? formatDate(currentCategory.created_at) : "—" },
+    { label: "Last updated", value: currentCategory?.updated_at ? formatDate(currentCategory.updated_at) : "—" },
   ];
 
   return (

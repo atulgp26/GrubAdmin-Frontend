@@ -13,6 +13,7 @@ import { ArrowUpRight } from "lucide-react";
 import DeleteRoleModal from "@/components/pages/employees/DeleteRoleModal";
 import { accountService } from "@/api/services/accountService";
 import { showSuccess, showError } from "@/components/ui/toast";
+import { formatDate as formatDateUtil } from "@/utils/formatDate";
 import OtpVerifyModal from "@/components/pages/login/OtpVerifyModal";
 import { usePermissions } from "@/context/PermissionContext";
 import PasswordChangeModal from "@/components/pages/account/PasswordChangeModal";
@@ -117,7 +118,7 @@ export default function AccountPage() {
 					const formatDate = (dateString) => {
 						if (!dateString) return "Not specified";
 						try {
-							return new Date(dateString).toLocaleDateString();
+							return formatDateUtil(dateString);
 						} catch (e) {
 							return "Not specified";
 						}

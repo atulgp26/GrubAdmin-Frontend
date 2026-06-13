@@ -25,6 +25,7 @@ import ExportListModal from "../employees/ExportListModal";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { RxCross2 } from "react-icons/rx";
+import { formatDateTime } from "@/utils/formatDate";
 
 const categoryOptions = [
     { id: "Profile", label: "Profile" },
@@ -241,17 +242,7 @@ export default function SystemLogs() {
 
                 return {
                     id: systemLog.id,
-                    timestamp: new Date(logTimestamp).toLocaleDateString(
-                        "en-GB",
-                        {
-                            day: "2-digit",
-                            month: "short",
-                            year: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                        },
-                    ),
+                    timestamp: formatDateTime(logTimestamp),
                     type: moduleName,
                     subtype,
                     action: message,

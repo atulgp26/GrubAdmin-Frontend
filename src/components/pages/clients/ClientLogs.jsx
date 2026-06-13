@@ -14,6 +14,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { MdCalendarToday } from "react-icons/md";
 import { RxCross2 } from "react-icons/rx";
 import SystemLogsFilterModal from "@/components/pages/system/SystemLogsFilterModal";
+import { formatDateTime } from "@/utils/formatDate";
 
 const verticalIconClassMap = {
   medical: "text-[var(--color-icon-medical)]",
@@ -24,14 +25,7 @@ const verticalIconClassMap = {
 
 const LogItem = ({ log }) => {
   const timestamp = log.createdAt
-    ? new Date(log.createdAt).toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })
+    ? formatDateTime(log.createdAt)
     : "";
 
   const logCategory = log.category || "";       

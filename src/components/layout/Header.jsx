@@ -13,6 +13,7 @@ import Button from "../ui/Button";
 import { useAuth } from "@/context/AuthContext";
 import { useImpersonation } from "@/context/ImpersonationContext";
 import { notificationsService } from "@/api/services/notificationsService";
+import { formatDate } from "@/utils/formatDate";
 
 const mockNotifications = [
 	{
@@ -103,11 +104,7 @@ export default function Header({ onToggleSidebar, collapsed }) {
 							minute: "2-digit",
 						});
 					}
-					return date.toLocaleDateString("en-GB", {
-						day: "2-digit",
-						month: "short",
-						year: "2-digit",
-					});
+					return formatDate(date);
 				})(),
 			})),
 		[notifications],

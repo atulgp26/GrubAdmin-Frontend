@@ -11,6 +11,7 @@ import {
 } from "@/constants/config";
 import { customerService } from "@/api/services/customerService";
 import LoadingDetails from "@/components/ui/LoadingDetails";
+import { formatDate } from "@/utils/formatDate";
 
 export default function AssignGrubpacModal({
 	open,
@@ -85,14 +86,7 @@ export default function AssignGrubpacModal({
 					region: `${c.state}, ${c.country}`,
 					state: c.state,
 					country: c.country,
-					addedOn: new Date(c.created_at).toLocaleDateString(
-						"en-GB",
-						{
-							day: "2-digit",
-							month: "short",
-							year: "2-digit",
-						},
-					),
+					addedOn: formatDate(c.created_at),
 					created_at: c.created_at,
 				}));
 				setClients(transformedClients);

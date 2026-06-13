@@ -18,6 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import LoadingDetails from "@/components/ui/LoadingDetails";
 import { customerService } from "@/api/services/customerService";
 import { useDebounce } from "use-debounce";
+import { formatDate } from "@/utils/formatDate";
 import {
 	DEBOUNCE_TIME,
 	DEFAULT_PAGE_SIZE,
@@ -91,11 +92,7 @@ export default function GrubpacsPage() {
 				customerId: g.client?.id ?? null,
 				status: g.status,
 				statusDisplay: g.status === "suspended" ? "Inactive" : g.status,
-				updatedOn: new Date(g.updated_at).toLocaleDateString("en-GB", {
-					day: "2-digit",
-					month: "short",
-					year: "2-digit",
-				}),
+				updatedOn: formatDate(g.updated_at),
 				assignment: g.client === null ? "unassigned" : "assigned",
 				vertical: g.vertical?.name ?? null, 
 			})),
