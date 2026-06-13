@@ -16,7 +16,7 @@ function isImpersonationRoute(pathname) {
 function isBareRoute(pathname) {
   if (pathname === "/" || pathname === "/login") return true;
   if (pathname === "/employees/activelogs" || pathname === "/employees/suspendedlogs" || pathname === "/employees/dismissedlogs") return true;
-  if (pathname.startsWith("/support/") && !pathname.startsWith("/support/categories")) return true;
+  if (pathname.startsWith("/support/") && !pathname.startsWith("/support/categories") && pathname !== "/support/suspended") return true;
   if (pathname === "/clients/clientlogs" || pathname === "/details" || pathname.startsWith("/details/")) return true;
   if (/^\/grublock\/[^/]+$/.test(pathname) && !["/grublock/list"].includes(pathname)) return true;
   return false;
