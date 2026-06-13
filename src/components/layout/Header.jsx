@@ -149,25 +149,17 @@ export default function Header({ onToggleSidebar, collapsed }) {
 		}
 	}, [pathname]);
 
+	const cleanMessage = (msg) =>
+		msg
+			.replace(/\.?\s*View Details\s*/g, "")
+			.replace(/[0-9A-Za-z]{24,}/g, "")
+			.replace(/\(\s*\)/g, "")
+			.replace(/\s+/g, " ")
+			.trim();
+
 	const renderMessage = (message) => {
 		if (typeof message !== "string") return message;
-		if (message.includes("View Details")) {
-			const parts = message.split("View Details");
-			return (
-				<>
-					{parts[0]}
-					<Link
-						href="/systemlogs"
-						className="text-[var(--color-stroke-brand)] font-semibold hover:underline cursor-pointer"
-						onClick={(e) => e.stopPropagation()}
-					>
-						View Details
-					</Link>
-					{parts[1]}
-				</>
-			);
-		}
-		return message;
+		return cleanMessage(message);
 	};
 
 	return (
