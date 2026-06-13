@@ -11,6 +11,8 @@ export default function BoxCountBadge({
   tooltipAlign = 'start',
   tooltipClassName = '',
   tooltipTextColor = 'text-[var(--color-stroke-brand)]',
+  tooltipSideOffset = 5,
+  tooltipAlignOffset = 0,
   className = '', 
   onClick, 
   children,
@@ -41,23 +43,23 @@ export default function BoxCountBadge({
           </Tooltip.Trigger>
           <Tooltip.Portal>
             <Tooltip.Content
-              side={tooltipSide}
-              align={tooltipAlign}
-              className={`z-50 !rounded-lg bg-white px-3 py-2 shadow-lg animate-fadeIn min-w-[130px] ${tooltipClassName}`}
-              sideOffset={5}
-            >
-              {tooltipContent || (
-                <div className='cursor-pointer'>
-                  <div className={`${tooltipTextColor} text-sm`}>
-                    12 permissions
-                  </div>
-                  <div className="text-[var(--info-panel-view-bg)] text-sm font-semibold cursor-pointer hover:underline">
-                    View details &gt;&gt;
-                  </div>
-                </div>
-              )}
-              <Tooltip.Arrow className="fill-white drop-shadow-md w-4 h-2" width={16} height={8} />
-            </Tooltip.Content>
+  side={tooltipSide}
+  align={tooltipAlign}
+className={`z-50 !rounded-lg bg-white px-3 py-2 shadow-lg animate-fadeIn min-w-[130px] flex flex-col items-center justify-center ${tooltipClassName}`}  sideOffset={tooltipSideOffset}
+  alignOffset={tooltipAlignOffset}
+>
+  {tooltipContent || (
+    <div className='cursor-pointer'>
+      <div className={`${tooltipTextColor} text-sm`}>
+        12 permissions
+      </div>
+      <div className="text-[var(--info-panel-view-bg)] text-sm font-semibold cursor-pointer hover:underline">
+        View details &gt;&gt;
+      </div>
+    </div>
+  )}
+  <Tooltip.Arrow className="fill-white drop-shadow-md w-4 h-2" width={16} height={8} />
+</Tooltip.Content>
           </Tooltip.Portal>
         </Tooltip.Root>
       </Tooltip.Provider>
@@ -88,7 +90,8 @@ export default function BoxCountBadge({
               side={tooltipSide}
               align={tooltipAlign}
               className={`z-50 rounded-lg bg-white px-3 py-2 shadow-lg ${tooltipTextColor} text-sm font-normal animate-fadeIn min-w-[90px] ${tooltipClassName}`}
-              sideOffset={5}
+              sideOffset={tooltipSideOffset}
+              alignOffset={tooltipAlignOffset}
             >
               {tooltipText}
               <Tooltip.Arrow className="fill-white drop-shadow-md w-4 h-2" width={24} height={16} />

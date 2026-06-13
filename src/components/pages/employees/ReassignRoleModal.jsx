@@ -181,20 +181,21 @@ export default function ReassignRoleModal({
 			open={open}
 			onClose={handleClose}
 			width="w-[920px]"
-			height="h-auto max-h-full"
+			height="max-h-[85vh]"
 		>
+			<div className="flex flex-col h-full overflow-y-auto">
 			<div className={`${backHidden ? "hidden" : ""}`}>
 				<Button
 					variant="cancel"
 					size="mdLg"
-					className="flex gap-2 group"
+					className="flex gap-2  group"
 					onClick={onClose}
 				>
 					<IoChevronBack className="w-6 h-6 text-[var(--color-stroke-brand)]" />
 					BACK
 				</Button>
 			</div>
-			<div className="flex flex-col h-full px-6 py-6">
+			<div className="flex flex-col px-6 py-6">
 				<div className="mb-4">
 					<h2 className="text-2xl font-semibold text-[var(--color-neutral-primary)] mb-2">
 						{title}
@@ -228,7 +229,7 @@ export default function ReassignRoleModal({
 					</div>
 				</div>
 
-				<div className="flex-1 rounded-lg">
+				<div className="rounded-lg">
 					<div className=" p-4 border-b border-[var(--color-stroke-neutral)]">
 						<div className="grid grid-cols-2 text-sm font-medium text-[var(--color-stroke-brand)]">
 							<span>Role</span>
@@ -241,7 +242,7 @@ export default function ReassignRoleModal({
 						</div>
 					</div>
 
-					<div className="flex-1 overflow-y-auto max-h-[400px]">
+					<div className="max-h-[200px] overflow-y-auto">
 						{loading ? (
 							<LoadingDetails entity="roles" />
 						) : filteredGroups.length === 0 ? (
@@ -319,6 +320,7 @@ export default function ReassignRoleModal({
 						CONFIRM ASSIGNMENT
 					</Button>
 				</div>
+			</div>
 			</div>
 		</Modal>
 	);

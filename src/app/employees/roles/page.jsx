@@ -1079,26 +1079,26 @@ const handleConfirmChanges = async () => {
 								</div>
 							</TableCell>
 							<TableCell className="px-3 py-3 w-32">
-								<CustomTooltip
-									title="View list"
-									placement="bottom"
-									arrowPosition="left"
+							<CustomTooltip
+								title="View list"
+								placement="left"
+								arrowPosition="left"
+							>
+								<button
+									type="button"
+									className={`group transition-all duration-200 outline-none border ${role.assignment > 0 ? "border-[var(--color-admin-profile-border)]" : "border-[var(--color-box-border)]"} hover:border-[var(--info-panel-view-bg)] bg-white hover:bg-[var(--color-admin-profile-border)] rounded-full px-4 py-2 flex items-center gap-2 text-base font-normal select-none focus:ring-2 focus:ring-[var(--color-brand-default)] w-fit`}
+									style={{ minWidth: 64 }}
+									onClick={() => handleOpenManagers(role)}
 								>
-									<button
-										type="button"
-										className={`group transition-all duration-200 outline-none border ${role.assignment > 0 ? "border-[var(--color-admin-profile-border)]" : "border-[var(--color-box-border)]"} hover:border-[var(--info-panel-view-bg)] bg-white hover:bg-[var(--color-admin-profile-border)] rounded-full px-4 py-2 flex items-center gap-2 text-base font-normal select-none focus:ring-2 focus:ring-[var(--color-brand-default)] w-fit`}
-										style={{ minWidth: 64 }}
-										onClick={() => handleOpenManagers(role)}
-									>
-										<Icon
-											name="two_users"
-											className={`w-5 h-5 ${role.assignment > 0 ? "text-[var(--info-panel-view-bg)]" : "text-[var(--color-neutral-light)] group-hover:text-[var(--color-brand-default)]"} transition-colors`}
-										/>
-										<span className="text-[var(--color-neutral-secondary)] text-sm font-normal">
-											{role.assignment}
-										</span>
-									</button>
-								</CustomTooltip>
+									<Icon
+										name="two_users"
+										className={`w-5 h-5 ${role.assignment > 0 ? "text-[var(--info-panel-view-bg)]" : "text-[var(--color-neutral-light)] group-hover:text-[var(--color-brand-default)]"} transition-colors`}
+									/>
+									<span className="text-[var(--color-neutral-secondary)] text-sm font-normal">
+										{role.assignment}
+									</span>
+								</button>
+							</CustomTooltip>
 							</TableCell>
 							<TableCell className="px-2 py-3 text-[var(--color-neutral-secondary)] text-base w-28 whitespace-nowrap">
 								{role.updated}
@@ -1304,16 +1304,16 @@ const handleConfirmChanges = async () => {
 										<TableCell className="px-3 py-3">
 											<CustomTooltip
 												title="View list"
-												placement="bottom"
+												placement="left"
 												arrowPosition="left"
-												onClick={() =>
-													handleOpenManagers(role)
-												}
 											>
 												<button
 													type="button"
 													className={`group transition-all duration-200 outline-none border ${role.assignment > 0 ? "border-[var(--color-admin-profile-border)]" : "border-[var(--color-box-border)]"} hover:border-[var(--info-panel-view-bg)] bg-white hover:bg-[var(--color-admin-profile-border)] rounded-full !px-3 !py-2 flex items-center gap-2 text-base font-normal select-none focus:ring-2 focus:ring-[var(--color-brand-default)]`}
 													style={{ minWidth: 64 }}
+													onClick={() =>
+														handleOpenManagers(role)
+													}
 												>
 													<Icon
 														name="two_users"
