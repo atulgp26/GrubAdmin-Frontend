@@ -481,12 +481,14 @@ export default function LoginPage() {
 					</div>
 
 					<div className="hidden md:flex flex-col items-center justify-center w-[820px] px-12 py-12 h-[640px] ml-6 bg-[var(--color-neutral-secondary-bg)] rounded-lg">
-						<div className="w-full h-full bg-white rounded mb-6 flex items-center justify-center"></div>
+						<div className="w-full mt-8 h-[440px] bg-white rounded mb-6 flex items-center justify-center">
+							<img src="/box.png" alt="Box" className="w-full h-full object-contain p-8" />
+						</div>
 						<div className="text-center">
 							<div className="font-semibold text-[var(--color-neutral-primary)] text-2xl mb-1">
 								{carouselData[carouselIndex].title}
 							</div>
-							<div className="text-[var(--color-neutral-secondary)] text-lg mb-4 max-w-md">
+							<div className="text-[var(--color-neutral-secondary)] text-lg mb-4 max-w-lg">
 								{carouselData[carouselIndex].description}
 							</div>
 							<div className="flex justify-center gap-4 mt-2">

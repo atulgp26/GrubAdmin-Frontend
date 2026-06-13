@@ -31,7 +31,7 @@ export default function InfoPanel({
 							<img
 								src={image}
 								alt={name || "Empty"}
-								className="w-64 h-48 mx-auto rounded-lg"
+								className="w-72 h-56 mx-auto rounded-lg"
 							/>
 						) : (
 							<div className="h-80 w-80 mx-auto bg-[var(--color-admin-profile-border)]"></div>
