@@ -37,8 +37,7 @@ import CustomTooltip from "@/components/ui/CustomTooltip";
 import { employeeService } from "@/api/services/employeeService";
 import { roleService } from "@/api/services/roleService";
 import { useEmployees } from "@/hooks/useEmployees";
-import EmployeeSkeleton from "@/components/ui/EmployeeSkeleton";
-import EmployeeErrorState from "@/components/ui/EmployeeErrorState";
+import LoadingDetails from "@/components/ui/LoadingDetails";
 import { usePermissions } from "@/context/PermissionContext";
 
 const EmployeesList = () => {
@@ -1289,12 +1288,12 @@ const EmployeesList = () => {
 										tooltipAlign="end"
 										tooltipContent={
 											<div className="space-y-2">
-												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-													Last updated on {employee.updated} (You)
-												</div>
-												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-													Added on {employee.addedDate}
-												</div>
+			<div className="text-[var(--color-stroke-brand)] text-xs text-right">
+  Last updated by You
+</div>
+<div className="text-[var(--color-stroke-brand)] text-xs text-right">
+  Added on {employee.joinDate}
+</div>
 											</div>
 										}
 									>
@@ -1358,8 +1357,8 @@ const EmployeesList = () => {
 	if (!canViewActive) return null;
 
 	return (
-		<div className="pb-8">
-			<div className="flex items-center justify-between mb-6">
+	<div className="flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
+			<div className="flex items-center justify-between mb-6 flex-shrink-0">
 				<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)]">
 					Employees
 				</h1>
@@ -1387,7 +1386,7 @@ const EmployeesList = () => {
 			</div>
 
 			{/* Search and Filters */}
-			<div className="flex items-center justify-between mb-6">
+			<div className="flex items-center justify-between mb-6 flex-shrink-0">
 				<div className="flex items-center gap-4">
 					<div className="w-64">
 						<SearchWithSuggestions
@@ -1446,12 +1445,10 @@ const EmployeesList = () => {
 
 			{/* Table or Grouped View */}
 			{isLoading ? (
-				<EmployeeSkeleton />
-			) : isError ? (
-				<EmployeeErrorState message={error} onRetry={refetch} />
-			) : groupByRole ? (
-				<>
-					<GroupCollapseTable
+  <LoadingDetails entity="employees" />
+) : groupByRole ? (
+  <div className="flex-1 overflow-y-auto min-h-0">
+    <GroupCollapseTable
 						groups={groupEmployeesByRole()}
 						openIndex={openGroupIndex}
 						setOpenIndex={setOpenGroupIndex}
@@ -1482,10 +1479,11 @@ const EmployeesList = () => {
 							employeeList={true}
 						/>
 					)}
-				</>
+				</div>
 			) : (
-				<div className="">
-					<Pagination
+  <div className="flex-1 overflow-y-auto min-h-0">
+    <div className="bg-[var(--color-bg-primary,white)]">
+      <Pagination
 						currentPage={currentPage}
 						pageSize={pageSize}
 						totalItems={totalItems}
@@ -1497,9 +1495,9 @@ const EmployeesList = () => {
 							}
 						}}
 					/>
-
+</div>
 					<Table className="min-w-full">
-						<TableHead>
+						<TableHead className="sticky top-0 z-10 bg-[var(--color-bg-primary,white)]">
 							<TableRow>
 								<TableCell className="w-12 p-4">
 									<TableCheckbox
@@ -1612,13 +1610,12 @@ const EmployeesList = () => {
 											tooltipAlign="end"
 											tooltipContent={
 												<div className="space-y-2">
-													<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-														Last updated on {employee.updated} (You)
-													</div>
-													<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-														Added on{" "}
-														{employee.addedDate}
-													</div>
+												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
+  Last updated by You
+</div>
+<div className="text-[var(--color-stroke-brand)] text-xs text-right">
+  Added on {employee.joinDate}
+</div>
 												</div>
 											}
 										>

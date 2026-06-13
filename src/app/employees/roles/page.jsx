@@ -1031,7 +1031,7 @@ const handleConfirmChanges = async () => {
 	const renderGroupTable = (group) => (
 		<div className="">
 			<Table className="min-w-full">
-				<TableHead>
+			<TableHead className="sticky top-0 z-10 bg-white">
 					<TableRow>
 						<TableCell className="w-12 px-3 py-3">
 							<TableCheckbox
@@ -1136,9 +1136,9 @@ const handleConfirmChanges = async () => {
 	if (!canViewRoles) return null;
 
 	return (
-		<div className="">
+		<div className="flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
 			{/* Header */}
-			<div className="flex items-center justify-between mb-6">
+		<div className="flex items-center justify-between mb-6 flex-shrink-0">
 				<div className="flex items-start gap-4">
 					<Link href="/employees/list">
 						<Button variant="cancel" className="!p-2 pt-1">
@@ -1168,7 +1168,7 @@ const handleConfirmChanges = async () => {
 			</div>
 
 			{/* Search and Filters */}
-			<div className="flex items-center justify-between mb-6">
+	<div className="flex items-center justify-between mb-6 flex-shrink-0">		
 				<div className="flex items-center gap-4">
 					<div className="w-64 pl-1">
 						<SearchWithSuggestions
@@ -1212,24 +1212,28 @@ const handleConfirmChanges = async () => {
           tableContainerClass="w-full"
         />
       ) : ( */}
-			{loading ? (
-				<LoadingDetails entity="roles" />
-			) : (
-				<div className="">
-					<Pagination
-						currentPage={currentPage}
-						pageSize={pageSize}
-						totalItems={totalCount}
-						onPrev={() => setCurrentPage((p) => Math.max(1, p - 1))}
-						onNext={() => {
-							const totalPages = Math.ceil(totalCount / pageSize);
-							if (currentPage < totalPages) {
-								setCurrentPage((p) => p + 1);
-							}
-						}}
-					/>
-					<Table className="min-w-full">
-						<TableHead>
+			{!loading && (
+    <div className="flex-shrink-0">
+        <Pagination
+            currentPage={currentPage}
+            pageSize={pageSize}
+            totalItems={totalCount}
+            onPrev={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onNext={() => {
+                const totalPages = Math.ceil(totalCount / pageSize);
+                if (currentPage < totalPages) {
+                    setCurrentPage((p) => p + 1);
+                }
+            }}
+        />
+    </div>
+)}
+{loading ? (
+    <LoadingDetails entity="roles" />
+) : (
+    <div className="flex-1 overflow-y-auto min-h-0">
+        <Table className="min-w-full">
+						<TableHead className="sticky top-0 z-10 bg-white">
 							<TableRow>
 								<TableCell className="w-12 px-3 py-3">
 									<TableCheckbox
