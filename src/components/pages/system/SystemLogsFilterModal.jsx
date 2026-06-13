@@ -114,7 +114,12 @@ export default function SystemLogsFilterModal({
 	selectedFilters = {},
 	onChange,
 	onApply,
+	selectedCategories = [],
 }) {
+	const visibleGroups = selectedCategories.length > 0
+		? FILTER_GROUPS.filter((g) => selectedCategories.includes(g.id))
+		: FILTER_GROUPS;
+
 	const isChecked = (groupId, optionId) =>
 		selectedFilters[groupId]?.includes(optionId);
 
@@ -140,10 +145,10 @@ export default function SystemLogsFilterModal({
 		>
 			<div className="bg-white rounded-lg overflow-hidden flex flex-col h-full max-h-[70vh]">
 				<div className="overflow-y-auto flex-1">
-					{FILTER_GROUPS.map((group, index) => (
+					{visibleGroups.map((group, index) => (
 						<div
-							key={group.id}
-							className={`px-6 py-4 space-y-4 ${index !== FILTER_GROUPS.length - 1
+							key={group.uniqueKey}
+							className={`px-6 py-4 space-y-4 ${index !== visibleGroups.length - 1
 									? "border-b border-[var(--color-stroke-neutral)]"
 									: ""
 								}`}
