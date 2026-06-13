@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/ui/Icon";
-import SearchWithSuggestions from "@/components/ui/SearchWithSuggestions";
+import Input from "@/components/ui/Input";
 import { RiInformationLine } from "react-icons/ri";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import FilterButton from "@/components/ui/FilterButton";
@@ -14,6 +14,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { MdCalendarToday } from "react-icons/md";
 import { RxCross2 } from "react-icons/rx";
 import SystemLogsFilterModal from "@/components/pages/system/SystemLogsFilterModal";
+import ClientProfileDetails from "./ClientProfileDetails";
 import { formatDateTime } from "@/utils/formatDate";
 
 const verticalIconClassMap = {
@@ -33,8 +34,10 @@ const LogItem = ({ log }) => {
   const actorName = log.actor?.name || "";      
   const actorRole = log.actor?.role || "";       
   const actorIp = log.actor?.ip || "";         
-  const description = log.description || "";    
-  const subjectName = log.subject?.name || "";   
+  const cleanMessage = (msg) =>
+    msg.replace(/[0-9A-Za-z]{24,}/g, "").replace(/\(\s*\)/g, "").replace(/\s+/g, " ").trim();
+  const description = cleanMessage(log.description || "");    
+  const subjectName = cleanMessage(log.subject?.name || "");   
   const subjectType = log.subject?.type || "";   
 
   return (
@@ -101,9 +104,11 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [clientProfileModal, setClientProfileModal] = useState(false);
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
   const [advancedFilters, setAdvancedFilters] = useState({});
+  const [draftFilters, setDraftFilters] = useState({});
   const pathname = usePathname();
   const fetchIdRef = useRef(0);
 
@@ -250,14 +255,6 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
     setSearch(e.target.value);
   };
 
-  const handleSuggestionSelect = (suggestion) => {
-    setSearch(suggestion.name);
-  };
-
-  const handleSearchClear = () => {
-    setSearch("");
-  };
-
   const formattedVertical =
     vertical.charAt(0).toUpperCase() + vertical.slice(1);
   const badgeIconClass =
@@ -320,7 +317,7 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
       <div className="flex flex-col gap-6 p-6 w-full">
         <div className="flex justify-between">
           <h1 className="flex items-center gap-2 text-[var(--color-neutral-primary)] font-semibold text-2xl">
-            <RiInformationLine className="cursor-pointer w-6 h-6 text-[var(--color-stroke-brand)]" />
+            <RiInformationLine className="cursor-pointer w-6 h-6 text-[var(--color-stroke-brand)]" onClick={() => setClientProfileModal(true)} />
             {displayName}
           </h1>
           <div className="flex gap-4">
@@ -338,19 +335,11 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
         </div>
 
         <div className="flex-shrink-0 flex justify-between items-center rounded-lg">
-          <SearchWithSuggestions
-            data={[]}
+          <Input
             value={search}
             onChange={handleSearchChange}
-            onSelect={handleSuggestionSelect}
-            onClear={handleSearchClear}
             placeholder="Search log"
-            clearable={true}
-            className="!w-64"
-            getLabel={(item) => item.name}
-            getSubLabel={(item) => item.code}
-            openOnFocus={false}
-            minChars={1}
+            className="!w-64 !h-8 !py-1"
           />
           <div className="flex items-center gap-4">
             <span className="text-sm text-[var(--color-stroke-brand)]">
@@ -377,7 +366,10 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
             </div>
             <FilterButton
               open={showFilterModal}
-              handleFilterClick={() => setShowFilterModal(true)}
+              handleFilterClick={() => {
+                setDraftFilters({ ...advancedFilters });
+                setShowFilterModal(true);
+              }}
             />
           </div>
         </div>
@@ -427,12 +419,20 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
           </div>
         )}
       </div>
+      <ClientProfileDetails
+        open={clientProfileModal}
+        onClose={() => setClientProfileModal(false)}
+        clientId={clientId}
+        clientName={displayName}
+        clientVertical={vertical}
+      />
       <SystemLogsFilterModal
         open={showFilterModal}
         onClose={() => setShowFilterModal(false)}
-        selectedFilters={advancedFilters}
-        onChange={setAdvancedFilters}
+        selectedFilters={draftFilters}
+        onChange={setDraftFilters}
         onApply={() => {
+          setAdvancedFilters(draftFilters);
           setCurrentPage(1);
           setShowFilterModal(false);
         }}
