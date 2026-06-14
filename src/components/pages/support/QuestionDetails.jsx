@@ -108,16 +108,16 @@ export default function QuestionDetails({
         </div>
 
         {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-4 my-6">
+          <div className="flex flex-wrap gap-4 my-6 max-w-full">
             {attachments.map((file, idx) => (
               <Button
                 key={`${file.name}-${idx}`}
                 onClick={() => file.url && handleDownload(file.url, file.name || "attachment")}
                 variant="textSecondary"
-                className="flex items-center gap-2 px-2 py-1 text-sm leading-none rounded-full btn-size-md-lg bg-[var(--color-stroke-neutral)] text-[var(--color-stroke-brand)]"
+                className="flex items-center gap-2 px-2 py-1 text-sm leading-none rounded-full btn-size-md-lg bg-[var(--color-stroke-neutral)] text-[var(--color-stroke-brand)] max-w-full"
                 disabled={!file.url}
               >
-                {file.name}
+                <span className="truncate max-w-[200px]">{file.name}</span>
               </Button>
             ))}
           </div>
