@@ -49,29 +49,10 @@ export default function InfoPanel({
 					</p>
 					{buttons && buttons.length > 0 ? (
 						<div className="flex gap-4 justify-center mb-4">
-							{buttons.map((btn, idx) => (
-								<>
-									{btn.href ? (
-										<Link href={btn.href}>
-											<Button
-												key={idx}
-												onClick={btn.onClick}
-												className={btn.className}
-												size="md"
-												variant={btn.variant}
-											>
-												{btn.icon && (
-													<Icon
-														name={btn.icon}
-														className="w-4 h-4 mr-2"
-													/>
-												)}
-												{btn.text}
-											</Button>
-										</Link>
-									) : (
+							{buttons.map((btn, idx) =>
+								btn.href ? (
+									<Link key={idx} href={btn.href}>
 										<Button
-											key={idx}
 											onClick={btn.onClick}
 											className={btn.className}
 											size="md"
@@ -85,9 +66,25 @@ export default function InfoPanel({
 											)}
 											{btn.text}
 										</Button>
-									)}
-								</>
-							))}
+									</Link>
+								) : (
+									<Button
+										key={idx}
+										onClick={btn.onClick}
+										className={btn.className}
+										size="md"
+										variant={btn.variant}
+									>
+										{btn.icon && (
+											<Icon
+												name={btn.icon}
+												className="w-4 h-4 mr-2"
+											/>
+										)}
+										{btn.text}
+									</Button>
+								)
+							)}
 						</div>
 					) : buttonText ? (
 						<Button
