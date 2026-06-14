@@ -633,15 +633,15 @@ export default function SupportDefaultLogs() {
                     </TableCell>
 
                     {/* Question & Answer */}
-                    <TableCell className="p-4 cursor-pointer">
+                    <TableCell className="p-4 cursor-pointer max-w-[300px]">
                       <div
                         onClick={() => handleQuestionDetails(log)}
-                        className="font-semibold flex justify-between items-center gap-6 text-[var(--color-neutral-secondary)]"
+                        className="font-semibold flex justify-between items-center gap-6 text-[var(--color-neutral-secondary)] overflow-hidden"
                       >
-                        {log.question}
-                        <Icon name={log.icon} className="w-4 h-4 text-[var(--color-stroke-brand)]" />
+                        <span className="truncate">{log.question}</span>
+                        <Icon name={log.icon} className="w-4 h-4 shrink-0 text-[var(--color-stroke-brand)]" />
                       </div>
-                      <div className="text-sm text-[var(--color-stroke-brand)]">
+                      <div className="text-sm text-[var(--color-stroke-brand)] truncate">
                         {log.answer}
                       </div>
                     </TableCell>

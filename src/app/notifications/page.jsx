@@ -280,9 +280,10 @@ export default function NotificationsPage() {
 		return <Icon className="h-8 w-8" style={{ color: iconColor }} />;
 	};
 
-	return (
-		<>
-			<div className="flex items-center justify-between mb-6 !pl-3">
+	
+		return (
+  <div className="flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
+    <div className="flex items-center justify-between mb-6 !pl-3 flex-shrink-0">
 				<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)]">
 					Notifications
 				</h1>
@@ -295,6 +296,7 @@ export default function NotificationsPage() {
 					</button>
 				)}
 			</div>
+			<div className="flex-shrink-0">
 			<NotificationFilterBar
 				search={search}
 				setSearch={onSearchChange}
@@ -315,6 +317,7 @@ export default function NotificationsPage() {
 				selectedTypes={selectedDropdownTypes}
 				setSelectedTypes={setSelectedDropdownTypes}
 			/>
+			</div>
 			<NotificationFilterModal
 				open={showFilterModal}
 				onClose={() => setShowFilterModal(false)}
@@ -324,6 +327,7 @@ export default function NotificationsPage() {
 				setSelectedStatuses={setSelectedStatuses}
 				onFilter={() => setShowFilterModal(false)}
 			/>
+			<div className="flex-1 overflow-y-auto min-h-0">
 			<NotificationList
 				filtered={filtered}
 				selected={selected}
@@ -332,7 +336,8 @@ export default function NotificationsPage() {
 				allSelected={allSelected}
 				onMarkAsRead={handleMarkAsRead}
 				onDismiss={handleDismiss}
-			/>
-		</>
-	);
+		/>
+  </div>
+</div>
+);
 }
