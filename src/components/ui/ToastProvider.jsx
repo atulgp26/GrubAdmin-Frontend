@@ -16,6 +16,7 @@ export default function ToastProvider() {
       }}
       containerStyle={{
         top: 12,
+        zIndex: 99999,
       }}
     />
   );

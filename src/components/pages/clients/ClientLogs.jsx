@@ -9,6 +9,11 @@ import { usePathname } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import { logsService } from "@/api/services/logsService";
 import EmptyState from "@/components/ui/EmptyState";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { MdCalendarToday } from "react-icons/md";
+import { RxCross2 } from "react-icons/rx";
+import SystemLogsFilterModal from "@/components/pages/system/SystemLogsFilterModal";
 
 const verticalIconClassMap = {
   medical: "text-[var(--color-icon-medical)]",
@@ -102,13 +107,16 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [startDate, endDate] = dateRange;
+  const [advancedFilters, setAdvancedFilters] = useState({});
   const pathname = usePathname();
   const fetchIdRef = useRef(0);
 
   const displayName = clientName || "Client";
   const vertical = (clientVertical || "medical").toLowerCase();
 
-  const fetchLogs = useCallback(async (page) => {
+  const fetchLogs = useCallback(async () => {
     if (!clientId) return;
 
     const fetchId = ++fetchIdRef.current;
@@ -116,10 +124,43 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
     setError(null);
 
     try {
-      const response = await logsService.getClientLogs(clientId, {
-        page_number: page,
+      const params = {
+        page_number: currentPage,
         page_size: pageSize,
-      });
+      };
+
+      if (startDate) {
+        const start = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+          0, 0, 0, 0,
+        );
+        params.start_date = start.toISOString();
+      }
+      if (endDate) {
+        const end = new Date(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+          23, 59, 59, 999,
+        );
+        params.end_date = end.toISOString();
+      }
+
+      const hasAdvancedFilters = Object.values(advancedFilters).some(
+        (v) => Array.isArray(v) && v.length > 0,
+      );
+      if (hasAdvancedFilters) {
+        params.filters = Object.entries(advancedFilters)
+          .filter(([, v]) => Array.isArray(v) && v.length > 0)
+          .map(([category, types]) => ({
+            category,
+            types,
+          }));
+      }
+
+      const response = await logsService.getClientLogs(clientId, params);
 
       if (fetchId !== fetchIdRef.current) return;
 
@@ -130,7 +171,6 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
         setLogs(logsData);
         setTotalCount(count);
         setTotalPages(metaTotalPages);
-        setCurrentPage(page);
       } else {
         setLogs([]);
         setTotalCount(0);
@@ -145,7 +185,7 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
         setLoading(false);
       }
     }
-  }, [clientId]);
+  }, [clientId, currentPage, startDate, endDate, advancedFilters]);
 
   useEffect(() => {
     setLogs([]);
@@ -154,11 +194,18 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
     setTotalCount(0);
     setTotalPages(1);
     setSearch("");
+    setDateRange([null, null]);
+    setAdvancedFilters({});
     setError(null);
-    if (clientId) {
-      fetchLogs(1);
-    }
-  }, [clientId, fetchLogs]);
+  }, [clientId]);
+
+  useEffect(() => {
+    if (clientId) fetchLogs();
+  }, [fetchLogs, clientId]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [startDate, endDate, advancedFilters]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -202,7 +249,7 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
 
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
-    fetchLogs(newPage);
+    setCurrentPage(newPage);
   };
 
   const handleSearchChange = (e) => {
@@ -315,6 +362,25 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
             <span className="text-sm text-[var(--color-stroke-brand)]">
               {loading ? "Loading..." : `Showing ${filteredLogs.length} of ${totalCount}`}
             </span>
+            <div className="relative">
+              <DatePicker
+                selectsRange
+                startDate={startDate}
+                endDate={endDate}
+                onChange={(update) => setDateRange(update)}
+                placeholderText="Date range"
+                className="pr-10 !w-44 !h-8 cursor-pointer !rounded-lg border border-[var(--color-stroke-neutral)] text-[var(--color-neutral-secondary)] px-3 text-sm outline-none"
+                dateFormat="dd MMM yy"
+              />
+              {startDate ? (
+                <RxCross2
+                  className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF5A3C]"
+                  onClick={() => setDateRange([null, null])}
+                />
+              ) : (
+                <MdCalendarToday className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF5A3C] pointer-events-none" />
+              )}
+            </div>
             <FilterButton
               open={showFilterModal}
               handleFilterClick={() => setShowFilterModal(true)}
@@ -367,6 +433,16 @@ export default function EmployeeLogs({ clientId, clientName, clientVertical }) {
           </div>
         )}
       </div>
+      <SystemLogsFilterModal
+        open={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        selectedFilters={advancedFilters}
+        onChange={setAdvancedFilters}
+        onApply={() => {
+          setCurrentPage(1);
+          setShowFilterModal(false);
+        }}
+      />
     </>
   );
 }

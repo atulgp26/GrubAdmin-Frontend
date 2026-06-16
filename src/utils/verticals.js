@@ -43,3 +43,18 @@ export const fetchVerticalOptions = async () => {
   return { options: [], map: {} };
 };
 
+export const groupByVertical = (clients) => {
+  const grouped = {};
+  clients.forEach((client) => {
+    const key = client.verticalId ?? client.vertical ?? "unassigned";
+    if (!grouped[key]) {
+      grouped[key] = {
+        verticalId: client.verticalId ?? null,
+        verticalName: client.vertical ?? "Unassigned",
+        clients: [],
+      };
+    }
+    grouped[key].clients.push(client);
+  });
+  return Object.values(grouped);
+}

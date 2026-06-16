@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Button from "@/components/ui/Button";
 import Pagination from "@/components/ui/Pagination";
 import SearchWithSuggestions from "@/components/ui/SearchWithSuggestions";
@@ -36,7 +36,9 @@ import AddNewEmployee from "@/components/pages/employees/AddNewEmployee";
 import CustomTooltip from "@/components/ui/CustomTooltip";
 import { employeeService } from "@/api/services/employeeService";
 import { roleService } from "@/api/services/roleService";
-import LoadingDetails from "@/components/ui/LoadingDetails";
+import { useEmployees } from "@/hooks/useEmployees";
+import EmployeeSkeleton from "@/components/ui/EmployeeSkeleton";
+import EmployeeErrorState from "@/components/ui/EmployeeErrorState";
 import { usePermissions } from "@/context/PermissionContext";
 
 const EmployeesList = () => {
@@ -204,12 +206,9 @@ const EmployeesList = () => {
 		useState(null);
 	const buttonRefs = useRef({});
 	const [footer, setFooter] = useState("");
-	const [employees, setEmployees] = useState([]);
-	const [loading, setLoading] = useState(true);
 	const [filterStatus, setFilterStatus] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
 	const pageSize = 10;
-	const [totalCount, setTotalCount] = useState(0);
 	// Removed rolesMap - not needed since admin.role.name is always available from API
 	const [selectedRoleForReassign, setSelectedRoleForReassign] =
 		useState(null); // Store selected role from ReassignRoleModal
@@ -264,178 +263,61 @@ const EmployeesList = () => {
 	// Track selected employee ID from suggestion click
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
 
-	// Use useCallback to prevent function recreation and infinite loops
-	const fetchEmployees = useCallback(async () => {
-		try {
-			setLoading(true);
-
-			const params = {};
-			if (searchValue && searchValue.trim()) {
-				params.query = searchValue.trim();
-			}
-			if (selectedRole.length > 0) {
-				// Send all selected role IDs as repeated params (role=ID&role=ID...)
-				// httpClient.get should serialize arrays as repeated keys
-				params.role = selectedRole; // e.g., ['id1','id2']
-			}
-			if (filterStatus && filterStatus.trim()) {
-				params.status = filterStatus.trim();
-			}
-			// Server-side pagination
-			params.page_number = currentPage;
-			params.page_size = pageSize;
-
-			const response = await employeeService.getAdmins(params);
-
-			// Check if component is still mounted and response is valid
-			if (!response) {
-				setLoading(false);
-				return;
-			}
-
-			if (
-				response.success &&
-				response.code === 200 &&
-				response.data?.admins
-			) {
-				// Use rolesMap directly from closure - it's in useCallback dependencies
-				// Employees primarily get roles from admin.role.name (always available from API)
-				const transformedEmployees = response.data.admins.map(
-					(admin, index) => {
-						const firstName = admin.first_name || "";
-						const lastName = admin.last_name || "";
-						const fullName =
-							[firstName, lastName].filter(Boolean).join(" ") ||
-							"Unnamed Employee";
-
-						let phoneFormatted = "";
-						if (admin.mobile_number && admin.country_code) {
-							phoneFormatted = `${admin.country_code} ${admin.mobile_number}`;
-						} else if (admin.mobile_number) {
-							phoneFormatted = admin.mobile_number;
-						}
-
-						let roleName = "No role";
-
-						// Priority: Use admin.role.name if available (most reliable - from API)
-						// This is always available from the API response
-						if (
-							admin.role &&
-							typeof admin.role === "object" &&
-							admin.role.name
-						) {
-							roleName = admin.role.name;
-						}
-						// rolesMap is not used here to avoid closure/stale data issues
-						// admin.role.name is always available from API
-
-						return {
-							id: admin.id || `emp-${index}`,
-							name: fullName,
-							empId: admin.employee_id
-								? `#${admin.employee_id}`
-								: `#${admin.id?.slice(-8) || `EMP${index}`}`,
-							joinDate: formatJoiningDate(admin.joining_date),
-							addedDate: admin.created_at ? formatJoiningDate(admin.created_at) : (admin.joining_date ? formatJoiningDate(admin.joining_date) : "Unknown"),
-							location: admin.location || "Not specified",
-							phone: phoneFormatted || "Not provided",
-							email: admin.email || "Not provided",
-							role: roleName,
-							updated: formatDate(admin.updated_at),
-							originalData: admin,
-						};
-					},
-				);
-
-				// If we have a preserved employee (from suggestion click) and it's not in the API response,
-				// add it to the results so it's still visible
-				let finalEmployees = transformedEmployees;
-				if (selectedEmployeeId) {
-					const foundInResponse = transformedEmployees.find(
-						(emp) => emp.id === selectedEmployeeId,
-					);
-					if (!foundInResponse) {
-						// Employee not in API response, try to find it in previous employees or use preserved employee
-						setEmployees((prevEmployees) => {
-							const preservedFromPrev = prevEmployees.find(
-								(emp) => emp.id === selectedEmployeeId,
-							);
-							if (preservedFromPrev) {
-								// Employee was in previous list, add it to new results
-								return [
-									preservedFromPrev,
-									...transformedEmployees,
-								];
-							}
-							// If not in previous list either, return new results as-is
-							// The preservedEmployee state will be used by filteredEmployees to show it
-							return transformedEmployees;
-						});
-						// Don't set employees here, it's already set in the functional update above
-						// Continue to total count extraction
-					} else {
-						// Employee found in API response, use normal flow
-						setEmployees(transformedEmployees);
-					}
-				} else {
-					setEmployees(transformedEmployees);
-				}
-				// Extract total count from various possible API response structures
-				const apiTotal =
-					response.data?.total ||
-					response.data?.meta?.total ||
-					response.data?.count ||
-					response.data?.admins_total ||
-					response.data?.pagination?.total ||
-					response.total ||
-					response.meta?.total;
-
-				// Use API total if available, otherwise fallback to current page count (but this indicates an API issue)
-				if (typeof apiTotal === "number" && apiTotal >= 0) {
-					setTotalCount(apiTotal);
-				} else {
-					// Fallback: if no total provided, assume current page is all (not ideal but prevents errors)
-					console.warn(
-						"API did not return total count, using current page length as fallback",
-					);
-					setTotalCount(transformedEmployees.length);
-				}
-			} else {
-				console.error("Failed to fetch employees:", response);
-				// Do not clear list if user is searching; keep client-side filtering responsive
-				if (!searchValue || !searchValue.trim()) {
-					setEmployees([]);
-					setTotalCount(0);
-				}
-			}
-		} catch (error) {
-			console.error("Error fetching employees:", error);
-			showError("Failed to load employees. Please try again.");
-			// Do not clear list if user is searching; keep client-side filtering responsive
-			if (!searchValue || !searchValue.trim()) {
-				setEmployees([]);
-				setTotalCount(0);
-			}
-		} finally {
-			setLoading(false);
-		}
-	}, [
+	const { status, employees: rawEmployees, totalCount, error, refetch, isLoading, isError } = useEmployees({
 		searchValue,
 		selectedRole,
 		filterStatus,
 		currentPage,
 		pageSize,
 		selectedEmployeeId,
-	]);
+	});
 
-	// Fetch employees when filters or pagination change
-	useEffect(() => {
-		if (typeof window === "undefined") return;
+	const employees = useMemo(() => {
+		if (!rawEmployees || rawEmployees.length === 0) return [];
+		return rawEmployees.map((admin, index) => {
+			const firstName = admin.first_name || "";
+			const lastName = admin.last_name || "";
+			const fullName =
+				[firstName, lastName].filter(Boolean).join(" ") ||
+				"Unnamed Employee";
 
-		// Always fetch from API when search, filters, or pagination changes
-		// Client-side filtering will handle showing exact matches from current list
-		fetchEmployees();
-	}, [fetchEmployees]);
+			let phoneFormatted = "";
+			if (admin.mobile_number && admin.country_code) {
+				phoneFormatted = `${admin.country_code} ${admin.mobile_number}`;
+			} else if (admin.mobile_number) {
+				phoneFormatted = admin.mobile_number;
+			}
+
+			let roleName = "No role";
+			if (
+				admin.role &&
+				typeof admin.role === "object" &&
+				admin.role.name
+			) {
+				roleName = admin.role.name;
+			}
+
+			return {
+				id: admin.id || `emp-${index}`,
+				name: fullName,
+				empId: admin.employee_id
+					? `#${admin.employee_id}`
+					: `#${admin.id?.slice(-8) || `EMP${index}`}`,
+				joinDate: formatJoiningDate(admin.joining_date),
+				addedDate: admin.created_at
+					? formatJoiningDate(admin.created_at)
+					: admin.joining_date
+						? formatJoiningDate(admin.joining_date)
+						: "Unknown",
+				location: admin.location || "Not specified",
+				phone: phoneFormatted || "Not provided",
+				email: admin.email || "Not provided",
+				role: roleName,
+				updated: formatDate(admin.updated_at),
+				originalData: admin,
+			};
+		});
+	}, [rawEmployees]);
 
 	// Clear selections on page change
 	useEffect(() => {
@@ -742,7 +624,7 @@ const EmployeesList = () => {
 				await new Promise((resolve) => setTimeout(resolve, 500));
 
 				// Refresh the employees list to remove suspended employees
-				await fetchEmployees();
+				await refetch();
 			} else {
 				const errorMsg =
 					response.error ||
@@ -781,7 +663,7 @@ const EmployeesList = () => {
 				setDeleteEmployeeModal(false);
 				setSelectedEmployees(new Set());
 				setSelectAll(false);
-				await fetchEmployees();
+				await refetch();
 			} else {
 				const errorMsg =
 					res?.error || res?.message || "Failed to delete employees.";
@@ -925,7 +807,7 @@ const EmployeesList = () => {
 		try {
 			setAddNewEmployeeModal(false);
 			// Refresh list to include the newly added employee
-			await fetchEmployees();
+			await refetch();
 		} catch (_) {
 			// no-op
 		}
@@ -975,7 +857,7 @@ const EmployeesList = () => {
 				setSelectAll(false);
 				setSelectedRoleForReassign(null);
 
-				await fetchEmployees();
+				await refetch();
 			} else {
 				const errorMsg =
 					response.error ||
@@ -1151,7 +1033,7 @@ const EmployeesList = () => {
 				setEditEmployeeModal(false);
 				setSelectedEmployeeForEdit(null);
 
-				await fetchEmployees();
+				await refetch();
 			} else {
 				const errorMsg =
 					response.error ||
@@ -1563,8 +1445,10 @@ const EmployeesList = () => {
 			</div>
 
 			{/* Table or Grouped View */}
-			{loading ? (
-				<LoadingDetails entity="employees" />
+			{isLoading ? (
+				<EmployeeSkeleton />
+			) : isError ? (
+				<EmployeeErrorState message={error} onRetry={refetch} />
 			) : groupByRole ? (
 				<>
 					<GroupCollapseTable
@@ -1795,7 +1679,7 @@ const EmployeesList = () => {
 							))}
 						</TableBody>
 					</Table>
-					{visibleFlatEmployees.length === 0 && !loading ? (
+					{visibleFlatEmployees.length === 0 && !isLoading ? (
 						<div className="text-center py-12 text-[var(--color-stroke-brand)]">
 							No employees found.
 						</div>

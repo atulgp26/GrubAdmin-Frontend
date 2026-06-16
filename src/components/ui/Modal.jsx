@@ -73,7 +73,7 @@ export default function Modal({
 					onClick={onClose}
 					aria-label="Close"
 				>
-					<MdClose className="w-6 h-6 text-[var(--color-stroke-brand)]" />
+					{/* <MdClose className="w-6 h-6 text-[var(--color-stroke-brand)]" /> */}
 				</button>
 				<div
 					className={`flex flex-col flex-1 justify-start h-full ${noXPadding ? "px-0 py-0" : "px-6 py-0 mt-10 mb-6"}`}

@@ -46,7 +46,7 @@ import { usePermissions } from "@/context/PermissionContext";
 import { useAuth } from "@/context/AuthContext";
 import { useImpersonation } from "@/context/ImpersonationContext";
 import AddNewClient from "@/components/pages/clients/AddNewClient";
-import { useDebounce, useDebouncedCallback } from "use-debounce";
+import { useDebounce } from "use-debounce";
 import {
 	DEBOUNCE_TIME,
 	DEFAULT_PAGE_NUMBER,
@@ -217,19 +217,17 @@ const ClientsList = () => {
 		can("delete entries", "clients") || can("delete entries");
 
 	const [debouncedSearchValue] = useDebounce(searchValue, DEBOUNCE_TIME);
-	const onDebouncedSearchValueChange = useDebouncedCallback(() => {
-		setCurrentPage(1);
-	}, DEBOUNCE_TIME);
 
 	// API data states
 	const [verticals, setVerticals] = useState([]);
 	const [customers, setCustomers] = useState([]);
 	const [loading, setLoading] = useState(true);
+	const [searching, setSearching] = useState(false);
 	const [error, setError] = useState(null);
+	const isInitialMount = useRef(true);
 
 	const onKeywordChange = (e) => {
 		setSearchValue(e.target.value);
-		onDebouncedSearchValueChange();
 	};
 
 	const handleOpenGmail = (email) => {
@@ -263,7 +261,11 @@ const ClientsList = () => {
 
 	const fetchCustomers = useCallback(async () => {
 		try {
-			setLoading(true);
+			if (isInitialMount.current) {
+				setLoading(true);
+			} else {
+				setSearching(true);
+			}
 			const params = {};
 			if (selectedRole.length > 0) {
 				params.filter = selectedRole;
@@ -277,7 +279,6 @@ const ClientsList = () => {
 			const response = await customerService.getCustomers(params);
 			if (response?.success && response?.code === 200) {
 				setCustomers(response.data?.customers || []);
-				setTotalItems(response.data?.total_count || 0);
 				setError(null);
 			} else {
 				showError("Failed to load customers data");
@@ -289,6 +290,7 @@ const ClientsList = () => {
 			setError("Failed to load data");
 		} finally {
 			setLoading(false);
+			setSearching(false);
 		}
 	}, [selectedRole, debouncedSearchValue, currentPage]);
 
@@ -301,6 +303,7 @@ const ClientsList = () => {
 	useEffect(() => {
 		if (isAuthenticated) {
 			fetchCustomers();
+			isInitialMount.current = false;
 		}
 	}, [isAuthenticated, fetchCustomers]);
 
@@ -357,6 +360,7 @@ const ClientsList = () => {
 		() =>
 			customers.map((customer) => {
 				const verticalName = customer?.vertical?.name || "unknown";
+				const verticalId = customer?.vertical?.id ?? null;
 				const boxCount = customer?._count?.boxes ?? 0;
 
 				return {
@@ -364,10 +368,12 @@ const ClientsList = () => {
 					client_id: customer.client_id,
 					name: customer.name,
 					organization: customer.organization_name || "Not specified",
-					region:
-						`${customer.state}, ${customer.country}` ||
-						"Not specified",
+				region:
+					customer.state
+						? `${customer.state}, ${customer.country}`
+						: customer.country || "Not specified",
 					vertical: verticalName,
+					verticalId: verticalId,
 					updated: new Date(customer.updated_at).toLocaleDateString(
 						"en-GB",
 						{
@@ -443,13 +449,8 @@ const ClientsList = () => {
 
 				return matchesSearch && matchesVertical;
 			}),
-		[processedCustomers],
+		[processedCustomers, searchValue, selectedRole],
 	);
-
-	// Ensure current page stays in bounds when filters/search change
-	useEffect(() => {
-		setCurrentPage(1);
-	}, [searchValue, selectedRole, groupByRole]);
 
 	// const totalItems = filteredClients.length;
 	const totalPages = useMemo(
@@ -569,32 +570,51 @@ const ClientsList = () => {
 		}
 	};
 
-	// Handle Check GrubPacs - impersonate client and redirect to GrubDelivery GrubPacs
-	const handleCheckGrubPacs = async (customer) => {
+	// Handle Check FAQs - navigate to FAQ page scoped to the client's vertical
+	const handleCheckFAQs = (e, customer) => {
+		e.stopPropagation();
 		setMenuOpen(null);
+		const verticalName = customer?.vertical;
+		if (!verticalName || verticalName === "unknown") {
+			showSuccess("Notice", "No vertical assigned, showing general FAQs.");
+			router.push("/help/customer-faqs");
+			return;
+		}
+		router.push(`/help/customer-faqs?vertical=${encodeURIComponent(verticalName.toLowerCase())}`);
+	};
+
+	// Handle Check GrubPacs - impersonate client and go to their GrubPacs module
+	const handleCheckGrubPacs = async (e, customer) => {
+		e.stopPropagation();
+		setMenuOpen(null);
+		if (!customer?.id) {
+			showError("Client ID is missing");
+			return;
+		}
 		try {
-			showSuccess("Accessing...", "Opening client's GrubPacs.");
-			const response = await customerService.impersonateClient(
-				customer.id,
-				{ return_url: "/grubpacs/list" },
-			);
+			showSuccess("Accessing...", "Initiating client GrubPacs access.");
+			const response = await customerService.impersonateClient(customer.id, {
+				return_url: "/delivery/grubpacs",
+			});
 			if (response?.success && response?.code === 200) {
 				const { token, client, redirect_url } = response.data;
 
 				startImpersonation(client, token);
 
-				window.open(redirect_url, "_blank", "noopener,noreferrer");
+				if (redirect_url) {
+					window.open(redirect_url, "_blank", "noopener,noreferrer");
+				}
 
 				showSuccess(
-					"Access Granted",
-					`Opening ${customer.name}'s GrubPacs in a new tab.`,
+					response.message_toast_title || "Access Granted",
+					response.message_toast_description || "Client GrubPacs access granted. A new tab has been opened with the client's GrubPacs.",
 				);
 			} else {
 				const errorMsg =
 					response?.message ||
 					response?.error ||
 					response?.data?.error ||
-					"Failed to access client account";
+					"Failed to access client GrubPacs";
 				showError(errorMsg);
 			}
 		} catch (error) {
@@ -761,9 +781,7 @@ const ClientsList = () => {
 		setMenuOpen(null);
 		try {
 			showSuccess("Accessing...", "Initiating client account access.");
-			const response = await customerService.impersonateClient(
-				customer.id,
-			);
+			const response = await customerService.impersonateClient(customer.id);
 			if (response?.success && response?.code === 200) {
 				const { token, client, redirect_url } = response.data;
 
@@ -775,8 +793,7 @@ const ClientsList = () => {
 
 				showSuccess(
 					response.message_toast_title || "Access Granted",
-					response.message_toast_description ||
-						"Client account access granted. A new tab has been opened with the client's delivery account.",
+					response.message_toast_description || "Client account access granted. A new tab has been opened with the client's delivery account.",
 				);
 			} else {
 				const errorMsg =
@@ -866,19 +883,36 @@ const ClientsList = () => {
 		}
 	};
 
+	const getVerticalIcon = (vertical) => {
+		switch (vertical.toLowerCase()) {
+			case "medical":
+				return "medical_suitcase";
+			case "delivery":
+				return "box";
+			case "hospitality":
+				return "restaurant";
+			case "camping":
+				return "compass";
+			default:
+				return "box";
+		}
+	};
+
 	const onVerticalGroupClick = (verticalName) => {
-		setCurrentOpenVertical((prev) =>
-			prev === verticalName ? null : verticalName,
-		);
-	};
+    setCurrentOpenVertical((prev) =>
+        prev === verticalName ? null : verticalName
+    );
+};
 
-	const onVerticalGroupOpen = (verticalName) => {
-		setCurrentOpenVertical(verticalName);
-	};
+const onVerticalGroupOpen = (verticalName) => {
+    setCurrentOpenVertical(verticalName);
+};
 
-	const onVerticalGroupClose = (verticalName) => {
-		setCurrentOpenVertical((prev) => (prev === verticalName ? null : prev));
-	};
+const onVerticalGroupClose = (verticalName) => {
+    setCurrentOpenVertical((prev) =>
+        prev === verticalName ? null : prev
+    );
+};
 
 	// Group employees by vertical from API data (include empty verticals)
 	const groupEmployeesByRole = () => {
@@ -926,9 +960,11 @@ const ClientsList = () => {
 	};
 
 	// Render table content for each group
-	const renderGroupTable = () => (
-		<div className="">
-			{customers.length === 0 ? (
+	const renderGroupTable = (groupData) => {
+		const data = groupData || processedCustomers;
+		return (
+			<div className="">
+			{data.length === 0 ? (
 				<div className="px-6 py-6">
 					<EmptyState
 						title="No customers in this vertical"
@@ -957,13 +993,25 @@ const ClientsList = () => {
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{processedCustomers.map((customer) => (
-							<TableRow key={customer.id}>
+						{data.map((customer) => (
+							<TableRow
+								key={customer.id}
+								className="cursor-pointer"
+								onClick={() =>
+									router.push(
+										`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`,
+									)
+								}
+							>
 								<TableCell className="p-4">
 									<div>
-										<div className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)]">
+										<Link
+											href={`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`}
+											className="font-semibold pb-1 text-base text-[var(--color-neutral-secondary)] hover:underline"
+											onClick={(e) => e.stopPropagation()}
+										>
 											{customer.name}
-										</div>
+										</Link>
 										<div className="text-sm text-[var(--color-stroke-brand)]">
 											{customer.client_id} |{" "}
 											{customer.organization}
@@ -976,23 +1024,23 @@ const ClientsList = () => {
 									</div>
 								</TableCell>
 								<TableCell className="p-4">
-									<div className="w-max">
-										<Badge
-											color={`${customer.vertical.toLowerCase()}`}
-											className="leading-none flex items-center space-x-2 w-max cursor-pointer"
-											onClick={() =>
-												setSelectedBoxClient(customer)
-											}
-										>
-											<Icon
-												name="inventory"
-												className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
-											/>
-											{customer.vertical} (
-											{customer.boxCount || 0})
-										</Badge>
-									</div>
-								</TableCell>
+    <div className="w-max">
+        <BoxCountBadge
+            count={customer.boxCount || 0}
+            label={customer.vertical}
+            iconName={getVerticalIcon(customer.vertical)}
+            iconColor={getIconColor(customer.vertical)}
+            borderColor={getIconColor(customer.vertical)}
+            tooltipSide="bottom"
+            tooltipAlign="start"
+            onClick={(e) => {
+                e.stopPropagation();
+                setSelectedBoxClient(customer);
+            }}
+            onViewList={() => setSelectedBoxClient(customer)}
+        />
+    </div>
+</TableCell>
 								<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
 									<BoxCountBadge
 										asText
@@ -1038,9 +1086,10 @@ const ClientsList = () => {
 											variant="messaging"
 											type="button"
 											className="group !p-2 hover:!border-[var(--notif-border)]"
-											onClick={() =>
-												handleOpenGmail(customer.email)
-											}
+											onClick={(e) => {
+												e.stopPropagation();
+												handleOpenGmail(customer.email);
+											}}
 										>
 											<Icon
 												name="messaging"
@@ -1050,15 +1099,214 @@ const ClientsList = () => {
 									</BoxCountBadge>
 								</TableCell>
 								<TableCell className="w-12 p-4">
-									<button
+									<div
 										ref={(el) =>
 											(buttonRefs.current[customer.id] =
 												el)
 										}
-										className={`p-2 hover:bg-[var(--color-neutral-secondary-bg)] rounded-lg`}
+										className="menu-container relative inline-block"
 									>
-										<BsThreeDotsVertical className="w-5 h-5 text-[var(--color-stroke-brand)]" />
-									</button>
+										<button
+											onClick={(e) => {
+												setMenuOpen(
+													menuOpen === customer.id
+														? null
+														: customer.id,
+												);
+												e.stopPropagation();
+											}}
+											className={`p-2 hover:bg-[var(--color-neutral-secondary-bg)] rounded-lg ${
+												menuOpen === customer.id
+													? "bg-[var(--color-neutral-secondary-bg)] shadow-[0_0_0_2px_var(--color-shadow-actionmenu)] rounded-lg"
+													: ""
+											}`}
+										>
+											<BsThreeDotsVertical className="w-5 h-5 text-[var(--color-stroke-brand)]" />
+										</button>
+										{menuOpen === customer.id && (
+											<div className="menu-container absolute right-full mr-2 z-60 w-[400px] p-3 top-1/2 -translate-y-1/2 ml-2  rounded-lg border border-[var(--color-stroke-neutral)] bg-white shadow-[4px_4px_8px_0_var(--color-notif-shadow-soft),0px_0px_4px_0_var(--color-notif-shadow-strong)] divide-y divide-[var(--color-stroke-neutral)] ">
+												{actions.map((item) =>
+													item.id === "logs" ? (
+														<Link
+															key={item.id}
+															href={`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`}
+															className="block"
+														>
+															<div
+																className="border gap-1 border-[var(--color-stroke-neutral)] rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                   flex items-center gap-3 px-4 py-3 mb-2"
+															>
+																<div className="flex gap-2 justify-center">
+																	<Icon
+																		name={
+																			item.icon
+																		}
+																		className="w-5 h-5 text-[var(--color-neutral-light)] group-active:text-[var(--color-stroke-brand)]"
+																	/>
+																</div>
+																<div className="flex-1">
+																	<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																		{
+																			item.title
+																		}
+																	</h3>
+																	<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																		{
+																			item.description
+																		}
+																	</p>
+																</div>
+															</div>
+														</Link>
+													) : item.id === "account" ? (
+														<div
+															key={item.id}
+															onClick={() =>
+																handleAccessAccount(customer)
+															}
+															className="border gap-1 border-[var(--color-stroke-neutral)] rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                   flex items-center gap-3 px-4 py-3 mb-2"
+														>
+															<div className="flex gap-2 justify-center">
+																<Icon
+																	name={
+																		item.icon
+																	}
+																	className="w-5 h-5 text-[var(--color-neutral-light)] group-active:text-[var(--color-stroke-brand)]"
+																/>
+															</div>
+															<div className="flex-1">
+																<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																	{
+																		item.title
+																	}
+																</h3>
+																<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																	{
+																		item.description
+																	}
+																</p>
+															</div>
+														</div>
+													) : (
+														<div
+															key={item.id}
+															className="border gap-1 border-[var(--color-stroke-neutral)] rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                   flex items-center gap-3 px-4 py-3 mb-2"
+														>
+															<div className="flex gap-2 justify-center">
+																<Icon
+																	name={
+																		item.icon
+																	}
+																	className="w-5 h-5 text-[var(--color-neutral-light)] group-active:text-[var(--color-stroke-brand)]"
+																/>
+															</div>
+															<div className="flex-1">
+																<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																	{
+																		item.title
+																	}
+																</h3>
+																<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																	{
+																		item.description
+																	}
+																</p>
+															</div>
+														</div>
+													),
+												)}
+												<div>
+													<h1 className="pt-3 pb-2 text-sm text-[var(--color-neutral-secondary)] font-semibold">
+														Quick actions
+													</h1>
+													<div className="flex flex-col gap-2">
+													{quickActions.map(
+														(item) =>
+															item.id ===
+															"faqs" ? (
+																<div
+																	key={
+																		item.id
+																	}
+																	onClick={(e) =>
+																		handleCheckFAQs(
+																			e,
+																			customer,
+																		)
+																	}
+																	className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
+																>
+																	<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																		{
+																			item.title
+																		}
+																	</h3>
+																	<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																		{
+																			item.description
+																		}
+																	</p>
+																</div>
+															) : item.id ===
+															  "checkgrubpacs" ? (
+																<div
+																	key={
+																		item.id
+																	}
+																	onClick={(e) =>
+																		handleCheckGrubPacs(
+																			e,
+																			customer,
+																		)
+																	}
+																	className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
+																>
+																	<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																		{
+																			item.title
+																		}
+																	</h3>
+																	<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																		{
+																			item.description
+																		}
+																	</p>
+																</div>
+															) : (
+																<div
+																	key={
+																		item.id
+																	}
+																	onClick={() =>
+																		handleActionClick(
+																			item.id,
+																		)
+																	}
+																	className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
+																>
+																	<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																		{
+																			item.title
+																		}
+																	</h3>
+																	<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																		{
+																			item.description
+																		}
+																	</p>
+																</div>
+															),
+													)}
+													</div>
+												</div>
+											</div>
+										)}
+									</div>
 								</TableCell>
 							</TableRow>
 						))}
@@ -1066,7 +1314,8 @@ const ClientsList = () => {
 				</Table>
 			)}
 		</div>
-	);
+		);
+	};
 
 	if (!canViewClients) {
 		return null;
@@ -1241,55 +1490,51 @@ const ClientsList = () => {
 
 			{/* Table or Grouped View */}
 			{groupByRole ? (
-				// <GroupCollapseTable
-				// 	groups={groupEmployeesByRole()}
-				// 	openIndex={openGroupIndex}
-				// 	setOpenIndex={setOpenGroupIndex}
-				// 	renderTable={renderGroupTable}
-				// 	noResultsMessage="No clients found."
-				// 	tableContainerClass="w-full"
-				// 	titleColor="!text-[var(--color-neutral-secondary)] !text-base"
-				// />
 				<>
-					{verticals.map((vertical, index) => (
-						<CollapseTable
-							key={vertical.id}
-							table={renderGroupTable}
-							vertical={vertical}
-							onClick={() => onVerticalGroupClick(vertical.name)}
-							onOpen={() => onVerticalGroupOpen(vertical.name)}
-							onClose={() => onVerticalGroupClose(vertical.name)}
-							groupName={vertical.name}
-							isOpen={currentOpenVertical === vertical.name}
-							data={processedCustomers}
-							renderTable={renderGroupTable}
-							emptyResult={
-								"No Customers are available for this verticals"
-							}
-							pagination={
-								currentOpenVertical === vertical.name &&
-								totalItems > 0
-									? {
-											rangeText: `Showing ${pageStartDisplay}-${pageEndDisplay}`,
-											onPrev: () =>
-												setCurrentPage((p) =>
-													Math.max(1, p - 1),
-												),
-											onNext: () =>
-												setCurrentPage((p) =>
-													Math.min(totalPages, p + 1),
-												),
-											disablePrev: currentPage <= 1,
-											disableNext:
-												currentPage >=
-												Math.ceil(
-													totalItems / pageSize,
-												),
-										}
-									: undefined
-							}
-						/>
-					))}
+					{verticals.map((vertical, index) => {
+						const verticalClients = filteredClients.filter(
+							(c) => c.verticalId === vertical.id,
+						);
+						return (
+							<CollapseTable
+								key={vertical.id}
+								table={renderGroupTable}
+								vertical={vertical}
+								onClick={() => onVerticalGroupClick(vertical.name)}
+								onOpen={() => onVerticalGroupOpen(vertical.name)}
+								onClose={() => onVerticalGroupClose(vertical.name)}
+								groupName={vertical.name}
+								isOpen={currentOpenVertical === vertical.name}
+								data={verticalClients}
+								renderTable={renderGroupTable}
+								emptyResult={
+									"No Customers are available for this verticals"
+								}
+								pagination={
+									currentOpenVertical === vertical.name &&
+									verticalClients.length > 0
+										? {
+												rangeText: `Showing 1-${verticalClients.length}`,
+												onPrev: () =>
+													setCurrentPage((p) =>
+														Math.max(1, p - 1),
+													),
+												onNext: () =>
+													setCurrentPage((p) =>
+														Math.min(totalPages, p + 1),
+													),
+												disablePrev: currentPage <= 1,
+												disableNext:
+													currentPage >=
+													Math.ceil(
+														totalItems / pageSize,
+													),
+											}
+										: undefined
+								}
+							/>
+						);
+					})}
 				</>
 			) : (
 				<div>
@@ -1341,12 +1586,24 @@ const ClientsList = () => {
 						</TableHead>
 						<TableBody>
 							{processedCustomers.map((customer) => (
-								<TableRow key={customer.id}>
+								<TableRow
+									key={customer.id}
+									className="cursor-pointer"
+									onClick={() =>
+										router.push(
+											`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`,
+										)
+									}
+								>
 									<TableCell className="p-4">
 										<div>
-											<div className="font-semibold text-base pb-1 text-[var(--color-neutral-secondary)]">
+											<Link
+												href={`/clients/clientlogs?clientId=${encodeURIComponent(customer.id)}&name=${encodeURIComponent(customer.name)}&vertical=${encodeURIComponent(customer.vertical)}`}
+												className="font-semibold text-base pb-1 text-[var(--color-neutral-secondary)] hover:underline"
+												onClick={(e) => e.stopPropagation()}
+											>
 												{customer.name}
-											</div>
+											</Link>
 											<div className="text-sm text-[var(--color-stroke-brand)]">
 												{customer.client_id} |{" "}
 												{customer.organization}
@@ -1358,26 +1615,24 @@ const ClientsList = () => {
 											{customer.region}
 										</div>
 									</TableCell>
-									<TableCell className="p-4">
-										<div className="w-max">
-											<Badge
-												color={`${customer.vertical.toLowerCase()}`}
-												className="leading-none flex items-center space-x-2 w-max cursor-pointer"
-												onClick={() =>
-													setSelectedBoxClient(
-														customer,
-													)
-												}
-											>
-												<Icon
-													name="inventory"
-													className={`w-4 h-4 ${getIconColor(customer.vertical)}`}
-												/>
-												{customer.vertical} (
-												{customer.boxCount || 0})
-											</Badge>
-										</div>
-									</TableCell>
+								<TableCell className="p-4">
+    <div className="w-max">
+        <BoxCountBadge
+            count={customer.boxCount || 0}
+            label={customer.vertical}
+            iconName={getVerticalIcon(customer.vertical)}
+            iconColor={getIconColor(customer.vertical)}
+            borderColor={getIconColor(customer.vertical)}
+            tooltipSide="bottom"
+            tooltipAlign="start"
+            onClick={(e) => {
+                e.stopPropagation();
+                setSelectedBoxClient(customer);
+            }}
+            onViewList={() => setSelectedBoxClient(customer)}
+        />
+    </div>
+</TableCell>
 									<TableCell className="p-4 text-[var(--color-neutral-secondary)] text-base">
 										<BoxCountBadge
 											asText
@@ -1424,11 +1679,12 @@ const ClientsList = () => {
 												type="button"
 												variant="messaging"
 												className="group !p-2"
-												onClick={() =>
+												onClick={(e) => {
+													e.stopPropagation();
 													handleOpenGmail(
 														customer.email,
-													)
-												}
+													);
+												}}
 											>
 												<Icon
 													name="messaging"
@@ -1498,14 +1754,11 @@ const ClientsList = () => {
 																	</div>
 																</div>
 															</Link>
-														) : item.id ===
-														  "account" ? (
+														) : item.id === "account" ? (
 															<div
 																key={item.id}
 																onClick={() =>
-																	handleAccessAccount(
-																		customer,
-																	)
+																	handleAccessAccount(customer)
 																}
 																className="border gap-1 border-[var(--color-stroke-neutral)] rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
                    flex items-center gap-3 px-4 py-3 mb-2"
@@ -1565,84 +1818,86 @@ const ClientsList = () => {
 															Quick actions
 														</h1>
 														<div className="flex flex-col gap-2">
-															{quickActions.map(
-																(item) =>
-																	item.id ===
-																	"faqs" ? (
-																		<Link
-																			key={
-																				item.id
+														{quickActions.map(
+															(item) =>
+																item.id ===
+																"faqs" ? (
+																	<div
+																		key={
+																			item.id
+																		}
+																		onClick={(e) =>
+																			handleCheckFAQs(
+																				e,
+																				customer,
+																			)
+																		}
+																		className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
+																	>
+																		<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																			{
+																				item.title
 																			}
-																			href="/help/customer-faqs"
-																			className="block"
-																		>
-																			<div
-																				className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+																		</h3>
+																		<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																			{
+																				item.description
+																			}
+																		</p>
+																	</div>
+																) : item.id ===
+																  "checkgrubpacs" ? (
+																	<div
+																		key={
+																			item.id
+																		}
+																		onClick={(e) =>
+																			handleCheckGrubPacs(
+																				e,
+																				customer,
+																			)
+																		}
+																		className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
-																			>
-																				<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
-																					{
-																						item.title
-																					}
-																				</h3>
-																				<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
-																					{
-																						item.description
-																					}
-																				</p>
-																			</div>
-																		</Link>
-																	) : item.id ===
-																	  "checkgrubpacs" ? (
-																		<div
-																			key={
-																				item.id
+																	>
+																		<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																			{
+																				item.title
 																			}
-																			onClick={() =>
-																				handleCheckGrubPacs(
-																					customer,
-																				)
+																		</h3>
+																		<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																			{
+																				item.description
 																			}
-																			className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
+																		</p>
+																	</div>
+																) : (
+																	<div
+																		key={
+																			item.id
+																		}
+																		onClick={() =>
+																			handleActionClick(
+																				item.id,
+																			)
+																		}
+																		className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
                                        border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
-																		>
-																			<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
-																				{
-																					item.title
-																				}
-																			</h3>
-																			<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
-																				{
-																					item.description
-																				}
-																			</p>
-																		</div>
-																	) : (
-																		<div
-																			key={
-																				item.id
+																	>
+																		<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
+																			{
+																				item.title
 																			}
-																			onClick={() =>
-																				handleActionClick(
-																					item.id,
-																				)
+																		</h3>
+																		<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
+																			{
+																				item.description
 																			}
-																			className="w-full rounded-lg cursor-pointer group hover:bg-[var(--sidebar-active-bg)] active:bg-[var(--color-admin-profile-border)]
-                                       border gap-1 border-[var(--color-stroke-neutral)] py-3 px-4"
-																		>
-																			<h3 className="text-sm text-[var(--color-neutral-secondary)] group-active:text-[--color-neutral-primary] mb-1">
-																				{
-																					item.title
-																				}
-																			</h3>
-																			<p className="text-xs text-[var(--color-stroke-brand)] group-active:text-[var(--color-neutral-secondary)] leading-relaxed">
-																				{
-																					item.description
-																				}
-																			</p>
-																		</div>
-																	),
-															)}
+																		</p>
+																	</div>
+																),
+														)}
 														</div>
 													</div>
 												</div>
@@ -1719,12 +1974,12 @@ const ClientsList = () => {
 				isCreating={isCreatingCustomer}
 			/>
 			<ClientBoxesModal
-				open={!!selectedBoxClient}
-				onClose={() => setSelectedBoxClient(null)}
-				clientId={selectedBoxClient?.id}
-				clientName={selectedBoxClient?.name}
-				vertical={selectedBoxClient?.vertical}
-			/>
+    open={!!selectedBoxClient}
+    onClose={() => setSelectedBoxClient(null)}
+    clientId={selectedBoxClient?.id}
+    clientName={selectedBoxClient?.name}
+    vertical={selectedBoxClient?.vertical}
+/>
 		</div>
 	);
 };

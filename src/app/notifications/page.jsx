@@ -4,18 +4,14 @@ import Icon from "@/components/ui/Icon";
 import NotificationFilterBar from "./NotificationFilterBar";
 import NotificationList from "./NotificationList";
 import NotificationFilterModal from "./NotificationFilterModal";
-import { PiWarningFill } from "react-icons/pi";
-import { FaRegCircleCheck } from "react-icons/fa6";
-import { MdWarningAmber } from "react-icons/md";
+import { FiUserPlus, FiPackage, FiAlertTriangle, FiArchive, FiUsers, FiRefreshCw, FiBell, FiCheckCircle, FiInfo } from "react-icons/fi";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
 import { notificationsService } from "@/api/services/notificationsService";
 import { showSuccess, showError } from "@/components/ui/toast";
 import { useDebounce, useDebouncedCallback } from "use-debounce";
 import { DEBOUNCE_TIME } from "@/constants/config";
 
 export default function NotificationsPage() {
-	const router = useRouter();
 	const { isAuthenticated, isLoading: authLoading } = useAuth();
 	const [search, setSearch] = useState("");
 	const [selected, setSelected] = useState([]);
@@ -89,18 +85,6 @@ export default function NotificationsPage() {
 		}
 	}, [selectedTypes, selectedStatuses, debouncedSearchValue]);
 
-	const handleDismiss = useCallback(async (id) => {
-		try {
-			const response = await notificationsService.markAsRead([id]);
-			if (response?.success) {
-				setNotifications((prev) => prev.filter((n) => n.id !== id));
-				showSuccess("Notification dismissed", "", true);
-			}
-		} catch (error) {
-			showError("Failed to dismiss notification.");
-		}
-	}, []);
-
 	const handleMarkAsRead = useCallback(async (ids) => {
 		try {
 			const response = await notificationsService.markAsRead(ids);
@@ -118,6 +102,19 @@ export default function NotificationsPage() {
 		}
 	}, []);
 
+	const handleDismiss = useCallback(async (ids) => {
+		setNotifications((prev) =>
+			prev.filter((n) => !ids.includes(n.id)),
+		);
+		setSelected((prev) => prev.filter((id) => !ids.includes(id)));
+
+		try {
+			await notificationsService.markAsRead(ids);
+		} catch (error) {
+			console.error("Failed to sync dismiss:", error);
+		}
+	}, []);
+
 	useEffect(() => {
 		if (isAuthenticated && !authLoading) {
 			getNotifications();
@@ -126,21 +123,46 @@ export default function NotificationsPage() {
 
 	const processedNotifications = useMemo(
 		() =>
-			notifications.map((n) => ({
-				id: n.id,
-				type: n.type,
-				goal: n.goal,
-				title: n.title,
-				message: n.description,
-				time: new Date(n.createdAt).toLocaleDateString("en-GB", {
-					day: "2-digit",
-					month: "short",
-					year: "2-digit",
-				}),
-				status: n.status,
-				category: n.item_type || n.type,
-				itemId: n.item_id,
-			})),
+			notifications.map((n) => {
+				const date = new Date(n.createdAt);
+				const now = new Date();
+				const isToday = date.toDateString() === now.toDateString();
+				const yesterday = new Date(now);
+				yesterday.setDate(yesterday.getDate() - 1);
+				const isYesterday =
+					date.toDateString() === yesterday.toDateString();
+
+				const timeStr = date.toLocaleTimeString("en-US", {
+					hour: "numeric",
+					minute: "2-digit",
+					hour12: true,
+				});
+
+				let dayStr;
+				if (isToday) {
+					dayStr = "Today";
+				} else if (isYesterday) {
+					dayStr = "Yesterday";
+				} else {
+					dayStr = date.toLocaleDateString("en-GB", {
+						day: "2-digit",
+						month: "short",
+						year: "numeric",
+					});
+				}
+
+				return {
+					id: n.id,
+					type: n.type,
+					goal: n.goal,
+					title: n.title,
+					message: n.description,
+					time: `${timeStr} | ${dayStr}`,
+					status: n.status,
+					category: n.item_type || n.type,
+					itemId: n.item_id,
+				};
+			}),
 		[notifications],
 	);
 
@@ -157,7 +179,6 @@ export default function NotificationsPage() {
 				)
 					return false;
 
-
 				if (
 					selectedDropdownTypes.length > 0 &&
 					!selectedDropdownTypes.some(
@@ -169,21 +190,20 @@ export default function NotificationsPage() {
 					return false;
 				return true;
 			}),
-		[processedNotifications, filter, search, selectedDropdownTypes],
+		[processedNotifications, filter, search, selectedDropdownTypes, typeOptions],
 	);
 
 	const handleDismissAll = useCallback(async () => {
 		const ids = filtered.map((n) => n.id);
+		if (ids.length === 0) return;
+
+		setNotifications((prev) => prev.filter((n) => !ids.includes(n.id)));
+		setSelected([]);
+
 		try {
-			const response = await notificationsService.markAsRead(ids);
-			if (response?.success) {
-				setNotifications((prev) =>
-					prev.filter((n) => !ids.includes(n.id)),
-				);
-				showSuccess("All notifications dismissed", "", true);
-			}
+			await notificationsService.markAsRead(ids);
 		} catch (error) {
-			showError("Failed to dismiss all notifications.");
+			console.error("Failed to sync dismiss all:", error);
 		}
 	}, [filtered]);
 
@@ -202,39 +222,65 @@ export default function NotificationsPage() {
 		[debouncedSearchValue, processedNotifications, search],
 	);
 
-	const getNotificationIcon = (type) => {
+	const getNotificationIcon = (type, category) => {
+		let iconColor;
 		switch (type) {
-			case "warning":
-				return (
-					<PiWarningFill
-						className="h-8 w-8"
-						style={{ color: "var(--notif-warning)" }}
-					/>
-				);
 			case "error":
-				return (
-					<PiWarningFill
-						className="h-8 w-8"
-						style={{ color: "var(--notif-error)" }}
-					/>
-				);
+				iconColor = "var(--notif-error)";
+				break;
+			case "warning":
+				iconColor = "var(--notif-warning)";
+				break;
 			case "success":
-				return (
-					<FaRegCircleCheck
-						className="h-8 w-8"
-						style={{ color: "var(--notif-success)" }}
-					/>
-				);
+				iconColor = "var(--notif-success)";
+				break;
 			case "info":
-				return <Icon name="info" />;
+				iconColor = "var(--color-brand-default)";
+				break;
 			default:
-				return (
-					<MdWarningAmber
-						className="h-8 w-8"
-						style={{ color: "var(--notif-warning)" }}
-					/>
-				);
+				iconColor = "var(--notif-warning)";
 		}
+
+		const cat = (category || "").toLowerCase();
+		let Icon;
+		if (cat.includes("client") || cat.includes("customer")) {
+			Icon = FiUserPlus;
+		} else if (
+			cat.includes("box") ||
+			cat.includes("grubpac") ||
+			cat.includes("package")
+		) {
+			Icon = FiPackage;
+		} else if (
+			cat.includes("repair") ||
+			cat.includes("service") ||
+			cat.includes("ticket")
+		) {
+			Icon = FiAlertTriangle;
+		} else if (cat.includes("inventory") || cat.includes("stock")) {
+			Icon = FiArchive;
+		} else if (cat.includes("employee") || cat.includes("admin")) {
+			Icon = FiUsers;
+		} else if (cat.includes("update") || cat.includes("release")) {
+			Icon = FiRefreshCw;
+		} else {
+			switch (type) {
+				case "error":
+				case "warning":
+					Icon = FiAlertTriangle;
+					break;
+				case "success":
+					Icon = FiCheckCircle;
+					break;
+				case "info":
+					Icon = FiInfo;
+					break;
+				default:
+					Icon = FiBell;
+			}
+		}
+
+		return <Icon className="h-8 w-8" style={{ color: iconColor }} />;
 	};
 
 	return (
@@ -246,13 +292,12 @@ export default function NotificationsPage() {
 				{filtered.length > 0 && (
 					<button
 						onClick={handleDismissAll}
-						className="text-sm uppercase text-normal tracking-widest text-gray-500 transition-opacity"
+						className="text-sm font-semibold text-[var(--color-brand-default)] hover:underline cursor-pointer"
 					>
-						Dismiss all
+						DISMISS ALL
 					</button>
 				)}
 			</div>
-
 			<NotificationFilterBar
 				search={search}
 				setSearch={onSearchChange}

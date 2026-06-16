@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Collapse from "@/components/ui/Collapse";
+import { useClickOutside } from "@/hooks/useClickOutside";
 
 export default function GroupCollapseTable({
   groups,
@@ -13,23 +14,32 @@ export default function GroupCollapseTable({
   pageSize = 50,
 }) {
   const containerRef = useRef(null);
-  const [pages, setPages] = useState({}); // key: index => current page
+  const [pages, setPages] = useState({});
 
-  // Close open collapse on outside click
-  useEffect(() => {
-    function handleClickOutside(e){
-      if (!containerRef.current) return;
+  const closeIfOutside = useCallback(
+    (e) => {
       if (openIndex === null) return;
-      if (e.target.closest('[data-portal-container="dropdown"]')) {
-        return;
-      }
-      if (!containerRef.current.contains(e.target)) {
+      if (e.target?.closest?.('[data-portal-container="dropdown"]')) return;
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
         setPages({});
         setOpenIndex(null);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    },
+    [openIndex, setOpenIndex],
+  );
+
+  useClickOutside(containerRef, closeIfOutside, openIndex !== null);
+
+  useEffect(() => {
+    if (openIndex === null) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setPages({});
+        setOpenIndex(null);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [openIndex, setOpenIndex]);
 
   const getPage = (idx) => pages[idx] || 1;

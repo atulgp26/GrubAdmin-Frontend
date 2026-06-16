@@ -56,9 +56,9 @@ export default function Sidebar({ collapsed, onClose }) {
 				<div className="hidden md:block fixed top-0 left-0 h-full w-1 bg-[var(--color-brand-primary-btn)] z-50" />
 			)}
 			<div
-				className={`fixed left-0 top-0 h-full border-r border-[var(--color-stroke-neutral)] transition-all duration-300 z-40 ${
-					collapsed ? "-translate-x-full" : "translate-x-0"
-				} w-60 hidden md:block`}
+				className={`hidden md:block sticky top-0 h-screen border-r border-[var(--color-stroke-neutral)] transition-[width] duration-300 flex-shrink-0 overflow-hidden ${
+					collapsed ? "w-0" : "w-60"
+				}`}
 			>
 				<div className="flex flex-col h-full">
 					<div className="p-6">
@@ -125,7 +125,8 @@ export default function Sidebar({ collapsed, onClose }) {
 			</div>
 			{!collapsed && (
 				<div
-					className="fixed inset-0 bg-[var(--color-neutral-primary)] bg-opacity-50 z-30 md:hidden"
+					className="fixed inset-0 z-30 md:hidden"
+					style={{ backgroundColor: 'rgba(var(--color-overlay-rgb), 0.5)' }}
 					onClick={onClose}
 				/>
 			)}

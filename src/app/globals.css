@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 :root {
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 0px;
+  --color-overlay-rgb: 3, 19, 10;
   --color-neutral-primary: #03130a;
   --color-neutral-secondary: #37493f;
   --color-neutral-light: #a4aca7;
@@ -63,6 +66,7 @@
   --color-sidebar-shadow:#e19e88;
   --color-success-hover:#EDF5E9;
   --color-success-shadow:#b8d7ad;
+  --color-notif-selected-bg:#EBF5FB;
   --color-stroke-shadow:#c9cfcb;
   
   /* Temperature zone colors */

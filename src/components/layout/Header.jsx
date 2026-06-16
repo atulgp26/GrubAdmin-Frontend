@@ -16,7 +16,7 @@ import { notificationsService } from "@/api/services/notificationsService";
 
 const mockNotifications = [
 	{
-		type: "warning",
+		type: "success",
 		title: "New client!",
 		message:
 			"MediCare Labs has been added. Assign boxes to activate their account.",
@@ -38,7 +38,7 @@ const mockNotifications = [
 		date: "Today",
 	},
 	{
-		type: "yellow_warning",
+		type: "warning",
 		title: "New client!",
 		message:
 			"MediCare Labs has been added. Assign boxes to activate their account.",
@@ -267,6 +267,14 @@ export default function Header({ onToggleSidebar, collapsed }) {
 												</span>
 											)}
 											{n.type === "yellow_warning" && (
+												<span className="inline-flex items-center justify-center w-8 h-8">
+													<Icon
+														name="icon_alert"
+														className="w-8 h-8"
+													/>
+												</span>
+											)}
+											{!["warning", "error", "success", "yellow_warning"].includes(n.type) && (
 												<span className="inline-flex items-center justify-center w-8 h-8">
 													<Icon
 														name="icon_alert"
