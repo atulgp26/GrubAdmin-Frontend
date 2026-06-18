@@ -688,34 +688,6 @@ console.log("isSuperAdmin value at save time:", isSuperAdmin);
 											</div>
 										</div>
 
-										<div className="mb-6">
-											<div className="flex items-center py-2">
-												<CheckBox
-													type="checkbox"
-													checked={isSuperAdmin}
-													onChange={(e) => {
-														setIsSuperAdmin(
-															e.target.checked,
-														);
-														// Clear selections when super admin is checked
-														if (e.target.checked) {
-															setSelected([]);
-															setPermissions({});
-														}
-													}}
-												/>
-												<span className="text-[var(--color-neutral-secondary)] text-lg pl-3 pr-2">
-													Super Admin
-												</span>
-											</div>
-											{isSuperAdmin && (
-												<p className="text-[var(--color-stroke-brand)] text-sm mt-1 ml-7">
-													Super Admin has access to
-													all permissions and modules
-												</p>
-											)}
-										</div>
-
 										{!isSuperAdmin && (
 											<div className="flex flex-col">
 												<span className="text-[var(--color-neutral-secondary)] pb-3 block">
