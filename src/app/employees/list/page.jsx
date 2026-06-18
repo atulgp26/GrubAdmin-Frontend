@@ -824,6 +824,23 @@ const EmployeesList = () => {
 	const onReassign = () => {
 		setOpenReassignModal(true);
 	};
+
+	// Determine the current role of selected employees to exclude from reassign options
+	const excludeRoleId = useMemo(() => {
+		if (selectedEmployees.size === 0) return null;
+		const selectedList = employees.filter((emp) =>
+			selectedEmployees.has(emp.id),
+		);
+		if (selectedList.length === 0) return null;
+		const roleIds = [
+			...new Set(
+				selectedList.map((emp) =>
+					emp?.originalData?.role?.id ?? emp?.originalData?.role_id,
+				),
+			),
+		];
+		return roleIds.length === 1 ? roleIds[0] : null;
+	}, [selectedEmployees, employees]);
 	const handleConfirmChanges = async () => {
 		if (!selectedRoleForReassign || selectedEmployees.size === 0) {
 			showError("Please select a role and employees.");
@@ -1836,7 +1853,8 @@ const EmployeesList = () => {
 				onClose={() => setOpenReassignModal(false)}
 				onConfirm={handleReassignConfirm}
 				title={`Reassign role to ${selectedEmployees.size} employees`}
-				description="Their previous access will be updated with the new permissions. It won’t remove their records, only their access changes."
+				description="Their previous access will be updated with the new permissions. It won't remove their records, only their access changes."
+				excludeRoleId={excludeRoleId}
 			/>
 			<ReassignConfirmModal
 				open={reassignConfirmModal}
