@@ -46,13 +46,16 @@ const ExportListModal = ({
     isInitializedRef.current = true;
 
     const initialChecked = {};
+    let firstRadioId = "";
 
     if (options.length > 0) {
       options.forEach((group) => {
         group.items.forEach((opt) => {
-          if (opt.checked !== undefined) {
+          if (opt.type === "radio") {
+            if (!firstRadioId) firstRadioId = opt.id;
+          } else if (opt.checked !== undefined) {
             initialChecked[opt.id] = opt.checked;
-          } else if (opt.disabled) {
+          } else {
             initialChecked[opt.id] = true;
           }
         });
@@ -63,11 +66,14 @@ const ExportListModal = ({
       midLevelData.forEach((v) => {
         if (v.checked !== undefined) {
           initialChecked[v.id] = v.checked;
+        } else {
+          initialChecked[v.id] = true;
         }
       });
     }
 
     setChecked(initialChecked);
+    if (firstRadioId && !scope) setScope(firstRadioId);
   }, [open, options, midLevelData]);
 
   const isPermissionsMode = title && title !== "Customise your export";
