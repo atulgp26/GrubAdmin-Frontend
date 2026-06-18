@@ -337,6 +337,7 @@ export default function GrubpacsPage() {
 				const item = unassignModal.item;
 				const items = unassignModal.items;
 
+				setSelectedItems([]);
 				setUnassignModal({
 					open: false,
 					item: null,
