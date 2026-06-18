@@ -207,7 +207,7 @@ const EmployeesList = () => {
 	const [footer, setFooter] = useState("");
 	const [filterStatus, setFilterStatus] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
-	const pageSize = 10;
+	const pageSize = groupByRole ? 100 : 10;
 	// Removed rolesMap - not needed since admin.role.name is always available from API
 	const [selectedRoleForReassign, setSelectedRoleForReassign] =
 		useState(null); // Store selected role from ReassignRoleModal
@@ -1440,7 +1440,10 @@ const EmployeesList = () => {
 					<label className="flex items-center gap-2 text-lg text-[var(--color-neutral-secondary)]">
 						<CheckBox
 							checked={groupByRole}
-							onChange={(e) => setGroupByRole(e.target.checked)}
+							onChange={(e) => {
+								setGroupByRole(e.target.checked);
+								setCurrentPage(1);
+							}}
 						/>
 						Group as per role
 					</label>
