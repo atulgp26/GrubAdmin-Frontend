@@ -13,7 +13,9 @@ export default function ClientProfileDetails({ open, onClose, clientId, clientNa
     customerService
       .getCustomer(clientId)
       .then((res) => {
-        setClientData(res?.data || null);
+        const raw = res?.data;
+        const customer = raw?.customers?.[0] || raw || null;
+        setClientData(customer);
       })
       .catch(() => {
         setClientData(null);
@@ -34,6 +36,9 @@ export default function ClientProfileDetails({ open, onClose, clientId, clientNa
       label: "Region",
       value: [clientData?.state, clientData?.country].filter(Boolean).join(", ") || "—",
     },
+    { label: "Address", value: clientData?.address || "—" },
+    { label: "City", value: clientData?.city || "—" },
+    { label: "Zip Code", value: clientData?.zipcode || "—" },
   ];
 
   return (
