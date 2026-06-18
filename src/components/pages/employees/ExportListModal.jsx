@@ -220,7 +220,9 @@ const ExportListModal = ({
           </div>
           <Button
             onClick={() => {
-              if (onConfirm) {
+              if (isPermissionsMode) {
+                onClose();
+              } else if (onConfirm) {
                 onConfirm({ scope, checked });
               } else {
                 onClose();
