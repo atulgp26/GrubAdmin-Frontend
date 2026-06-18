@@ -381,8 +381,16 @@ const EmployeesList = () => {
 		Object.keys(roleGroups).forEach((roleName) => {
 			const count = roleGroups[roleName].length;
 			const roleId = roleGroups[roleName][0]?.originalData?.role_id;
-			// Permissions count - using placeholder since rolesMap removed
-			const permissions = 0;
+			const employee = roleGroups[roleName][0];
+			let permissions = 0;
+			if (employee?.originalData?.role?.permissions_json) {
+				const permissionsJson =
+					employee.originalData.role.permissions_json;
+				Object.keys(permissionsJson).forEach((sectionKey) => {
+					const list = permissionsJson[sectionKey];
+					if (Array.isArray(list)) permissions += list.length;
+				});
+			}
 			rolesData.push({
 				name: roleName,
 				count: count,
