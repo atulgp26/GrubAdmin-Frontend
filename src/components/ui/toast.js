@@ -41,6 +41,7 @@ export function showSuccess(title, message, hideDetails = false, href = "", acti
             </button>
           )}
           <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); toast.dismiss(t.id); }}
             className="p-1 hover:bg-black/10 rounded-full transition-colors flex items-center justify-center cursor-pointer"
             aria-label="Dismiss"
@@ -64,6 +65,7 @@ export function showError(message) {
           <span className="text-base text-error-toast">{message}</span>
         </div>
         <button
+          type="button"
           onClick={(e) => { e.stopPropagation(); toast.dismiss(t.id); }}
           className="p-1 hover:bg-black/10 rounded-full transition-colors flex items-center justify-center cursor-pointer"
           aria-label="Dismiss"

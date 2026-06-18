@@ -611,9 +611,9 @@ const EmployeesList = () => {
 			if (response.success && response.code === 200) {
 				if (count === 1) {
 					const empName = employees.find(e => String(e.id) === String(adminIds[0]))?.name || "Employee";
-					showSuccess("Success!", `${empName}'s account has been suspended.`, false, "#");
+					showSuccess("Success!", `${empName}'s account has been suspended.`, false, `/employees/activelogs?id=${encodeURIComponent(adminIds[0])}&name=${encodeURIComponent(empName)}`);
 				} else {
-					showSuccess("Success!", `${count} employees have been suspended.`, false, "#");
+					showSuccess("Success!", `${count} employees have been suspended.`);
 				}
 				setSuspendEmployeeModal(false);
 				setSelectedEmployees(new Set());
