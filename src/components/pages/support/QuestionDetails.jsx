@@ -95,7 +95,7 @@ export default function QuestionDetails({
                 <div className="text-lg text-[var(--color-neutral-primary)] font-semibold">
                   {log.question}
                 </div>
-                <div className="text-lg text-[var(--color-neutral-secondary)]">
+                <div className="text-lg text-[var(--color-neutral-secondary)] break-words">
                   {log.answer}
                 </div>
               </div>
