@@ -31,7 +31,7 @@ export default function InfoPanel({
 							<img
 								src={image}
 								alt={name || "Empty"}
-								className="w-64 h-48 mx-auto rounded-lg"
+								className="w-72 h-72 mx-auto rounded-lg"
 							/>
 						) : (
 							<div className="h-80 w-80 mx-auto bg-[var(--color-admin-profile-border)]"></div>
@@ -49,29 +49,10 @@ export default function InfoPanel({
 					</p>
 					{buttons && buttons.length > 0 ? (
 						<div className="flex gap-4 justify-center mb-4">
-							{buttons.map((btn, idx) => (
-								<>
-									{btn.href ? (
-										<Link href={btn.href}>
-											<Button
-												key={idx}
-												onClick={btn.onClick}
-												className={btn.className}
-												size="md"
-												variant={btn.variant}
-											>
-												{btn.icon && (
-													<Icon
-														name={btn.icon}
-														className="w-4 h-4 mr-2"
-													/>
-												)}
-												{btn.text}
-											</Button>
-										</Link>
-									) : (
+							{buttons.map((btn, idx) =>
+								btn.href ? (
+									<Link key={idx} href={btn.href}>
 										<Button
-											key={idx}
 											onClick={btn.onClick}
 											className={btn.className}
 											size="md"
@@ -85,9 +66,25 @@ export default function InfoPanel({
 											)}
 											{btn.text}
 										</Button>
-									)}
-								</>
-							))}
+									</Link>
+								) : (
+									<Button
+										key={idx}
+										onClick={btn.onClick}
+										className={btn.className}
+										size="md"
+										variant={btn.variant}
+									>
+										{btn.icon && (
+											<Icon
+												name={btn.icon}
+												className="w-4 h-4 mr-2"
+											/>
+										)}
+										{btn.text}
+									</Button>
+								)
+							)}
 						</div>
 					) : buttonText ? (
 						<Button

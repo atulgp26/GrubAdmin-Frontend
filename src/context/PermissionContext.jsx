@@ -63,42 +63,41 @@ export function PermissionProvider({ children }) {
     return map;
   }, []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (isBackground = false) => {
+    if (!isBackground) {
+      setLoading(true);
+    }
     try {
       // Validate session directly via getProfile - returns user data if authenticated
       // This is more reliable than verifyAuthenticated as it confirms actual session
       const response = await accountService.getProfile();
 
-   if (response?.success && response?.code === 200) {
+      if (response?.success && response?.code === 200) {
+        const u =
+          response?.data?.user ||
+          response?.data ||
+          null;
 
-  const u =
-    response?.data?.user ||
-    response?.data ||
-    null;
+        setUser(u);
 
-  setUser(u);
+        const sourcePermissions =
+          u?.permissions_json ||
+          u?.role?.permissions_json;
 
-  const sourcePermissions =
-    u?.permissions_json ||
-    u?.role?.permissions_json;
+        const pset =
+          flattenPermissions(sourcePermissions);
 
-  const pset =
-    flattenPermissions(sourcePermissions);
+        setPermissions(pset);
 
-  setPermissions(pset);
+        const byModule =
+          buildPermissionsByModule(sourcePermissions);
 
-  const byModule =
-    buildPermissionsByModule(sourcePermissions);
-
-  setPermissionsByModule(byModule);
-
-} else {
-
-  setUser(null);
-  setPermissions(new Set());
-  setPermissionsByModule({});
-}
+        setPermissionsByModule(byModule);
+      } else {
+        setUser(null);
+        setPermissions(new Set());
+        setPermissionsByModule({});
+      }
     } catch (error) {
       console.error("Failed to load profile:", error);
     } finally {
@@ -112,8 +111,8 @@ export function PermissionProvider({ children }) {
 
   // Refresh permissions whenever auth cookie changes (login/logout) or tab gains focus
   useEffect(() => {
-    const onAuthChanged = () => { load(); };
-    const onFocus = () => { load(); };
+    const onAuthChanged = () => { load(true); };
+    const onFocus = () => { load(true); };
     if (typeof window !== 'undefined') {
       window.addEventListener('auth-changed', onAuthChanged);
       window.addEventListener('focus', onFocus);

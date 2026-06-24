@@ -8,6 +8,7 @@ import { MdCalendarToday, MdDone } from "react-icons/md";
 import { showSuccess, showError } from "@/components/ui/toast";
 import { roleService } from "@/api/services/roleService";
 import { useRef } from "react";
+import { formatDate } from "@/utils/formatDate";
 
 const EditEmployeeModal = ({ open, onClose, employeeData, onConfirm }) => {
 	const [formData, setFormData] = useState({
@@ -367,11 +368,7 @@ const EditEmployeeModal = ({ open, onClose, employeeData, onConfirm }) => {
 					? formData.employeeId.trim().replace(/^#\s*/, "")
 					: employeeData.originalData?.employee_id,
 				joinDate: formData.joiningDate,
-				updated: new Date().toLocaleDateString("en-GB", {
-					day: "numeric",
-					month: "short",
-					year: "2-digit",
-				}),
+				updated: formatDate(new Date()),
 			};
 
 			onConfirm(updatedEmployeeData);

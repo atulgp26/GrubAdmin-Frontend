@@ -547,9 +547,10 @@ const DismissEmployees = () => {
 		}
 
 		return (
-			<div className="">
-				<Table className="min-w-full">
-					<TableHead>
+			
+    <div className="">
+        <Table className="min-w-full">
+            <TableHead className="sticky top-0 z-10 bg-white">
 						<TableRow>
 							<TableCell className="p-4 !text-sm font-medium text-[var(--color-stroke-brand)]">
 								Name
@@ -596,12 +597,13 @@ const DismissEmployees = () => {
 										tooltipContent={
 											<div className="space-y-2">
 												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-													Dismissed on {employee.dismissed} (You)
-												</div>
-												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-													Added on {employee.addedDate}{" "}
-													(You)
-												</div>
+    Dismissed by You
+</div>
+<div className="text-[var(--color-stroke-brand)] text-xs text-right">
+    Added on{" "}
+    {employee.joinDate}{" "}
+    (You)
+</div>
 											</div>
 										}
 									>
@@ -672,9 +674,8 @@ const DismissEmployees = () => {
 	if (!canViewDismissed) return null;
 
 	return (
-		<div>
-			<div className="flex items-center justify-between mb-6">
-				<div className="flex items-center gap-4">
+		<div className="flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
+<div className="flex items-center justify-between mb-6 flex-shrink-0">				<div className="flex items-center gap-4">
 					<Button
 						variant="cancel"
 						onClick={() => router.push("/employees/list")}
@@ -701,8 +702,7 @@ const DismissEmployees = () => {
 			</div>
 
 			{/* Search and Filters */}
-			<div className="flex items-center justify-between mb-6">
-				<div className="flex items-center gap-4">
+<div className="flex items-center justify-between mb-6 flex-shrink-0">				<div className="flex items-center gap-4">
 					<div className="w-64">
 						<SearchWithSuggestions
 							data={searchData}
@@ -761,8 +761,9 @@ const DismissEmployees = () => {
 						Loading dismissed employees...
 					</div>
 				</div>
-			) : groupByRole ? (
-				<GroupCollapseTable
+		) : groupByRole ? (
+    <div className="flex-1 overflow-y-auto min-h-0">
+    <GroupCollapseTable
 					groups={groupEmployeesByRole()}
 					openIndex={openGroupIndex}
 					setOpenIndex={setOpenGroupIndex}
@@ -770,8 +771,9 @@ const DismissEmployees = () => {
 					noResultsMessage="No dismissed employees found."
 					tableContainerClass="w-full"
 				/>
+				</div>
 			) : (
-				<div className="">
+				    <div className="flex-1 overflow-y-auto min-h-0">
 					<Pagination
 						currentPage={currentPage}
 						pageSize={pageSize}
@@ -780,7 +782,7 @@ const DismissEmployees = () => {
 						onNext={() => setCurrentPage((p) => p + 1)}
 					/>
 					<Table className="min-w-full">
-						<TableHead>
+					   <TableHead className="sticky top-0 z-10 bg-white">
 							<TableRow>
 								<TableCell className="p-4 !text-sm font-medium text-[var(--color-stroke-brand)]">
 									Name
@@ -866,14 +868,13 @@ const DismissEmployees = () => {
 											tooltipAlign="end"
 											tooltipContent={
 												<div className="space-y-2">
-													<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-														Dismissed on {employee.dismissed} (You)
-													</div>
-													<div className="text-[var(--color-stroke-brand)] text-xs text-right">
-														Added on{" "}
-														{employee.addedDate}{" "}
-														(You)
-													</div>
+												<div className="text-[var(--color-stroke-brand)] text-xs text-right">
+    Dismissed by You
+</div>
+<div className="text-[var(--color-stroke-brand)] text-xs text-right">
+    Added on {employee.joinDate}{" "}
+    (You)
+</div>
 												</div>
 											}
 										>

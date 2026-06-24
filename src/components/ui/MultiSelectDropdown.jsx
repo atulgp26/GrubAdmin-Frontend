@@ -91,7 +91,7 @@ export default function MultiSelectDropdown({
         style={style}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className={`truncate select-none text-sm ${fontsize} leading-none font-normal`}>{buttonLabel}</span>
+        <span className={`truncate select-none text-sm ${fontsize} leading-tight font-normal`}>{buttonLabel}</span>
         <span
           className={`ml-2 transition-transform duration-200 ${open ? "rotate-180" : "rotate-0"}`}
         >

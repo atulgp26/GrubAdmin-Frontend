@@ -18,6 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import LoadingDetails from "@/components/ui/LoadingDetails";
 import { customerService } from "@/api/services/customerService";
 import { useDebounce } from "use-debounce";
+import { formatDate } from "@/utils/formatDate";
 import {
 	DEBOUNCE_TIME,
 	DEFAULT_PAGE_SIZE,
@@ -91,11 +92,7 @@ export default function GrubpacsPage() {
 				customerId: g.client?.id ?? null,
 				status: g.status,
 				statusDisplay: g.status === "suspended" ? "Inactive" : g.status,
-				updatedOn: new Date(g.updated_at).toLocaleDateString("en-GB", {
-					day: "2-digit",
-					month: "short",
-					year: "2-digit",
-				}),
+				updatedOn: formatDate(g.updated_at),
 				assignment: g.client === null ? "unassigned" : "assigned",
 				vertical: g.vertical?.name ?? null, 
 			})),
@@ -513,9 +510,10 @@ export default function GrubpacsPage() {
 	}
 
 	return (
-		<div className="w-full">
-			{/* Header */}
-			<div className="flex items-center justify-between mb-6">
+		<div className="w-full h-full flex flex-col gap-6">
+<div className="shrink-0">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
 				<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)]">
 					Grubpacs
 				</h1>
@@ -525,7 +523,7 @@ export default function GrubpacsPage() {
 			</div>
 
 			{/* Search + Filters */}
-			<div className="flex items-center justify-between gap-6 mb-6 flex-wrap">
+<div className="flex items-center justify-between gap-6 flex-wrap">
 				<div className="w-[260px]">
 					<SearchWithSuggestions
 						data={processedGrubpacs}
@@ -566,8 +564,10 @@ export default function GrubpacsPage() {
 					</label>
 				</div>
 			</div>
+			</div>
 
-			{groupByRole ? (
+		    <div className="flex-1 overflow-y-auto min-h-0 space-y-4">
+        {groupByRole ? (
 				<>
 					{groups.map((group) => {
 						const groupData = processedGrubpacs.filter(
@@ -579,11 +579,14 @@ export default function GrubpacsPage() {
 							<CollapseTable
 								key={group.value}
 								groupName={group.name}
+								scrollable={true}
+scrollableMaxHeight="calc(100vh - 380px)"
 								renderTable={() => (
 									<GrubPacsTable
 										data={groupData}
 										selectedItems={selectedItems}
 										groupName={group.name}
+										
 										onSelectAll={(checked) =>
 											handleSelectAllInSection(
 												groupData,
@@ -630,9 +633,12 @@ export default function GrubpacsPage() {
 				<>
 					<CollapseTable
 						groupName={`Assigned (${assignedGrubpacs.length})`}
+						    scrollable={true}                  
+    scrollableMaxHeight="calc(100vh - 380px)"
 						renderTable={() => (
 							<GrubPacsTable
 								data={assignedGrubpacs}
+			
 								selectedItems={selectedItems}
 								groupName="Assigned"
 								onSelectAll={(checked) =>
@@ -666,10 +672,13 @@ export default function GrubpacsPage() {
 					/>
 					<CollapseTable
 						groupName={`Unassigned (${unassignedGrubpacs.length})`}
+						scrollable={true}
+scrollableMaxHeight="calc(100vh - 380px)"
 						renderTable={() => (
 							<GrubPacsTable
 								data={unassignedGrubpacs}
 								selectedItems={selectedItems}
+								
 								groupName="Unassigned"
 								onSelectAll={(checked) =>
 									handleSelectAllInSection(
@@ -771,6 +780,7 @@ export default function GrubpacsPage() {
 					customActions={customActionButtons}
 				/>
 			)}
+			</div>
 		</div>
 	);
 }

@@ -64,7 +64,7 @@ export default function GrubPacsTable({
 		<div className="">
 			<Table>
 				{/* Header */}
-				<TableHead>
+			<TableHead className="sticky top-0 z-10 bg-[var(--color-bg-primary,white)]">
 					<TableRow className="">
 						<TableCell className="w-12 !pl-4">
 							<TableCheckbox
@@ -164,7 +164,7 @@ export default function GrubPacsTable({
 										<BoxCountBadge
 											// asText={groupName === "Assigned"}
 											asText={true}
-											tooltipSide="bottom"
+											tooltipSide="left"
 											tooltipAlign="end"
 											tooltipTextColor="text-[var(--color-neutral-secondary)]"
 											tooltipText={

@@ -17,6 +17,11 @@ export const customerService = {
 		);
 	},
 
+	// Get single customer by ID
+	getCustomer: async (id) => {
+		return httpClient.get(API_ENDPOINTS.CUSTOMER.GET_CUSTOMERS, { id });
+	},
+
 	createCustomer: async (data) => {
 		return httpClient.post(API_ENDPOINTS.CUSTOMER.CREATE_CUSTOMER, data);
 	},

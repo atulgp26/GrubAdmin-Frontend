@@ -40,10 +40,9 @@ export function showSuccess(title, message, hideDetails = false, href = "", acti
               {action.label}
             </button>
           )}
-          {/* ✅ cross button */}
           <button
-            onClick={() => toast.dismiss(t.id)}
-            className="p-2 -mr-2 hover:bg-black/5 rounded-full transition-colors flex items-center justify-center"
+            onClick={(e) => { e.stopPropagation(); toast.dismiss(t.id); }}
+            className="p-1 hover:bg-black/10 rounded-full transition-colors flex items-center justify-center cursor-pointer"
             aria-label="Dismiss"
           >
             <IoMdClose strokeWidth={2} className="w-5 h-5 text-[var(--color-success-dark)]" />
@@ -65,11 +64,11 @@ export function showError(message) {
           <span className="text-base text-error-toast">{message}</span>
         </div>
         <button
-          onClick={() => toast.dismiss(t.id)}
-          className="p-2 -mr-2 hover:bg-black/5 rounded-full transition-colors flex items-center justify-center"
+          onClick={(e) => { e.stopPropagation(); toast.dismiss(t.id); }}
+          className="p-1 hover:bg-black/10 rounded-full transition-colors flex items-center justify-center cursor-pointer"
           aria-label="Dismiss"
         >
-          <IoMdClose className="w-5 h-5" />
+          <IoMdClose className="w-5 h-5 text-[var(--color-stroke-brand)]" />
         </button>
       </div>
     ),

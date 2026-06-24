@@ -116,17 +116,38 @@ const AddFaq = ({ open, onClose, mode = "add", faqData = null, onSuccess, initia
     }
   };
 
-  const onAddFilesClick = () => {
-    fileInputRef.current?.click();
+  const onAddFilesClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
+
+  const allowedTypes = ['.png', '.jpg', '.jpeg', '.csv', '.pdf', '.avif', '.webp'];
+  const maxSize = 10 * 1024 * 1024; // 10 MB
 
   const onFilesSelected = (e) => {
     const selected = Array.from(e.target.files || []);
     if (!selected.length) return;
+
+    const validFiles = [];
+    for (const f of selected) {
+      const ext = '.' + f.name.split('.').pop().toLowerCase();
+      if (!allowedTypes.includes(ext)) {
+        showError(`"${f.name}" has an unsupported file type. Allowed: png, jpg, csv, pdf, avif, webp`);
+        continue;
+      }
+      if (f.size > maxSize) {
+        showError(`"${f.name}" exceeds the 10 MB limit`);
+        continue;
+      }
+      validFiles.push(f);
+    }
+
+    if (!validFiles.length) return;
+
     setFiles((prev) => {
       const existingNames = new Set((prev || []).map((f) => `${f.name}-${f.size}-${f.lastModified}`));
       const merged = [...(prev || [])];
-      selected.forEach((f) => {
+      validFiles.forEach((f) => {
         const key = `${f.name}-${f.size}-${f.lastModified}`;
         if (!existingNames.has(key)) {
           merged.push(f);
@@ -151,6 +172,14 @@ const AddFaq = ({ open, onClose, mode = "add", faqData = null, onSuccess, initia
 
     setIsFormValid(isValid);
   }, [addQuestion, description, selectedStatus, selectedCategoryId]);
+
+  useEffect(() => {
+    const onBeforeUnload = (e) => {
+      console.log('[AddFaq] PAGE REFRESHING! Is file picker open:', !!fileInputRef.current);
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -311,35 +340,36 @@ const AddFaq = ({ open, onClose, mode = "add", faqData = null, onSuccess, initia
             <h3 className="text-[var(--color-neutral-secondary)] text-base">
               Attachment <span className="text-sm">(optional)</span>
             </h3>
-            <div className="flex gap-4 items-center">
-              <Button className="flex btn-size-md-lg items-center gap-3" variant="grayOutline" onClick={onAddFilesClick}>
-                <GrAttachment className="w-6 h-6" />
-                ADD FILES
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={onFilesSelected}
+            <div className="flex flex-col gap-3">
+             <input
+  ref={fileInputRef}
+  type="file"
+  multiple
+  accept=".png,.jpg,.jpeg,.csv,.pdf,.avif,.webp"
+  onClick={(e) => e.stopPropagation()}
+  onChange={(e) => {
+                  console.log('[AddFaq] file input change fired, files:', e.target.files?.length);
+                  onFilesSelected(e);
+                }}
+                className="block w-full text-sm text-[var(--color-stroke-brand)] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[var(--color-neutral-secondary-bg)] file:text-[var(--color-stroke-brand)] hover:file:bg-[var(--color-admin-profile-border)]"
               />
               {(existingAttachments?.length > 0 || files?.length > 0) && (
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap max-w-full">
                   {existingAttachments.map((f, idx) => (
                     f?.url ? (
-                      <a key={`ex-${idx}`} href={f.url} target="_blank" rel="noopener noreferrer" className="flex leading-none items-center gap-2 rounded-full py-1.5 px-2 bg-[var(--color-stroke-neutral)] text-[var(--color-stroke-brand)] text-sm">
+                      <a key={`ex-${idx}`} href={f.url} target="_blank" rel="noopener noreferrer" className="flex leading-none items-center gap-2 rounded-full py-1.5 px-2 bg-[var(--color-stroke-neutral)] text-[var(--color-stroke-brand)] text-sm max-w-[240px] truncate">
                         {f.name || 'attachment'}
                       </a>
                     ) : (
-                      <span key={`ex-${idx}`} className="flex leading-none items-center gap-2 rounded-full py-1.5 px-2 bg-[var(--color-stroke-neutral)] text-[var(--color-stroke-brand)] text-sm">{f.name || 'attachment'}</span>
+                      <span key={`ex-${idx}`} className="flex leading-none items-center gap-2 rounded-full py-1.5 px-2 bg-[var(--color-stroke-neutral)] text-[var(--color-stroke-brand)] text-sm max-w-[240px] truncate">{f.name || 'attachment'}</span>
                     )
                   ))}
                   {files.map((f, idx) => (
-                    <span key={`${f.name}-${idx}`} className="flex leading-none items-center gap-2 rounded-full py-1.5 px-2 bg-[var(--color-stroke-neutral)] text-[var(--color-stroke-brand)] text-sm">
-                      <button type="button" onClick={() => removeFile(idx)} aria-label="Remove file">
+                    <span key={`${f.name}-${idx}`} className="flex leading-none items-center gap-2 rounded-full py-1.5 px-2 bg-[var(--color-stroke-neutral)] text-[var(--color-stroke-brand)] text-sm max-w-[240px] truncate">
+                      <button type="button" onClick={() => removeFile(idx)} aria-label="Remove file" className="shrink-0">
                         <RxCross2 className="w-5 h-5" />
                       </button>
-                      {f.name}
+                      <span className="truncate">{f.name}</span>
                     </span>
                   ))}
                 </div>
@@ -349,6 +379,7 @@ const AddFaq = ({ open, onClose, mode = "add", faqData = null, onSuccess, initia
 
           <div className="flex gap-4 mb-2 px-1 pt-6 border-t border-[var(--color-box-border)]">
             <Button
+              type="button"
               variant="grayOutline"
               size="mdLg"
               onClick={onClose}
@@ -358,6 +389,7 @@ const AddFaq = ({ open, onClose, mode = "add", faqData = null, onSuccess, initia
             </Button>
 
             <Button
+              type="button"
               variant="primary"
               size="mdLg"
               disabled={mode === "edit" ? !(isFormValid && hasChanges) : !isFormValid}

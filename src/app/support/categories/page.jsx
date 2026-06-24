@@ -613,31 +613,31 @@ export default function Categories() {
 		);
 	}
 
-    return (
-        <div className="min-h-[calc(100vh-150px)]">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)]">
-                        Client support management
-                    </h1>
-                    <p className="text-[var(--color-stroke-brand)]">
-                        Client support management
-                    </p>
-                </div>
-                <div className="flex items-center gap-4">
-                    {hasAnyActions && (
-                        <Button
-                            variant="primary"
-                            className="btn-size-md-sm !px-3 font-medium"
-                            onClick={() => setIsActionModalOpen(true)}
-                        >
-                            TAKE ACTION
-                        </Button>
-                    )}
-                </div>
-            </div>
+	return (
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
+			<div className="flex items-center justify-between mb-6">
+				<div className="flex flex-col gap-1">
+					<h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)]">
+						Client support management
+					</h1>
+					<p className="text-[var(--color-stroke-brand)]">
+						Client support management
+					</p>
+				</div>
+				<div className="flex items-center gap-4">
+					{hasAnyActions && (
+						<Button
+							variant="primary"
+							className="btn-size-md-sm !px-3 font-medium"
+							onClick={() => setIsActionModalOpen(true)}
+						>
+							TAKE ACTION
+						</Button>
+					)}
+				</div>
+			</div>
 
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 flex-shrink-0">
 				<div className="w-full sm:w-64">
 					<SearchWithSuggestions
 						value={search}
@@ -694,6 +694,7 @@ export default function Categories() {
 				</div>
 			</div>
 
+<div className="flex-1 overflow-y-auto min-h-0 pr-1">
 			{filtered.length === 0 ? (
 				<InfoPanel
 					image={null}
@@ -889,15 +890,13 @@ export default function Categories() {
 														Delete category
 													</Button>
 												)}
+										
 										</div>
 									</DropdownPortal>
 								</div>
 								{iconIdToKey[cat.iconId] ? (
 									<img
-										src={
-											fallbackIcons[iconIdToKey[cat.iconId]] ||
-											`${iconBaseUrl}/${iconIdToKey[cat.iconId].split('/').map(encodeURIComponent).join('/')}`
-										}
+										src={`${iconBaseUrl}/${encodeURIComponent(iconIdToKey[cat.iconId])}`}
 										alt="icon"
 										className="w-8 h-8"
 										onError={(e) => {
@@ -925,6 +924,7 @@ export default function Categories() {
 					))}
 				</div>
 			)}
+					</div>
 
 			<ExportListModal
 				open={exportOpen}

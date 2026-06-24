@@ -17,6 +17,7 @@ export default function Modal({
 	noBlur = false,
 	closeOnOutsideClick = true,
 	noXPadding,
+	noPadding,
 	hideClose,
 }) {
 	const [isClient, setIsClient] = useState(false);
@@ -57,6 +58,11 @@ export default function Modal({
 		.replace("items-start", "!items-start")
 		.replace("items-end", "!items-end");
 
+	const getInnerPadding = () => {
+		if (noPadding || noXPadding) return "px-0 py-0";
+		return "px-6 py-0 mt-10 mb-6";
+	};
+
 	return createPortal(
 		<div
 			className={`fixed inset-0 ${top} ${right} ${bottom} ${left} z-50 flex ${positionClassWithImportant} shadow-lg ${noBlur ? "" : "backdrop-blur-sm"} ${customClass}`}
@@ -75,9 +81,7 @@ export default function Modal({
 				>
 					{/* <MdClose className="w-6 h-6 text-[var(--color-stroke-brand)]" /> */}
 				</button>
-				<div
-					className={`flex flex-col flex-1 justify-start h-full ${noXPadding ? "px-0 py-0" : "px-6 py-0 mt-10 mb-6"}`}
-				>
+				<div className={`flex flex-col flex-1 h-full ${getInnerPadding()}`}>
 					{children}
 				</div>
 			</div>

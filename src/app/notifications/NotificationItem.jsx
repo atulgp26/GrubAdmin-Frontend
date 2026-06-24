@@ -1,7 +1,6 @@
 "use client"
 import React from "react";
 import TableCheckbox from "@/components/ui/TableCheckbox";
-import { useRouter } from "next/navigation";
 
 export default function NotificationItem({
 	notification,
@@ -10,33 +9,22 @@ export default function NotificationItem({
 	getNotificationIcon,
 	onDismiss,
 }) {
-	const router = useRouter();
 	const handleCheckboxChange = (e) => {
 		onSelect(e);
 	};
 
 	
+    const cleanMessage = (msg) =>
+        msg
+            .replace(/\.?\s*View Details\s*/g, "")
+            .replace(/[0-9A-Za-z]{24,}/g, "")
+            .replace(/\(\s*\)/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+
     const renderMessage = (message) => {
         if (typeof message !== "string") return message;
-        if (message.includes("View Details")) {
-            const parts = message.split("View Details");
-            return (
-                <>
-                    {parts[0]}
-                    <span
-                        className="text-[var(--color-stroke-brand)] font-semibold hover:underline cursor-pointer"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/systemlogs?itemId=${notification.itemId}`);
-                        }}
-                    >
-                        View Details
-                    </span>
-                    {parts[1]}
-                </>
-            );
-        }
-        return message;
+        return cleanMessage(message);
     };
 
     return (

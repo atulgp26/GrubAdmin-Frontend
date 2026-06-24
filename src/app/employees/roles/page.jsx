@@ -1031,7 +1031,7 @@ const handleConfirmChanges = async () => {
 	const renderGroupTable = (group) => (
 		<div className="">
 			<Table className="min-w-full">
-				<TableHead>
+			<TableHead className="sticky top-0 z-10 bg-white">
 					<TableRow>
 						<TableCell className="w-12 px-3 py-3">
 							<TableCheckbox
@@ -1079,26 +1079,26 @@ const handleConfirmChanges = async () => {
 								</div>
 							</TableCell>
 							<TableCell className="px-3 py-3 w-32">
-								<CustomTooltip
-									title="View list"
-									placement="bottom"
-									arrowPosition="left"
+							<CustomTooltip
+								title="View list"
+								placement="left"
+								arrowPosition="left"
+							>
+								<button
+									type="button"
+									className={`group transition-all duration-200 outline-none border ${role.assignment > 0 ? "border-[var(--color-admin-profile-border)]" : "border-[var(--color-box-border)]"} hover:border-[var(--info-panel-view-bg)] bg-white hover:bg-[var(--color-admin-profile-border)] rounded-full px-4 py-2 flex items-center gap-2 text-base font-normal select-none focus:ring-2 focus:ring-[var(--color-brand-default)] w-fit`}
+									style={{ minWidth: 64 }}
+									onClick={() => handleOpenManagers(role)}
 								>
-									<button
-										type="button"
-										className={`group transition-all duration-200 outline-none border ${role.assignment > 0 ? "border-[var(--color-admin-profile-border)]" : "border-[var(--color-box-border)]"} hover:border-[var(--info-panel-view-bg)] bg-white hover:bg-[var(--color-admin-profile-border)] rounded-full px-4 py-2 flex items-center gap-2 text-base font-normal select-none focus:ring-2 focus:ring-[var(--color-brand-default)] w-fit`}
-										style={{ minWidth: 64 }}
-										onClick={() => handleOpenManagers(role)}
-									>
-										<Icon
-											name="two_users"
-											className={`w-5 h-5 ${role.assignment > 0 ? "text-[var(--info-panel-view-bg)]" : "text-[var(--color-neutral-light)] group-hover:text-[var(--color-brand-default)]"} transition-colors`}
-										/>
-										<span className="text-[var(--color-neutral-secondary)] text-sm font-normal">
-											{role.assignment}
-										</span>
-									</button>
-								</CustomTooltip>
+									<Icon
+										name="two_users"
+										className={`w-5 h-5 ${role.assignment > 0 ? "text-[var(--info-panel-view-bg)]" : "text-[var(--color-neutral-light)] group-hover:text-[var(--color-brand-default)]"} transition-colors`}
+									/>
+									<span className="text-[var(--color-neutral-secondary)] text-sm font-normal">
+										{role.assignment}
+									</span>
+								</button>
+							</CustomTooltip>
 							</TableCell>
 							<TableCell className="px-2 py-3 text-[var(--color-neutral-secondary)] text-base w-28 whitespace-nowrap">
 								{role.updated}
@@ -1136,9 +1136,9 @@ const handleConfirmChanges = async () => {
 	if (!canViewRoles) return null;
 
 	return (
-		<div className="">
+		<div className="flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
 			{/* Header */}
-			<div className="flex items-center justify-between mb-6">
+		<div className="flex items-center justify-between mb-6 flex-shrink-0">
 				<div className="flex items-start gap-4">
 					<Link href="/employees/list">
 						<Button variant="cancel" className="!p-2 pt-1">
@@ -1168,7 +1168,7 @@ const handleConfirmChanges = async () => {
 			</div>
 
 			{/* Search and Filters */}
-			<div className="flex items-center justify-between mb-6">
+	<div className="flex items-center justify-between mb-6 flex-shrink-0">		
 				<div className="flex items-center gap-4">
 					<div className="w-64 pl-1">
 						<SearchWithSuggestions
@@ -1212,24 +1212,28 @@ const handleConfirmChanges = async () => {
           tableContainerClass="w-full"
         />
       ) : ( */}
-			{loading ? (
-				<LoadingDetails entity="roles" />
-			) : (
-				<div className="">
-					<Pagination
-						currentPage={currentPage}
-						pageSize={pageSize}
-						totalItems={totalCount}
-						onPrev={() => setCurrentPage((p) => Math.max(1, p - 1))}
-						onNext={() => {
-							const totalPages = Math.ceil(totalCount / pageSize);
-							if (currentPage < totalPages) {
-								setCurrentPage((p) => p + 1);
-							}
-						}}
-					/>
-					<Table className="min-w-full">
-						<TableHead>
+			{!loading && (
+    <div className="flex-shrink-0">
+        <Pagination
+            currentPage={currentPage}
+            pageSize={pageSize}
+            totalItems={totalCount}
+            onPrev={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onNext={() => {
+                const totalPages = Math.ceil(totalCount / pageSize);
+                if (currentPage < totalPages) {
+                    setCurrentPage((p) => p + 1);
+                }
+            }}
+        />
+    </div>
+)}
+{loading ? (
+    <LoadingDetails entity="roles" />
+) : (
+    <div className="flex-1 overflow-y-auto min-h-0">
+        <Table className="min-w-full">
+						<TableHead className="sticky top-0 z-10 bg-white">
 							<TableRow>
 								<TableCell className="w-12 px-3 py-3">
 									<TableCheckbox
@@ -1300,16 +1304,16 @@ const handleConfirmChanges = async () => {
 										<TableCell className="px-3 py-3">
 											<CustomTooltip
 												title="View list"
-												placement="bottom"
+												placement="left"
 												arrowPosition="left"
-												onClick={() =>
-													handleOpenManagers(role)
-												}
 											>
 												<button
 													type="button"
 													className={`group transition-all duration-200 outline-none border ${role.assignment > 0 ? "border-[var(--color-admin-profile-border)]" : "border-[var(--color-box-border)]"} hover:border-[var(--info-panel-view-bg)] bg-white hover:bg-[var(--color-admin-profile-border)] rounded-full !px-3 !py-2 flex items-center gap-2 text-base font-normal select-none focus:ring-2 focus:ring-[var(--color-brand-default)]`}
 													style={{ minWidth: 64 }}
+													onClick={() =>
+														handleOpenManagers(role)
+													}
 												>
 													<Icon
 														name="two_users"

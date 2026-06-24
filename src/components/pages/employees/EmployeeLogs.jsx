@@ -5,6 +5,7 @@ import { LuPlug2 } from "react-icons/lu";
 import { MdOutlineDone } from "react-icons/md";
 import { FaRegPlusSquare } from "react-icons/fa";
 import SearchWithSuggestions from "@/components/ui/SearchWithSuggestions";
+import { formatDateTime } from "@/utils/formatDate";
 import { RiInformationLine } from "react-icons/ri";
 import Button from "@/components/ui/Button";
 import { PencilLine, Trash2 } from "lucide-react";
@@ -163,18 +164,7 @@ const getCategoryIcon = (category) => {
 // Format timestamp
 const formatTimestamp = (isoString) => {
 	if (!isoString) return "";
-	const date = new Date(isoString);
-	return date
-		.toLocaleString("en-GB", {
-			day: "2-digit",
-			month: "short",
-			year: "2-digit",
-			hour: "2-digit",
-			minute: "2-digit",
-			second: "2-digit",
-			hour12: false,
-		})
-		.replace(",", "");
+	return formatDateTime(isoString);
 };
 
 // Format log description to make it more readable

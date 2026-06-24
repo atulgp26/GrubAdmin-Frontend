@@ -263,8 +263,8 @@ export default function SuspendedSupportCategoriesPage() {
 	}
 
 	return (
-		<div className="min-h-[calc(100vh-150px)]">
-			<div className="flex items-center justify-between mb-6">
+<div className="flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
+	<div className="flex items-center justify-between mb-6 flex-shrink-0">
 				<div className="flex items-center gap-4">
 					<Button
 						variant="cancel"
@@ -320,8 +320,8 @@ export default function SuspendedSupportCategoriesPage() {
 					subdescription="All support categories are currently active. Suspended categories will appear here once deactivated."
 				/>
 			) : (
-				<>
-					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+	<div className="flex flex-col flex-1 min-h-0">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 flex-shrink-0">
 						<div className="w-full sm:w-64">
 							<SearchWithSuggestions
 								value={search}
@@ -336,24 +336,22 @@ export default function SuspendedSupportCategoriesPage() {
 								minChars={1}
 							/>
 						</div>
-						{filtered.length > 0 && (
-							<div className="flex items-center gap-3 ml-auto">
-								<div className="text-sm text-[var(--color-stroke-brand)]">
-									Showing {filtered.length} of{" "}
-									{categories.length}
-								</div>
-								<div className="w-44">
-									<Select
-										value={vertical}
-										onChange={setVertical}
-										options={verticalOptions}
-										placeholder="All verticals"
-									/>
-								</div>
+						<div className="flex items-center gap-3 ml-auto">
+							<div className="text-sm text-[var(--color-stroke-brand)]">
+								Showing {filtered.length} of{" "}
+								{categories.length}
 							</div>
-						)}
+							<div className="w-44">
+								<Select
+									value={vertical}
+									onChange={setVertical}
+									options={verticalOptions}
+									placeholder="All verticals"
+								/>
+							</div>
+						</div>
 					</div>
-
+<div className="flex-1 overflow-y-auto min-h-0">
 					{filtered.length === 0 ? (
 						<InfoPanel
 							title=""
@@ -526,8 +524,9 @@ export default function SuspendedSupportCategoriesPage() {
 								</div>
 							))}
 						</div>
+						
 					)}
-
+</div>
 					<ExportListModal
 						open={exportOpen}
 						onClose={() => setExportOpen(false)}
@@ -647,7 +646,7 @@ export default function SuspendedSupportCategoriesPage() {
 							}}
 						/>
 					)}
-				</>
+				</div>
 			)}
 		</div>
 	);
