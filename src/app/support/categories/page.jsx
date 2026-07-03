@@ -66,6 +66,17 @@ export default function Categories() {
 		"icons/camping-faq-icon.png": "/window.svg",
 		"icons/hospitality-faq-icon.png": "/shop.svg",
 		"icons/delivery-faq-icon.png": "/car.svg",
+		"icons/default-faq-icon.svg": "/notes-info.svg",
+		"icons/medical-faq-icon.svg": "/troubleshooting.svg",
+		"icons/camping-faq-icon.svg": "/window.svg",
+		"icons/hospitality-faq-icon.svg": "/shop.svg",
+		"icons/delivery-faq-icon.svg": "/car.svg",
+		"icons/gear.svg": "/plug.svg",
+		"icons/suitcase-medical.svg": "/troubleshooting.svg",
+		"icons/bluetooth-on.svg": "/bluetooth.svg",
+		"icons/exclamation-triangle.svg": "/exclamation-triangle.svg",
+		"icons/user-shield.svg": "/accountandsupport.svg",
+		"icons/question-circle.svg": "/question-mark.svg",
 	};
 	const [verticalIdToName, setVerticalIdToName] = useState({});
 	const [loading, setLoading] = useState(true);
@@ -894,16 +905,16 @@ export default function Categories() {
 										</div>
 									</DropdownPortal>
 								</div>
-								{iconIdToKey[cat.iconId] ? (
-									<img
-										src={`${iconBaseUrl}/${encodeURIComponent(iconIdToKey[cat.iconId])}`}
-										alt="icon"
-										className="w-8 h-8"
-										onError={(e) => {
-											e.currentTarget.src = "/question-mark.svg";
-										}}
-									/>
-								) : (
+							{iconIdToKey[cat.iconId] ? (
+								<img
+									src={`${iconBaseUrl}/${iconIdToKey[cat.iconId].split('/').map(encodeURIComponent).join('/')}`}
+									alt="icon"
+									className="w-8 h-8"
+									onError={(e) => {
+										e.currentTarget.src = fallbackIcons[iconIdToKey[cat.iconId]] || "/question-mark.svg";
+									}}
+								/>
+							) : (
 									<Icon
 										name="notes_info"
 										className="w-8 h-8 text-[var(--color-brand-icon)] group-hover:text-[var(--info-panel-view-bg)]"

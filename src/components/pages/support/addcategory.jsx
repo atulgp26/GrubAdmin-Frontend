@@ -129,12 +129,23 @@ const AddCategory = ({ open, onClose, mode = "add", initialValues = null }) => {
             "icons/camping-faq-icon.png": "/window.svg",
             "icons/hospitality-faq-icon.png": "/shop.svg",
             "icons/delivery-faq-icon.png": "/car.svg",
+            "icons/default-faq-icon.svg": "/notes-info.svg",
+            "icons/medical-faq-icon.svg": "/troubleshooting.svg",
+            "icons/camping-faq-icon.svg": "/window.svg",
+            "icons/hospitality-faq-icon.svg": "/shop.svg",
+            "icons/delivery-faq-icon.svg": "/car.svg",
             "Support/Card/gear.svg": "/plug.svg",
             "Support/Card/suitcase-medical.svg": "/troubleshooting.svg",
             "Support/Card/bluetooth-on.svg": "/bluetooth.svg",
             "Support/Card/exclamation-triangle.svg": "/exclamation-triangle.svg",
             "Support/Card/user-shield.svg": "/accountandsupport.svg",
             "Support/Card/question-circle.svg": "/question-mark.svg",
+            "icons/gear.svg": "/plug.svg",
+            "icons/suitcase-medical.svg": "/troubleshooting.svg",
+            "icons/bluetooth-on.svg": "/bluetooth.svg",
+            "icons/exclamation-triangle.svg": "/exclamation-triangle.svg",
+            "icons/user-shield.svg": "/accountandsupport.svg",
+            "icons/question-circle.svg": "/question-mark.svg",
           };
           const opts = icons.map(ic => {
             const key = ic.bucket_key.split('/').map(encodeURIComponent).join('/');
