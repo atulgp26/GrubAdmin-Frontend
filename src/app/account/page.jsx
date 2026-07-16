@@ -307,10 +307,7 @@ export default function AccountPage() {
 				return;
 			}
 
-			const eligibilityResponse = await accountService.deleteEligibility(
-				email,
-				enteredOtp,
-			);
+			const eligibilityResponse = await accountService.deleteEligibility();
 
 			if (
 				eligibilityResponse.success &&

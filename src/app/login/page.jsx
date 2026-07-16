@@ -126,6 +126,7 @@ export default function LoginPage() {
 			const result = await login({
 				email: data.email,
 				password: data.password,
+				remember_me: rememberMe,
 			});
 
 			if (result.success) {
@@ -180,7 +181,7 @@ export default function LoginPage() {
 		}
 	};
 
-	// Forgot Password Handlers
+	// Forgot Password — Figma: SEND RESET LINK (email magic link, not OTP modal)
 	const handleForgotPassword = async (email) => {
 		try {
 			setIsLoading(true);
@@ -193,18 +194,17 @@ export default function LoginPage() {
 				(!response.code ||
 					(response.code >= 200 && response.code < 300))
 			) {
-				setOtpEmail(normalizedEmail);
 				setForgotPasswordModalOpen(false);
-				setIsForgotPasswordFlow(true);
-				setOtpVerifyModalOpen(true);
-				setTimer(12);
-				setOtp(["", "", "", ""]);
-				showSuccess("OTP sent successfully!", "", true);
+				showSuccess(
+					"Reset link sent",
+					"If this email is registered, you will receive a password reset link shortly.",
+					true,
+				);
 			} else {
 				showError(getApiError(response));
 			}
 		} catch (error) {
-			console.error("Forgot password send OTP error:", error);
+			console.error("Forgot password send link error:", error);
 			showError(getApiError(error));
 		} finally {
 			setIsLoading(false);
@@ -278,8 +278,8 @@ export default function LoginPage() {
 				// isn't sent due to cross-origin SameSite restrictions)
 				if (response?.data?.token) {
 					setToken(response.data.token);
-					setAuthCookie(otpEmail, response.data.token, 1);
 				}
+				setAuthCookie(otpEmail, 1);
 
 				// Refresh AuthContext session (the HttpOnly cookie was set by the backend)
 				const sessionValid = await refreshSession();

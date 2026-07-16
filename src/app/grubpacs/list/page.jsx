@@ -469,7 +469,7 @@ export default function GrubpacsPage() {
 			const res = await boxService.getBoxes(params);
 			if (res?.success && res?.data) {
 				setGrubpacs(res.data.boxes || []);
-				setTotalItems(res.data.pagination?.total_count || 0); 
+				setTotalItems(res.pagination?.total_count ?? res.data?.count ?? 0);
 			}
 		} catch (e) {
 			console.error("Failed to fetch grubpacs:", e);

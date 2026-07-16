@@ -14,7 +14,7 @@ export default function ClientProfileDetails({ open, onClose, clientId, clientNa
       .getCustomer(clientId)
       .then((res) => {
         const raw = res?.data;
-        const customer = raw?.customers?.[0] || raw || null;
+        const customer = raw?.customer || raw?.customers?.[0] || raw || null;
         setClientData(customer);
       })
       .catch(() => {

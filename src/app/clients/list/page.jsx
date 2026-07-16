@@ -280,6 +280,11 @@ const ClientsList = () => {
 			const response = await customerService.getCustomers(params);
 			if (response?.success && response?.code === 200) {
 				setCustomers(response.data?.customers || []);
+				setTotalItems(
+					response.pagination?.total_count ??
+						response.data?.count ??
+						0,
+				);
 				setError(null);
 			} else {
 				showError("Failed to load customers data");
@@ -1464,7 +1469,18 @@ const onVerticalGroupClose = (verticalName) => {
 			</div>
 
 			{/* Table or Grouped View */}
-			{groupByRole ? (
+			{!loading &&
+			customers.length === 0 &&
+			!debouncedSearchValue &&
+			selectedRole.length === 0 ? (
+				<InfoPanel
+					title=""
+					name="No clients added yet"
+					description="Clients will appear here once onboarded. You can track their boxes, assist them, and access their platform for guidance."
+					buttonLabel={canAddClient ? "ADD NEW CLIENT" : null}
+					onButtonClick={() => setAddNewClient(true)}
+				/>
+			) : groupByRole ? (
 					<div className="flex-1 overflow-y-auto min-h-0">
 					{verticals.map((vertical, index) => {
 						const verticalClients = filteredClients.filter(

@@ -32,8 +32,8 @@ export const accountService = {
   },
 
   // Check delete eligibility
-  deleteEligibility: async (email, otp) => {
-    return httpClient.getWithBody(API_ENDPOINTS.ACCOUNT.DELETE_ELIGIBILITY, { email, otp });
+  deleteEligibility: async () => {
+    return httpClient.get(API_ENDPOINTS.ACCOUNT.DELETE_ELIGIBILITY);
   },
 
   // Delete user account

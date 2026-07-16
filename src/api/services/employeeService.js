@@ -110,29 +110,16 @@ export const employeeService = {
 		const queryString = queryParts.length > 0 ? queryParts.join("&") : "";
 		const fullUrl = `${API_BASE_URL}${API_ENDPOINTS.EMPLOYEE.EXPORT_ADMINS}${queryString ? "?" + queryString : ""}`;
 
-		console.log("Export Admins API URL:", fullUrl);
-		console.log("Export Admins params:", params);
-		console.log("Export Admins query string:", queryString);
-
-		// Fetch response
 		const response = await fetch(fullUrl, {
 			method: "GET",
+			credentials: "include",
 			headers: getHeaders(),
 		});
 
-		console.log("Export Admins API response status:", response.status);
 		const contentType = response.headers.get("content-type") || "";
 		const contentDisposition =
 			response.headers.get("content-disposition") || "";
 
-		console.log("Content-Type:", contentType);
-		console.log("Content-Disposition:", contentDisposition);
-		console.log(
-			"Response headers:",
-			Object.fromEntries(response.headers.entries()),
-		);
-
-		// Handle 401 Unauthorized
 		if (response.status === 401) {
 			clearAuthCookie();
 			if (
@@ -144,16 +131,8 @@ export const employeeService = {
 			throw new Error("Unauthorized");
 		}
 
-		// Clone response for error checking
-		const responseClone = response.clone();
-
-		// Always read as text first (CSV is text format)
 		const text = await response.text();
-		console.log("Export Admins text response length:", text.length);
-		console.log("Export Admins text preview:", text.substring(0, 500));
-		console.log("Export Admins full response text:", text);
 
-		// If response is not OK, try to parse error message
 		if (!response.ok) {
 			let errorMessage = `HTTP error! status: ${response.status}`;
 			try {
@@ -161,39 +140,30 @@ export const employeeService = {
 					const errorData = JSON.parse(text);
 					errorMessage =
 						errorData.message || errorData.error || errorMessage;
-					console.error("Export Admins API error:", errorData);
 				} else {
-					console.error("Export Admins API error text:", text);
 					errorMessage = text || errorMessage;
 				}
-			} catch (e) {
-				console.error("Error parsing error response:", e);
+			} catch (_) {
+				// keep default error message
 			}
 			throw new Error(errorMessage);
 		}
 
-		// Check if response is actually valid CSV or if it's an error
 		if (
 			!text ||
 			text.trim().length === 0 ||
 			text.trim() === "1" ||
 			text.trim() === "2"
 		) {
-			console.error(
-				"Export Admins: Invalid or empty response received:",
-				text,
-			);
 			throw new Error(
 				"Export failed: Received invalid response from server. Please try again.",
 			);
 		}
 
-		// Check if response is JSON error (should not happen for successful export)
 		if (text.trim().startsWith("{") || text.trim().startsWith("[")) {
 			try {
 				const jsonData = JSON.parse(text);
 				if (jsonData.error || jsonData.message) {
-					console.error("Export Admins API JSON error:", jsonData);
 					throw new Error(
 						jsonData.message ||
 							jsonData.error ||
@@ -201,34 +171,26 @@ export const employeeService = {
 					);
 				}
 			} catch (parseError) {
-				// Not JSON, continue as CSV
+				if (parseError instanceof Error && parseError.message !== "Failed to export. Received error response.") {
+					// Not JSON, continue as CSV
+				} else {
+					throw parseError;
+				}
 			}
 		}
 
-		// Create CSV blob with proper MIME type
 		const blob = new Blob([text], { type: "text/csv;charset=utf-8;" });
-		console.log(
-			"Export Admins blob created - size:",
-			blob.size,
-			"bytes, type:",
-			blob.type,
-		);
 
-		// Check if blob is empty
 		if (blob.size === 0) {
 			throw new Error(
 				"Export file is empty. Please check your filters and try again.",
 			);
 		}
 
-		// Extract filename from Content-Disposition or use default
 		const filename =
 			extractFilenameFromDisposition(contentDisposition) ||
 			`employees_export_${new Date().toISOString().split("T")[0]}.csv`;
 
-		console.log("Export Admins filename:", filename);
-
-		// Return blob with metadata
 		return {
 			blob,
 			filename,

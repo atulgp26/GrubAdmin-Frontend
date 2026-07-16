@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "./config";
 import { getHeaders } from "./utils";
 import { clearAuthCookie } from "@/utils/cookies";
+import { clearToken } from "./utils";
 
 // Handle 401 redirect - only run once per session to avoid redirect loops
 let isRedirecting = false;

@@ -19,7 +19,8 @@ export const customerService = {
 
 	// Get single customer by ID
 	getCustomer: async (id) => {
-		return httpClient.get(API_ENDPOINTS.CUSTOMER.GET_CUSTOMERS, { id });
+		const url = API_ENDPOINTS.CUSTOMER.GET_CUSTOMER.replace(":id", id);
+		return httpClient.get(url);
 	},
 
 	createCustomer: async (data) => {
@@ -30,9 +31,6 @@ export const customerService = {
 	exportCustomers: async (params = {}) => {
 		const queryString = new URLSearchParams(params).toString();
 		const fullUrl = `${API_BASE_URL}${API_ENDPOINTS.CUSTOMER.EXPORT_CUSTOMERS}${queryString ? "?" + queryString : ""}`;
-
-		console.log("Export API URL:", fullUrl);
-		console.log("Export params:", params);
 
 		const response = await httpClient.get(
 			API_ENDPOINTS.CUSTOMER.EXPORT_CUSTOMERS,

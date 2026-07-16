@@ -13,11 +13,6 @@ export const authService = {
     return httpClient.post(API_ENDPOINTS.AUTH.LOGOUT);
   },
 
-  // Refresh authentication token
-  refreshToken: async () => {
-    return httpClient.post(API_ENDPOINTS.AUTH.REFRESH_TOKEN);
-  },
-
   // Send OTP
   sendOtp: async (email) => {
     const payloadEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
@@ -74,7 +69,6 @@ export const authService = {
       otp: payloadOtp,
       password: data?.password || '',
     };
-    console.log('Forgot password confirm payload:', { ...payload, password: '***' });
     return httpClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD_CONFIRM, payload);
   },
 };

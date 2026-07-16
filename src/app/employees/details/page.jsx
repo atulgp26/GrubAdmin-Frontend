@@ -1,10 +1,12 @@
 import EmployeeDetails from '@/components/pages/employees/EmployeeDetails'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 const page = () => {
   return (
     <div>
-      <EmployeeDetails/>
+      <Suspense fallback={null}>
+        <EmployeeDetails/>
+      </Suspense>
     </div>
   )
 }

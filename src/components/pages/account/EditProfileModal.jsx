@@ -1021,9 +1021,9 @@ function CheckIcon() {
 }
 
 const defaultFields = {
-	name: "Akash Sharma",
-	email: "akash@gmail.com",
-	contact: "+91 98765 43210",
+	name: "",
+	email: "",
+	contact: "",
 	password: "**********",
-	facility: "ABC Hotel, Delhi",
+	facility: "",
 };

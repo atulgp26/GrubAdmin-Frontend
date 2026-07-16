@@ -1,8 +1,17 @@
-export const API_CONFIG = {
-	BASE_URL:
-		process.env.NEXT_PUBLIC_API_BASE_URL ||
-		"http://43.204.34.10:8000/api/v1",
+const resolveApiBaseUrl = () => {
+	const configured = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+	if (configured) return configured.replace(/\/$/, "");
+	throw new Error(
+		"NEXT_PUBLIC_API_BASE_URL is required.",
+	);
 };
+
+export const API_CONFIG = {
+	BASE_URL: resolveApiBaseUrl(),
+};
+
+export const CLIENT_DASHBOARD_URL =
+	process.env.NEXT_PUBLIC_CLIENT_DASHBOARD_URL?.replace(/\/$/, "");
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -14,6 +23,7 @@ export const API_ENDPOINTS = {
 		RESEND_OTP: "/admin/auth/resend-otp",
 		VERIFY_OTP: "/admin/auth/verify-otp",
 		VERIFY_AUTHENTICATED: "/admin/auth/verify-authenticated",
+		FORGOT_PASSWORD_SEND_LINK: "/admin/auth/reset-password/otp/send",
 		FORGOT_PASSWORD_SEND_OTP: "/admin/auth/reset-password/otp/send",
 		FORGOT_PASSWORD_RESEND_OTP: "/admin/auth/reset-password/otp/resend",
 		FORGOT_PASSWORD_VERIFY_OTP: "/admin/auth/reset-password/otp/verify",
@@ -35,6 +45,7 @@ export const API_ENDPOINTS = {
 	CUSTOMER: {
 		GET_VERTICALS: "/admin/vertical",
 		GET_CUSTOMERS: "/admin/customer",
+		GET_CUSTOMER: "/admin/customer/:id",
 		CREATE_CUSTOMER: "/admin/customer",
 		EXPORT_CUSTOMERS: "/admin/customer/export",
 		IMPERSONATE_CLIENT: "/admin/customer/:id/impersonate",

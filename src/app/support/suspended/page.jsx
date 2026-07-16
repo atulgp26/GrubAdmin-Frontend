@@ -66,6 +66,7 @@ export default function SuspendedSupportCategoriesPage() {
 						icon: "notes_info",
 						iconId: c.icon_id,
 						description: c.description || "",
+						faqCount: c.faq_count ?? c.faqCount ?? 0,
 						verticalId:
 							c.vertical_id !== undefined &&
 							c.vertical_id !== null
@@ -545,7 +546,7 @@ export default function SuspendedSupportCategoriesPage() {
 						custom={true}
 						title={
 							selectedCategory
-								? `Reactivate Troubleshooting and FAQs??`
+								? `Reactivate Troubleshooting and FAQs?`
 								: `Reactivate Troubleshooting and ${reactivateCount} ${reactivateCount === 1 ? "category" : "categories"}?`
 						}
 						description={
@@ -555,7 +556,7 @@ export default function SuspendedSupportCategoriesPage() {
 						}
 						confirmText={
 							selectedCategory
-								? `YES, REACTIVATE CATEGORY & 12 FAQs`
+								? `YES, REACTIVATE CATEGORY & ${selectedCategory.faqCount ?? 0} FAQs`
 								: `YES, REACTIVATE ${reactivateCount} ${reactivateCount === 1 ? "CATEGORY" : "CATEGORIES"} AND THEIR FAQS`
 						}
 					/>

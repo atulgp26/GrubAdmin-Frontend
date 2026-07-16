@@ -25,27 +25,9 @@ export const clearToken = () => {
   _inMemoryToken = null;
 };
 
-// Attempt to read a token from the JS-accessible `auth` cookie.
-// This is a best-effort helper; the canonical auth is the HttpOnly cookie.
-function readTokenFromClientCookie() {
-  if (typeof window === 'undefined') return null;
-  try {
-    const authCookie = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('auth='));
-    if (!authCookie) return null;
-    const authData = JSON.parse(decodeURIComponent(authCookie.split('=')[1]));
-    return authData.authToken || null;
-  } catch {
-    return null;
-  }
-}
-
 export const getToken = () => {
-  // In-memory token (set after login/OTP-verify) takes precedence.
-  if (_inMemoryToken) return _inMemoryToken;
-  // Fallback to client-side cookie.
-  return readTokenFromClientCookie();
+  // In-memory only — never read JWT from JS-accessible cookies.
+  return _inMemoryToken;
 };
 
 // Get headers for API requests.

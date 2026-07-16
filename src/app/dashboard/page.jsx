@@ -5,6 +5,8 @@ import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { usePermissions } from "@/context/PermissionContext";
 
+import WelcomeBox from "@/components/pages/dashboard/WelcomeBox";
+
 export default function DashboardPage() {
   const router = useRouter();
   const { can, loading, user } = usePermissions();
@@ -35,6 +37,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-[calc(100vh-150px)]">
+      <WelcomeBox />
       <div className="flex flex-col">
         <div>
           <h1 className="text-2xl font-semibold text-[var(--color-neutral-primary)] mb-2">

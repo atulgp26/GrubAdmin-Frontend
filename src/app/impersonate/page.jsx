@@ -48,7 +48,7 @@ function ImpersonateHandler() {
 
     startImpersonation(clientInfo, token);
     setToken(token);
-    setAuthCookie(clientInfo.name || "impersonated", token, 1 / 24);
+    setAuthCookie(clientInfo.name || "impersonated", 1 / 24);
 
     // Exchange impersonation token for delivery session
     customerService
@@ -57,7 +57,7 @@ function ImpersonateHandler() {
         if (sessionResponse?.success && sessionResponse?.data?.auth_token) {
           const deliveryToken = sessionResponse.data.auth_token;
           setToken(deliveryToken);
-          setAuthCookie(clientInfo.name || "impersonated", deliveryToken, 1);
+          setAuthCookie(clientInfo.name || "impersonated", 1);
         }
       })
       .catch((err) => {

@@ -7,8 +7,8 @@
  * This cookie is NOT accessible via JavaScript (HttpOnly flag).
  * All API requests use `credentials: "include"` which automatically sends it.
  *
- * The `auth` cookie (JS-accessible) is a LEGACY client-side hint only.
- * It is NOT the source of truth for authentication.
+ * The `auth` cookie (JS-accessible) stores a non-sensitive session hint only
+ * (email + timestamp). It MUST NOT contain JWTs or other secrets.
  * Session validation MUST be done via API (GET /admin/account/me).
  */
 
@@ -33,13 +33,11 @@ export const deleteCookie = (name) => {
 	document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 };
 
-// Authentication specific functions (legacy client-side hint only)
-export const setAuthCookie = (email, authToken, time = 1 / 24) => {
-	const authData = { email, authToken, timestamp: Date.now() };
+// Non-sensitive session hint only — never store JWTs here.
+export const setAuthCookie = (email, time = 1 / 24) => {
+	const authData = { email, timestamp: Date.now() };
 	setCookie("auth", JSON.stringify(authData), time ?? 1 / 24);
-	try {
-		window.dispatchEvent(new Event("auth-changed"));
-	} catch (_) {}
+	notifyAuthChanged();
 };
 
 export const getAuthCookie = () => {
@@ -48,6 +46,12 @@ export const getAuthCookie = () => {
 
 	try {
 		const authData = JSON.parse(authCookie);
+		if (authData?.authToken) {
+			// Strip legacy JWT from client cookie.
+			delete authData.authToken;
+			setCookie("auth", JSON.stringify(authData), 1);
+		}
+
 		const now = Date.now();
 		const cookieAge = now - authData.timestamp;
 		const maxAge = 60 * 60 * 1000;
@@ -66,6 +70,13 @@ export const getAuthCookie = () => {
 
 export const clearAuthCookie = () => {
 	deleteCookie("auth");
+	notifyAuthChanged();
+};
+
+export const notifyAuthChanged = () => {
+	try {
+		window.dispatchEvent(new Event("auth-changed"));
+	} catch (_) {}
 };
 
 /**

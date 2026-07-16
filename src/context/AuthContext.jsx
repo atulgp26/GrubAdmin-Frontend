@@ -71,14 +71,7 @@ export function AuthProvider({ children }) {
 					const sessionValid = await loadSession();
 
 					if (sessionValid) {
-						// Persist token for page-reload recovery
-						if (response?.data?.token) {
-							setAuthCookie(
-								credentials.email,
-								response.data.token,
-								1,
-							);
-						}
+						setAuthCookie(credentials.email, 1);
 						return { success: true };
 					}
 					return {

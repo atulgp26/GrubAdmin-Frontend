@@ -154,6 +154,7 @@ export const faqService = {
     // Fetch response
     const response = await fetch(fullUrl, {
       method: 'GET',
+      credentials: 'include',
       headers: getHeaders(),
     });
     
@@ -239,6 +240,7 @@ export const faqService = {
     
     const response = await fetch(fullUrl, {
       method: 'GET',
+      credentials: 'include',
       headers: getHeaders(),
     });
     
