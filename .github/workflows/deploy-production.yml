@@ -1,0 +1,66 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.EC2_HOST }}" ] || \
+             [ -z "${{ secrets.EC2_SSH_KEY }}" ] || \
+             [ -z "${{ secrets.EC2_USER }}" ]; then
+            echo "One or more required secrets are empty or not set (EC2_HOST, EC2_SSH_KEY, EC2_USER)"
+            exit 1
+          fi
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Add EC2 host to known_hosts
+        run: |
+          ssh-keyscan -t ed25519 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Build & Deploy
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd grubadmin-frontend
+            git stash
+            git pull origin main
+            docker compose -f docker-compose.frontend.yml down
+            docker compose -f docker-compose.frontend.yml up --build -d
+          EOF
+
+      - name: Done
+        run: echo "Admin frontend deployed successfully to production"

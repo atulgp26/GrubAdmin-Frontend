@@ -13,40 +13,7 @@ import Button from "../ui/Button";
 import { useAuth } from "@/context/AuthContext";
 import { useImpersonation } from "@/context/ImpersonationContext";
 import { notificationsService } from "@/api/services/notificationsService";
-import { formatDate } from "@/utils/formatDate";
-
-const mockNotifications = [
-	{
-		type: "success",
-		title: "New client!",
-		message:
-			"MediCare Labs has been added. Assign boxes to activate their account.",
-		time: "12:15 PM",
-		date: "Today",
-	},
-	{
-		type: "error",
-		title: "Repair requests",
-		message: "Client X has overdue repair requests.",
-		time: "12:15 PM",
-		date: "Today",
-	},
-	{
-		type: "success",
-		title: "Boxes added!",
-		message: "50 boxes (Medical type 1) added to the inventory.",
-		time: "12:15 PM",
-		date: "Today",
-	},
-	{
-		type: "warning",
-		title: "New client!",
-		message:
-			"MediCare Labs has been added. Assign boxes to activate their account.",
-		time: "12:15 PM",
-		date: "Today",
-	},
-];
+import { formatNotificationTimeLabel } from "@/utils/formatDate";
 
 export default function Header({ onToggleSidebar, collapsed }) {
 	const router = useRouter();
@@ -90,22 +57,7 @@ export default function Header({ onToggleSidebar, collapsed }) {
 				goal: n.goal,
 				title: n.title,
 				message: n.description,
-				time: (() => {
-					const date = new Date(n.createdAt);
-					const today = new Date();
-					const isToday =
-						date.getDate() === today.getDate() &&
-						date.getMonth() === today.getMonth() &&
-						date.getFullYear() === today.getFullYear();
-
-					if (isToday) {
-						return date.toLocaleTimeString("en-GB", {
-							hour: "2-digit",
-							minute: "2-digit",
-						});
-					}
-					return formatDate(date);
-				})(),
+				time: formatNotificationTimeLabel(n.createdAt),
 			})),
 		[notifications],
 	);
@@ -241,62 +193,51 @@ export default function Header({ onToggleSidebar, collapsed }) {
 									</Link>
 								</div>
 								<div className="max-h-[37rem] overflow-y-auto scrollbar-hide divide-y divide-[var(--color-stroke-neutral)] pb-4">
-									{processesNotifications.map((n, i) => (
+									{processesNotifications.map((n) => (
 										<div
-											key={i}
-											className="flex flex-col items-start gap-3 p-6 bg-white hover:bg-[var(--color-neutral-secondary-bg)] transition"
+											key={n.id}
+											className="flex gap-3 p-6 bg-white hover:bg-[var(--color-neutral-secondary-bg)] transition"
 										>
-											<div className="flex gap-3 items-end mt-1">
+											<span className="inline-flex shrink-0 items-start justify-center w-8 h-8 pt-0.5">
 												{n.type === "warning" && (
-													<span className="inline-flex items-center justify-center w-8 h-8">
-														<PiWarningFill
-															className="h-8 w-8"
-															style={{ color: "var(--notif-warning)" }}
-														/>
-													</span>
+													<PiWarningFill
+														className="h-8 w-8"
+														style={{ color: "var(--notif-warning)" }}
+													/>
 												)}
 												{n.type === "error" && (
-													<span className="inline-flex items-center justify-center w-8 h-8">
-														<PiWarningFill
-															className="h-8 w-8"
-															style={{ color: "var(--notif-error)" }}
-														/>
-													</span>
+													<PiWarningFill
+														className="h-8 w-8"
+														style={{ color: "var(--notif-error)" }}
+													/>
 												)}
 												{n.type === "success" && (
-													<span className="inline-flex items-center justify-center w-8 h-8">
-														<FaRegCircleCheck
-															className="w-8 h-8"
-															style={{ color: "var(--notif-success)" }}
-														/>
-													</span>
+													<FaRegCircleCheck
+														className="w-8 h-8"
+														style={{ color: "var(--notif-success)" }}
+													/>
 												)}
 												{n.type === "yellow_warning" && (
-													<span className="inline-flex items-center justify-center w-8 h-8">
-														<Icon name="icon_alert" className="w-8 h-8" />
-													</span>
+													<Icon name="icon_alert" className="w-8 h-8" />
 												)}
 												{!["warning", "error", "success", "yellow_warning"].includes(n.type) && (
-													<span className="inline-flex items-center justify-center w-8 h-8">
-														<Icon name="icon_alert" className="w-8 h-8" />
-													</span>
+													<Icon name="icon_alert" className="w-8 h-8" />
 												)}
-												<div
-													className={`font-semibold text-base text-[var(--color-neutral-secondary)] ${i === 3 ? "text-[var(--color-stroke-brand)]" : ""}`}
-												>
+											</span>
+											<div className="flex-1 min-w-0">
+												<div className="font-semibold text-base text-[var(--color-neutral-secondary)]">
 													{n.title}
 												</div>
-											</div>
-											<div className="flex-1 w-full">
-												<div className="text-sm text-[var(--color-neutral-secondary)] mb-3">
+												<div className="text-sm text-[var(--color-neutral-secondary)] mt-2 mb-3">
 													{renderMessage(n.message)}
 												</div>
 												<div className="flex items-center justify-between text-sm text-[var(--color-stroke-brand)]">
 													<span>{n.time}</span>
 													<button
+														type="button"
 														onClick={(e) => handleDismiss(n.id, e)}
-														className="text-sm font-semibold hover:underline uppercase tracking-wide"
-														style={{ color: '#FE480B' }}
+														className="text-sm font-semibold hover:underline uppercase tracking-wide shrink-0"
+														style={{ color: "#FE480B" }}
 													>
 														DISMISS
 													</button>

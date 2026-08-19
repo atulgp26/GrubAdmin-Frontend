@@ -1,0 +1,71 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check staging slot configured
+        id: slot
+        run: |
+          if [ -z "${{ secrets.STAGING_DEPLOY_PATH }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Staging slot not configured::STAGING_DEPLOY_PATH secret not set — CI gate passed; SSH deploy skipped until staging slot is ready on EC2."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup SSH key
+        if: steps.slot.outputs.configured == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Add EC2 host to known_hosts
+        if: steps.slot.outputs.configured == 'true'
+        run: |
+          ssh-keyscan -t ed25519 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Build & Deploy to staging slot
+        if: steps.slot.outputs.configured == 'true'
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            cd ${{ secrets.STAGING_DEPLOY_PATH }}
+            git stash
+            git pull origin staging
+            docker compose -f docker-compose.frontend.yml down
+            docker compose -f docker-compose.frontend.yml up --build -d
+          EOF
+
+      - name: Done
+        if: steps.slot.outputs.configured == 'true'
+        run: echo "Admin frontend deployed successfully to staging slot"

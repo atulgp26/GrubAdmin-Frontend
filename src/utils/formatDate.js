@@ -22,3 +22,33 @@ export const formatDateTime = (date) => {
   });
   return `${day} ${month} '${year}, ${time}`;
 };
+
+/** Notification footer label, e.g. "12:15 PM | Today" */
+export const formatNotificationTimeLabel = (dateInput) => {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  const timeStr = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  let dayStr;
+  if (isToday) {
+    dayStr = "Today";
+  } else if (isYesterday) {
+    dayStr = "Yesterday";
+  } else {
+    dayStr = formatDate(date);
+  }
+
+  return `${timeStr} | ${dayStr}`;
+};

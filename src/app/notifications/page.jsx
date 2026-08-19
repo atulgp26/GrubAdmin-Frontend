@@ -10,7 +10,7 @@ import { notificationsService } from "@/api/services/notificationsService";
 import { showSuccess, showError } from "@/components/ui/toast";
 import { useDebounce, useDebouncedCallback } from "use-debounce";
 import { DEBOUNCE_TIME } from "@/constants/config";
-import { formatDate } from "@/utils/formatDate";
+import { formatNotificationTimeLabel } from "@/utils/formatDate";
 
 export default function NotificationsPage() {
 	const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -124,42 +124,17 @@ export default function NotificationsPage() {
 
 	const processedNotifications = useMemo(
 		() =>
-			notifications.map((n) => {
-				const date = new Date(n.createdAt);
-				const now = new Date();
-				const isToday = date.toDateString() === now.toDateString();
-				const yesterday = new Date(now);
-				yesterday.setDate(yesterday.getDate() - 1);
-				const isYesterday =
-					date.toDateString() === yesterday.toDateString();
-
-				const timeStr = date.toLocaleTimeString("en-US", {
-					hour: "numeric",
-					minute: "2-digit",
-					hour12: true,
-				});
-
-				let dayStr;
-				if (isToday) {
-					dayStr = "Today";
-				} else if (isYesterday) {
-					dayStr = "Yesterday";
-				} else {
-					dayStr = formatDate(date);
-				}
-
-				return {
-					id: n.id,
-					type: n.type,
-					goal: n.goal,
-					title: n.title,
-					message: n.description,
-					time: `${timeStr} | ${dayStr}`,
-					status: n.status,
-					category: n.item_type || n.type,
-					itemId: n.item_id,
-				};
-			}),
+			notifications.map((n) => ({
+				id: n.id,
+				type: n.type,
+				goal: n.goal,
+				title: n.title,
+				message: n.description,
+				time: formatNotificationTimeLabel(n.createdAt),
+				status: n.status,
+				category: n.item_type || n.type,
+				itemId: n.item_id,
+			})),
 		[notifications],
 	);
 

@@ -20,9 +20,10 @@ export const GRUBPAC_GROUP_BY_ASSIGNED_GROUPS = [
 
 export const GRUBPAC_DEFAULT_ASSIGNMENT_STATE = "assigned";
 
-// Seed credentials for super admin login
-export const SEED_EMAIL = "rahul.jha.work7@gmail.com";
-export const SEED_PASSWORD = "Qwerty@54321";
+// Optional dev-only login defaults — set via NEXT_PUBLIC_SEED_EMAIL / NEXT_PUBLIC_SEED_PASSWORD in .env.local.
+// Leave unset in production builds so credentials are not baked into the client bundle.
+export const SEED_EMAIL = process.env.NEXT_PUBLIC_SEED_EMAIL?.trim() ?? "";
+export const SEED_PASSWORD = process.env.NEXT_PUBLIC_SEED_PASSWORD ?? "";
 
 export const MODULE = {
 	employee: "Employee - List",
