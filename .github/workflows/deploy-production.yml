@@ -115,15 +115,14 @@ jobs:
             if $SSH "test -f /tmp/fe-deploy-prod.pid && kill -0 \$(cat /tmp/fe-deploy-prod.pid) 2>/dev/null"; then
               echo "build still running (attempt $i)..."
             else
-              echo "build process exited — log tail:"
-              $SSH "tail -100 /tmp/fe-deploy-prod.log" || true
-              exit 1
+              echo "deploy script finished, waiting for frontend HTTP (attempt $i)..."
             fi
             sleep 15
           done
           if [ "$ready" != "true" ]; then
             echo "frontend health check failed on port 3000"
             $SSH "tail -100 /tmp/fe-deploy-prod.log" || true
+            $SSH "docker logs grub-admin-frontend --tail 50" || true
             exit 1
           fi
 
