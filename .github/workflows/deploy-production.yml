@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: admin-fe-ec2-deploy
+  cancel-in-progress: false
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -41,7 +45,7 @@ jobs:
           if [ -z "${{ secrets.EC2_HOST }}" ] || \
              [ -z "${{ secrets.EC2_SSH_KEY }}" ] || \
              [ -z "${{ secrets.EC2_USER }}" ]; then
-            echo "One or more required secrets are empty or not set (EC2_HOST, EC2_SSH_KEY, EC2_USER)"
+            echo "Missing SSH secrets: set EC2_HOST, EC2_USER, EC2_SSH_KEY in the production environment"
             exit 1
           fi
 
@@ -59,11 +63,25 @@ jobs:
 
       - name: Add EC2 host to known_hosts
         run: |
-          ssh-keyscan -t ed25519 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          HOST="${{ secrets.EC2_HOST }}"
+          success=false
+          for attempt in 1 2 3 4 5; do
+            if ssh-keyscan -T 20 -t ed25519,ecdsa,rsa -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
+              success=true
+              break
+            fi
+            echo "ssh-keyscan attempt $attempt failed, retrying..."
+            sleep 5
+          done
+          if [ "$success" != "true" ]; then
+            echo "ssh-keyscan failed for host (check EC2_HOST and EC2 security group port 22)"
+            exit 1
+          fi
 
       - name: Start build on EC2 (detached)
         run: |
-          ssh -o ConnectTimeout=30 -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=120 \
+            -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
             cd grubadmin-frontend
             git stash
@@ -88,7 +106,7 @@ jobs:
 
       - name: Wait for frontend ready
         run: |
-          SSH="ssh -o ConnectTimeout=30 -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}"
+          SSH="ssh -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=120 -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}"
           ready=false
           for i in $(seq 1 40); do
             if $SSH "curl -sf http://127.0.0.1:3000/ >/dev/null"; then
@@ -107,7 +125,6 @@ jobs:
           if [ "$ready" != "true" ]; then
             echo "frontend health check failed on port 3000"
             $SSH "tail -100 /tmp/fe-deploy-prod.log" || true
-            $SSH "docker compose -f /home/ubuntu/grubadmin-frontend/docker-compose.frontend.yml logs --tail 50" || true
             exit 1
           fi
 
