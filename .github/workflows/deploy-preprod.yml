@@ -8,6 +8,8 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_BASE_URL: https://ci.example.com/api/v1
     steps:
       - uses: actions/checkout@v4
 
@@ -59,11 +61,29 @@ jobs:
         if: steps.slot.outputs.configured == 'true'
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            set -e
             cd ${{ secrets.PREPROD_DEPLOY_PATH }}
             git stash
             git pull origin pre-prod
+            export FE_CONTAINER_NAME=grub-admin-frontend-preprod
+            export FE_HOST_PORT=3002
+            export FE_DOCKER_NETWORK=grubadmin-fe-network-preprod
             docker compose -f docker-compose.frontend.yml down
             docker compose -f docker-compose.frontend.yml up --build -d
+            ready=false
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              if curl -sf http://127.0.0.1:3002/ >/dev/null; then
+                ready=true
+                break
+              fi
+              echo "waiting for frontend (attempt \$i)..."
+              sleep 5
+            done
+            if [ "\$ready" != "true" ]; then
+              echo "frontend health check failed on port 3002"
+              docker compose -f docker-compose.frontend.yml logs --tail 50
+              exit 1
+            fi
           EOF
 
       - name: Done
