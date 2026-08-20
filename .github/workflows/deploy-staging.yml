@@ -31,6 +31,7 @@ jobs:
   deploy:
     needs: validate
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     environment: staging
     steps:
       - uses: actions/checkout@v4
@@ -51,40 +52,68 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+          cat >> ~/.ssh/config << 'CFG'
+          Host *
+            ServerAliveInterval 15
+            ServerAliveCountMax 120
+            TCPKeepAlive yes
+          CFG
 
       - name: Add EC2 host to known_hosts
         if: steps.slot.outputs.configured == 'true'
         run: |
           ssh-keyscan -t ed25519 -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Build & Deploy to staging slot
+      - name: Start build on EC2 (detached)
         if: steps.slot.outputs.configured == 'true'
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh -o ConnectTimeout=30 -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             set -e
             cd ${{ secrets.STAGING_DEPLOY_PATH }}
             git stash
             git pull origin staging
-            export FE_CONTAINER_NAME=grub-admin-frontend-staging
-            export FE_HOST_PORT=3001
-            export FE_DOCKER_NETWORK=grubadmin-fe-network-staging
-            docker compose -f docker-compose.frontend.yml down
-            docker compose -f docker-compose.frontend.yml up --build -d
-            ready=false
-            for i in 1 2 3 4 5 6 7 8 9 10; do
-              if curl -sf http://127.0.0.1:3001/ >/dev/null; then
-                ready=true
-                break
-              fi
-              echo "waiting for frontend (attempt \$i)..."
-              sleep 5
-            done
-            if [ "\$ready" != "true" ]; then
-              echo "frontend health check failed on port 3001"
-              docker compose -f docker-compose.frontend.yml logs --tail 50
+            LOG=/tmp/fe-deploy-staging.log
+            PIDFILE=/tmp/fe-deploy-staging.pid
+            rm -f "\$LOG" "\$PIDFILE"
+            nohup bash -c '
+              set -e
+              cd ${{ secrets.STAGING_DEPLOY_PATH }}
+              export FE_CONTAINER_NAME=grub-admin-frontend-staging
+              export FE_HOST_PORT=3001
+              export FE_DOCKER_NETWORK=grubadmin-fe-network-staging
+              export DOCKER_BUILDKIT=1
+              export COMPOSE_DOCKER_CLI_BUILD=1
+              docker compose -f docker-compose.frontend.yml build
+              docker compose -f docker-compose.frontend.yml up -d --remove-orphans
+            ' > "\$LOG" 2>&1 &
+            echo \$! > "\$PIDFILE"
+            echo "Deploy started (pid \$(cat "\$PIDFILE"))"
+          EOF
+
+      - name: Wait for frontend ready
+        if: steps.slot.outputs.configured == 'true'
+        run: |
+          SSH="ssh -o ConnectTimeout=30 -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}"
+          ready=false
+          for i in $(seq 1 40); do
+            if $SSH "curl -sf http://127.0.0.1:3001/ >/dev/null"; then
+              ready=true
+              break
+            fi
+            if $SSH "test -f /tmp/fe-deploy-staging.pid && kill -0 \$(cat /tmp/fe-deploy-staging.pid) 2>/dev/null"; then
+              echo "build still running (attempt $i)..."
+            else
+              echo "build process exited — log tail:"
+              $SSH "tail -100 /tmp/fe-deploy-staging.log" || true
               exit 1
             fi
-          EOF
+            sleep 15
+          done
+          if [ "$ready" != "true" ]; then
+            echo "frontend health check failed on port 3001"
+            $SSH "tail -100 /tmp/fe-deploy-staging.log" || true
+            exit 1
+          fi
 
       - name: Done
         if: steps.slot.outputs.configured == 'true'
