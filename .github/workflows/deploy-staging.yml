@@ -101,11 +101,10 @@ jobs:
               cd ${{ secrets.STAGING_DEPLOY_PATH }}
               export FE_CONTAINER_NAME=grub-admin-frontend-staging
               export FE_HOST_PORT=3001
-              export FE_DOCKER_NETWORK=grubadmin-fe-network-staging
               export DOCKER_BUILDKIT=1
               export COMPOSE_DOCKER_CLI_BUILD=1
-              docker compose -f docker-compose.frontend.yml build
-              docker compose -f docker-compose.frontend.yml up -d --remove-orphans
+              docker compose -p grubadmin-fe-staging -f docker-compose.frontend.yml build
+              docker compose -p grubadmin-fe-staging -f docker-compose.frontend.yml up -d
             ' > "\$LOG" 2>&1 &
             echo \$! > "\$PIDFILE"
             echo "Deploy started (pid \$(cat "\$PIDFILE"))"
