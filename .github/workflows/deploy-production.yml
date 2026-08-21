@@ -78,53 +78,73 @@ jobs:
             exit 1
           fi
 
-      - name: Start build on EC2 (detached)
+      - name: Blue-green deploy Admin FE on EC2
         run: |
           ssh -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=120 \
             -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            set -e
-            cd grubadmin-frontend
-            git stash
+            set -euo pipefail
+            BG_SCRIPT="/home/ubuntu/scripts/bluegreen-prod-admin-fe.sh"
+            if [ ! -x "$BG_SCRIPT" ]; then
+              echo "Missing $BG_SCRIPT — sync from GrubAdmin-Backend scripts/ec2/ first"
+              exit 1
+            fi
+
+            INACTIVE_COLOR="$("$BG_SCRIPT" inactive-color)"
+            INACTIVE_PORT="$("$BG_SCRIPT" inactive-port)"
+            INACTIVE_PROJECT="$("$BG_SCRIPT" inactive-project)"
+            INACTIVE_CONTAINER="$("$BG_SCRIPT" inactive-container)"
+            ACTIVE_COLOR="$("$BG_SCRIPT" active-color)"
+
+            echo "=== Admin FE blue-green: candidate=${INACTIVE_COLOR} port=${INACTIVE_PORT} project=${INACTIVE_PROJECT} ==="
+            echo "=== Active until cutover: ${ACTIVE_COLOR} ==="
+
+            cd /home/ubuntu/grubadmin-frontend
+            git stash || true
             git pull origin main
-            LOG=/tmp/fe-deploy-prod.log
-            PIDFILE=/tmp/fe-deploy-prod.pid
+
+            LOG=/tmp/fe-deploy-prod-bg.log
+            PIDFILE=/tmp/fe-deploy-prod-bg.pid
             rm -f "$LOG" "$PIDFILE"
-            nohup bash -c '
-              set -e
+
+            nohup bash -c "
+              set -euo pipefail
               cd /home/ubuntu/grubadmin-frontend
-              export FE_CONTAINER_NAME=grub-admin-frontend
-              export FE_HOST_PORT=3000
+              export FE_CONTAINER_NAME=${INACTIVE_CONTAINER}
+              export FE_HOST_PORT=${INACTIVE_PORT}
               export DOCKER_BUILDKIT=1
               export COMPOSE_DOCKER_CLI_BUILD=1
-              docker compose -p grubadmin-fe-prod -f docker-compose.frontend.yml build
-              docker compose -p grubadmin-fe-prod -f docker-compose.frontend.yml up -d
-            ' > "$LOG" 2>&1 &
+              docker compose -p ${INACTIVE_PROJECT} -f docker-compose.frontend.yml build
+              docker compose -p ${INACTIVE_PROJECT} -f docker-compose.frontend.yml up -d
+            " > "$LOG" 2>&1 &
             echo $! > "$PIDFILE"
-            echo "Deploy started (pid $(cat "$PIDFILE"))"
+            echo "Candidate build started (pid $(cat "$PIDFILE"))"
+
+            # Wait for candidate HTTP (up to ~10 min)
+            ready=false
+            for i in $(seq 1 40); do
+              if curl -sf "http://127.0.0.1:${INACTIVE_PORT}/" >/dev/null; then
+                ready=true
+                break
+              fi
+              if test -f "$PIDFILE" && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+                echo "build still running (attempt $i)..."
+              else
+                echo "deploy script finished, waiting for candidate HTTP (attempt $i)..."
+              fi
+              sleep 15
+            done
+            if [ "$ready" != "true" ]; then
+              echo "Candidate Admin FE health failed on :${INACTIVE_PORT}"
+              tail -100 "$LOG" || true
+              docker logs "$INACTIVE_CONTAINER" --tail 50 || true
+              exit 1
+            fi
+
+            "$BG_SCRIPT" cutover "$INACTIVE_COLOR"
+            echo "=== Keep previous slot as warm standby (no stop) ==="
+            "$BG_SCRIPT" status
+            echo "=== Admin FE blue-green deploy complete ==="
           EOF
 
-      - name: Wait for frontend ready
-        run: |
-          SSH="ssh -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=120 -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}"
-          ready=false
-          for i in $(seq 1 40); do
-            if $SSH "curl -sf http://127.0.0.1:3000/ >/dev/null"; then
-              ready=true
-              break
-            fi
-            if $SSH "test -f /tmp/fe-deploy-prod.pid && kill -0 \$(cat /tmp/fe-deploy-prod.pid) 2>/dev/null"; then
-              echo "build still running (attempt $i)..."
-            else
-              echo "deploy script finished, waiting for frontend HTTP (attempt $i)..."
-            fi
-            sleep 15
-          done
-          if [ "$ready" != "true" ]; then
-            echo "frontend health check failed on port 3000"
-            $SSH "tail -100 /tmp/fe-deploy-prod.log" || true
-            $SSH "docker logs grub-admin-frontend --tail 50" || true
-            exit 1
-          fi
-
       - name: Done
-        run: echo "Admin frontend deployed successfully to production"
+        run: echo "Admin frontend blue-green deployed successfully to production"
